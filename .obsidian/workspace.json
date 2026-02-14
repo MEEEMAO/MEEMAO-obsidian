@@ -142,21 +142,31 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Iterative LLM+ILP.md",
+                "file": "Literature/ETF 的本質與類型.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of Iterative LLM+ILP"
+              "title": "Outline of ETF 的本質與類型"
+            }
+          },
+          {
+            "id": "1f0692fc1249c25b",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {},
+              "icon": "git-pull-request",
+              "title": "Source Control"
             }
           }
-        ]
+        ],
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -166,10 +176,11 @@
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
       "bases:Create new base": false,
-      "obsidian-excalidraw-plugin:New drawing": false
+      "obsidian-excalidraw-plugin:New drawing": false,
+      "obsidian-git:Open Git source control": false
     }
   },
-  "active": "4b46c84002f955d2",
+  "active": "1f0692fc1249c25b",
   "lastOpenFiles": [
     "Inbox/系統優化idea.md",
     "Literature/Supremum Lagrange Multiplier Test.md",

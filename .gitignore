@@ -1,0 +1,11 @@
+# 排除工作空間設定（視窗大小、開啟的標籤頁等，不需同步）
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# 排除快取與索引檔案
+.obsidian/indexed
+.obsidian/plugins/obsidian-git/cache
+
+# 排除系統暫存
+.DS_Store
+Thumbs.db
