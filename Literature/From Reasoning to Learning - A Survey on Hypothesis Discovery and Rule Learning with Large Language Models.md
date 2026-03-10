@@ -16,8 +16,7 @@ publication time: 04/2025
 
 #### **傳統符號方法限制:**
 >Lacked the commonsense background needed for inventive rule formation *https://dl.acm.org/doi/10.1145/3664194*
-#### 現有問題:
-##### hypothesis leakage
+#### 現有問題: hypothesis leakage
 #### Future work:
 >**尋找假設的環境應該要和現實世界一樣複雜**: 動態環境, 多樣的action, 不同選擇產生不同feedback
 - Iterative learning and continuous refinement of hypotheses within dynamic, evolving contexts.

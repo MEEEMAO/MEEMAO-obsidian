@@ -13,11 +13,11 @@ aliases: []
 3. validate hypothesis through **induction**
 
 ![[Pasted image 20260119155059.png]]
-##### Abduction: generate
+## Abduction: generate
 + generates explanatory hypotheses based on an initial set of observations. 
 + only form that generates entirely new ideas or explanations
-##### Deduction: apply
+## Deduction: apply
 + apply these hypotheses and derive predictions. 
-##### Induction: validate & refine
+## Induction: validate & refine
 + Validate: 這個假設的正確程度 - evaluates how well the predicted observations align with actual outcomes.
 + Refine: updating the confidence of the hypotheses or rejecting those that are no longer valid.
