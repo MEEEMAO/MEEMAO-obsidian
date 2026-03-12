@@ -1,6 +1,6 @@
 ---
 created: 2026-02-26 12:01
-type: machine learning
+type: ML
 tags:
   - LLM
   - Consciousness

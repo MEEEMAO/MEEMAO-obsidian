@@ -1,6 +1,6 @@
 ---
 created: 2026-01-14 22:35
-type: machine learning
+type: ML
 tags:
   - LLM
   - Hypothesis-generation

@@ -1,8 +1,11 @@
 ---
-created:
-type:
+created: 2026-03-11
+type: ML
 tags:
-url:
+  - LLM
+  - Hypothesis-generation
+  - ILP
+url: https://arxiv.org/pdf/2505.21486
 aliases: []
-publication time:
+publication time: 19 Jan 2026 AAAI
 ---
