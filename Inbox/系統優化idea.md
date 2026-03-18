@@ -3,3 +3,5 @@
 	+ paper 30min / day
 	+ learning 30 min/ day
 + Obsidian + cowork (設定定期筆記優化建議 & 複習小卡)
++ 晚餐後先reading Toefl 
++ 現代math time
