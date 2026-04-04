@@ -1,0 +1,35 @@
+filters:
+  and:
+    - file.folder == "10-Literature"
+properties:
+  file.name:
+    displayName: 論文標題
+  note.publication_time:
+    displayName: 發表時間
+  note.url:
+    displayName: 連結
+  note.keywords:
+    displayName: 關鍵字
+views:
+  - type: table
+    name: 所有論文
+    order:
+      - publication_time
+      - file.name
+      - file.mtime
+      - keywords
+      - url
+    sort:
+      - property: file.links
+        direction: ASC
+      - property: file.name
+        direction: ASC
+      - property: publication_time
+        direction: ASC
+    limit: 100
+  - type: table
+    name: 依關鍵字分組
+    groupBy:
+      property: keywords
+      direction: ASC
+    limit: 100

@@ -1,9 +1,0 @@
-- MAS limitation:
-	- text-based reasoning and communication.
-- LatentMAS introduce for collaboration in multi-agent systems?
-	- collaborate directly within the continuous latent space
-- How does an agent in the LatentMAS framework perform its initial reasoning step?
-	- It performs auto-regressive latent thoughts generation through last-layer hidden embeddings.
-- A shared latent working memory: preserve and transfer internal representations between agents
-	- lossless information exchange
-	- Reasoning Expressiveness: models’ continuous thoughts convey far richer information than discrete tokens.

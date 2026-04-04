@@ -1,0 +1,32 @@
+filters:
+  and:
+    - file.folder == "20-Permanent"
+    - note.domain == "Finance"
+properties:
+  file.name:
+    displayName: 知識點
+  note.source:
+    displayName: 來源
+  note.tags:
+    displayName: Topics
+views:
+  - type: table
+    name: 所有 Finance 筆記
+    order:
+      - file.name
+      - tags
+      - source
+      - file.mtime
+    limit: 100
+  - type: table
+    name: 依 Topic 分組
+    groupBy:
+      property: tags
+      direction: ASC
+    limit: 100
+  - type: table
+    name: 依來源分組
+    groupBy:
+      property: source
+      direction: ASC
+    limit: 100
