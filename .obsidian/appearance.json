@@ -1,5 +1,7 @@
 {
   "theme": "moonstone",
   "accentColor": "#5c6ef5",
-  "cssTheme": ""
+  "cssTheme": "",
+  "interfaceFontFamily": "Chalkboard SE",
+  "textFontFamily": "Georgia"
 }

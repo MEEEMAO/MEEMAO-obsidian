@@ -4,7 +4,6 @@ source: Book-Build a Large Language Model (From Scratch)
 tags:
   - llm
 ---
-
 > [!abstract] BERT 透過雙向訓練理解句子的完整上下文，擅長文本分類任務
 
 ## 核心概念

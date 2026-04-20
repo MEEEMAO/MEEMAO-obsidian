@@ -1,0 +1,29 @@
+{
+	"nodes":[
+		{"id":"title","type":"text","text":"# 📖 Atomic Habits\n**James Clear｜Personal-Growth**","x":-180,"y":-680,"width":360,"height":100,"color":"0"},
+		{"id":"n-micro","type":"file","file":"20-Permanent/微小改變能帶來巨大差異但需要跨越潛伏期.md","x":-660,"y":-340,"width":400,"height":100,"color":"4"},
+		{"id":"n-identity","type":"file","file":"20-Permanent/改變習慣最有效的方法是改變身分認同.md","x":260,"y":-340,"width":400,"height":100,"color":"4"},
+		{"id":"label-core","type":"text","text":"### 🔄 核心框架","x":-740,"y":-60,"width":220,"height":50,"color":"0"},
+		{"id":"n-reward","type":"file","file":"20-Permanent/讓獎賞令人滿足.md","x":520,"y":285,"width":360,"height":420,"color":"5"},
+		{"id":"n-loop","type":"file","file":"20-Permanent/習慣迴路是提示、渴望、回應、獎賞的四階段循環.md","x":-220,"y":-135,"width":400,"height":100,"color":"6"},
+		{"id":"label-laws","type":"text","text":"### ⚡ 行為改變四法則","x":-660,"y":200,"width":240,"height":50,"color":"0"},
+		{"id":"n-response","type":"file","file":"20-Permanent/兩分鐘法則與環境設計讓行動輕而易舉.md","x":80,"y":285,"width":360,"height":420,"color":"5"},
+		{"id":"n-craving","type":"file","file":"20-Permanent/誘惑綑綁與文化群體能讓習慣更有吸引力.md","x":-400,"y":285,"width":360,"height":420,"color":"5"},
+		{"id":"label-foundation","type":"text","text":"### 🧱 基礎觀念","x":-760,"y":-580,"width":220,"height":90,"color":"0"},
+		{"id":"n-cue","type":"file","file":"20-Permanent/讓提示顯而易見能察覺並設計觸發好習慣的環境.md","x":-1020,"y":285,"width":360,"height":420,"color":"5"}
+	],
+	"edges":[
+		{"id":"e-micro-identity","fromNode":"n-micro","fromSide":"right","toNode":"n-identity","toSide":"left","label":"系統思維的核心是身分認同"},
+		{"id":"e-loop-micro","fromNode":"n-loop","fromSide":"left","toNode":"n-micro","toSide":"bottom","label":"迴路需要重複才能自動化"},
+		{"id":"e-loop-identity","fromNode":"n-loop","fromSide":"right","toNode":"n-identity","toSide":"bottom","label":"驅動迴路的深層動力"},
+		{"id":"e-loop-cue","fromNode":"n-loop","fromSide":"bottom","toNode":"n-cue","toSide":"top","label":"法則一：提示"},
+		{"id":"e-loop-craving","fromNode":"n-loop","fromSide":"bottom","toNode":"n-craving","toSide":"top","label":"法則二：渴望"},
+		{"id":"e-loop-response","fromNode":"n-loop","fromSide":"bottom","toNode":"n-response","toSide":"top","label":"法則三：回應"},
+		{"id":"e-loop-reward","fromNode":"n-loop","fromSide":"bottom","toNode":"n-reward","toSide":"top","label":"法則四：獎賞"},
+		{"id":"e-cue-craving","fromNode":"n-cue","fromSide":"right","toNode":"n-craving","toSide":"left","label":"提示觸發渴望"},
+		{"id":"e-craving-response","fromNode":"n-craving","fromSide":"right","toNode":"n-response","toSide":"left"},
+		{"id":"e-response-reward","fromNode":"n-response","fromSide":"right","toNode":"n-reward","toSide":"left"},
+		{"id":"e-cue-response","fromNode":"n-cue","fromSide":"bottom","toNode":"n-response","toSide":"bottom","label":"共用環境設計策略"},
+		{"id":"e-reward-identity","fromNode":"n-reward","fromSide":"top","toNode":"n-identity","toSide":"right","label":"獎賞應與身分認同一致"}
+	]
+}

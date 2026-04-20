@@ -53,8 +53,6 @@ tags: [topic-tag1, topic-tag2]
 - **Permanent ↔ Permanent**：唯一需要主動建立的連結類型
 - Literature Note **不**需要連結到 Permanent（方向是單向的：Literature → 生成 → Permanent）
 - **建立連結的方式**：先用 `domain` → `tags` 篩選同主題筆記，再判斷是否有相同、相異、補充關係
-- 每張 Permanent Note 底部必須有：
-
 ```markdown
 ## 相關概念
 - [[相關Permanent1]] — 相同之處：XXX；差異：XXX
@@ -87,7 +85,6 @@ claude "幫我為這篇論文建立筆記 https://arxiv.org/..."
    - 結論（Conclusion）
 3. 補全 frontmatter（publication_time、url、keywords）
 4. 儲存至 `10-Literature/`
-5. 辨識論文中的原子概念 → 自動建立 Permanent Notes（見下方 SOP）
 
 ---
 
