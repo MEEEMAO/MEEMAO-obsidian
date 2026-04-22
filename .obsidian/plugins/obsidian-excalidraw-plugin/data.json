@@ -158,9 +158,7 @@
   "taskboneEnabled": false,
   "taskboneAPIkey": "",
   "pinnedScripts": [],
-  "sidepanelTabs": [
-    "{\"script\":\"Downloaded/Mindmap Builder\",\"title\":\"Mind Map Builder\"}"
-  ],
+  "sidepanelTabs": [],
   "customPens": [
     {
       "type": "default",
