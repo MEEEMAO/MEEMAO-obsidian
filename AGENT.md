@@ -65,7 +65,7 @@ tags: [topic-tag1, topic-tag2]
 
 > [!important] 所有場景通用規則
 > 1. **寫入 Permanent Note 之前，必須先將內容呈現給使用者確認。** 確認後才可寫入 `20-Permanent/`。
-> 2. **正確性檢查**：若要寫入的筆記 domain 為 `DS` 或 `Finance`，且 source 不是來自 Literature Note，則寫入前須使用 `fact-checker` skill 進行事實與正確性檢查。
+> 2. **正確性檢查**：若要寫入的筆記 domain 為 `DS` 或 `Finance`，且 source 不是來自 Literature Note，則寫入前需要進行事實與正確性檢查。
 > 3. **筆記美化**：寫入時須整理筆記結構與排版，確保層次分明、方便日後閱讀（善用標題層級、callout、表格、highlight 等 Obsidian 語法）。
 
 ### 使用場景 A：給我論文（檔案或連結）
@@ -76,7 +76,7 @@ tags: [topic-tag1, topic-tag2]
 ```
 
 ** 執行步驟：**
-1. 使用 `academic-researcher` skill 讀取論文
+1. 讀取檔案
 2. 建立結構化 Literature Note，包含：
    - 研究背景（Research Background）
    - 研究問題（Research Problem）
@@ -97,7 +97,7 @@ tags: [topic-tag1, topic-tag2]
 **判斷類型後執行：**
 
 #### 如果是論文筆記
-1. 使用 `academic-researcher` skill 讀取論文，補齊論文結構：研究背景、研究問題、方法、貢獻、結論
+1. Search for 論文原文讀取，補齊論文結構：研究背景、研究問題、方法、貢獻、結論
 2. 更新 frontmatter（publication_time、url、keywords）
 3. 移到 `10-Literature/`
 4. → 執行「Literature → Permanent」流程（見下）
@@ -149,7 +149,7 @@ tags: [topic-tag1, topic-tag2]
 
 ** 執行步驟：**
 1. 掃描 `20-Permanent/` 中 DS 領域的筆記，了解使用者目前的知識圖譜
-2. 使用 `deep-research` 或 `literature-review` skill 搜尋該領域最新進展
+2. 使用 `literature-review` skill 搜尋該領域最新進展
 3. 交叉比對：使用者已有基礎但尚未深入的方向 = research gap
 4. 輸出 2-3 個有潛力的研究題目，附上理由與相關的現有筆記
 
