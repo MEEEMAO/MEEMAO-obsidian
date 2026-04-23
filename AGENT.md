@@ -1,8 +1,8 @@
-# MEEMAO Knowledge Vault — Claude 操作手冊
+# MEEMAO Knowledge Vault — 操作手冊
 
 ## 這個 Vault 是什麼
 
-MEEMAO 的 Zettelkasten 第二大腦，結合 Claude Code CLI 與 Obsidian 的自動化知識管理系統。
+MEEMAO 的 Zettelkasten 第二大腦，結合 Agent 與 Obsidian 的自動化知識管理系統。
 
 **三大知識領域：**
 - `DS`：Data Science — LLM、Agent、ML、AI 系統設計、統計學方法、假設檢定、機率分布
@@ -71,11 +71,11 @@ tags: [topic-tag1, topic-tag2]
 ### 使用場景 A：給我論文（檔案或連結）
 
 ```bash
-claude "幫我為這篇論文建立筆記" --file paper.pdf
-claude "幫我為這篇論文建立筆記 https://arxiv.org/..."
+ "幫我為這篇論文建立筆記" --file paper.pdf
+ "幫我為這篇論文建立筆記 https://arxiv.org/..."
 ```
 
-**Claude 執行步驟：**
+** 執行步驟：**
 1. 使用 `academic-researcher` skill 讀取論文
 2. 建立結構化 Literature Note，包含：
    - 研究背景（Research Background）
@@ -91,7 +91,7 @@ claude "幫我為這篇論文建立筆記 https://arxiv.org/..."
 ### 使用場景 B：處理 Inbox
 
 ```bash
-claude "處理 Inbox"
+ "處理 Inbox"
 ```
 
 **判斷類型後執行：**
@@ -114,10 +114,10 @@ claude "處理 Inbox"
 ### 使用場景 C：Literature → Permanent（原子化）
 
 ```bash
-claude "把這篇 Literature Note 原子化，建立 Permanent Notes"
+ "把這篇 Literature Note 原子化，建立 Permanent Notes"
 ```
 
-**Claude 執行步驟：**
+** 執行步驟：**
 1. 讀取 Literature Note，辨識 2-5 個獨立的原子概念
 2. 為每個概念建立一張 Permanent Note：
    - 標題 = 一個完整命題（如：「AMOC 是監測版的 ROC 曲線」）
@@ -133,9 +133,9 @@ claude "把這篇 Literature Note 原子化，建立 Permanent Notes"
 ### 使用場景 D：知識問答 & 複習
 
 ```bash
-claude "根據我的 DS 筆記，解釋 Chi-square test 和 LR Test 的差別"
-claude "從 Finance 的 Permanent Notes 中抽 5 個概念，幫我出複習題"
-claude "根據我的 DS 和 Finance 筆記，找出可以交叉應用的概念"
+ "根據我的 DS 筆記，解釋 Chi-square test 和 LR Test 的差別"
+ "從 Finance 的 Permanent Notes 中抽 5 個概念，幫我出複習題"
+ "根據我的 DS 和 Finance 筆記，找出可以交叉應用的概念"
 ```
 
 ---
@@ -143,11 +143,11 @@ claude "根據我的 DS 和 Finance 筆記，找出可以交叉應用的概念"
 ### 使用場景 E：Research Idea 發想
 
 ```bash
-claude "根據我現有的 DS 筆記，幫我找出 3 個有潛力的研究方向"
-claude "我想研究 [主題]，根據我的知識庫，找出相關概念和知識缺口"
+ "根據我現有的 DS 筆記，幫我找出 3 個有潛力的研究方向"
+ "我想研究 [主題]，根據我的知識庫，找出相關概念和知識缺口"
 ```
 
-**Claude 執行步驟：**
+** 執行步驟：**
 1. 掃描 `20-Permanent/` 中 DS 領域的筆記，了解使用者目前的知識圖譜
 2. 使用 `deep-research` 或 `literature-review` skill 搜尋該領域最新進展
 3. 交叉比對：使用者已有基礎但尚未深入的方向 = research gap
@@ -158,10 +158,10 @@ claude "我想研究 [主題]，根據我的知識庫，找出相關概念和知
 ### 使用場景 F：筆記整理 & 健檢
 
 ```bash
-claude "幫我整理 Permanent Notes，找出重複或遺漏的連結"
+ "幫我整理 Permanent Notes，找出重複或遺漏的連結"
 ```
 
-**Claude 執行步驟：**
+** 執行步驟：**
 1. 掃描 `20-Permanent/` 所有筆記
 2. 用 `domain` → `tags` 篩選同主題筆記，交叉比對內容
 3. 找出：重複或高度重疊的筆記、遺漏的相關概念連結、缺少 tags 的筆記
@@ -172,7 +172,7 @@ claude "幫我整理 Permanent Notes，找出重複或遺漏的連結"
 ### 使用場景 G：Project 研究工作區
 
 ```bash
-claude "幫我在 40-Projects/ 建立一個新研究主題"
+ "幫我在 40-Projects/ 建立一個新研究主題"
 ```
 
 **Project 資料夾結構：**
