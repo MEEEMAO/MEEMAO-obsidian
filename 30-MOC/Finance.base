@@ -17,7 +17,12 @@ views:
       - tags
       - source
       - file.mtime
+    sort:
+      - property: tags
+        direction: DESC
     limit: 100
+    columnSize:
+      file.name: 319
   - type: table
     name: 依 Topic 分組
     groupBy:

@@ -1,7 +1,10 @@
 ---
-publication_time: "2025-07"
+publication_time: 2025-07
 url: https://arxiv.org/abs/2507.21046
-keywords: [self-evolving-agents, LLM-agents, agent-evolution, reinforcement-learning, multi-agent-systems]
+keywords:
+  - self-evolving-agents
+  - LLM-agents
+  - agent-evolution
 ---
 ## Research Background
 
@@ -15,24 +18,17 @@ keywords: [self-evolving-agents, LLM-agents, agent-evolution, reinforcement-lear
 > 2. Updates must produce **persistent, policy-changing** effects (not transient behaviors)
 > 3. System must possess **autonomous exploration** or **self-initiated learning** mechanisms
 
-### Agent 運作的環境假設
-
-環境定義為**部分可觀測馬可夫決策過程（POMDP）**，包含狀態、動作、觀測、轉移機率與目標條件獎勵函數。
-## Research Problem
-
-現有 LLM Agent 的研究缺乏一個**統一的分析框架**來理解和比較各種自我演化機制。具體而言：
+**Self-evolving agent = 多層級可進化系統**
 
 - Agent 可以演化的**組件**有哪些？（模型、記憶、工具、架構）
 - **何時**該觸發演化？（任務執行中 vs. 任務之間）
 - **如何**驅動演化？（獎勵訊號、模仿學習、群體演化）
 - 在哪些**領域**中應用演化？
 
-本文旨在提供一個系統性的 survey，將 self-evolving agents 的研究脈絡進行結構化分析。
+ frontier ：**同時在四個維度 co-evolve**
 
 ## Method
 ![[Pasted image 20260421135720.png]]
-
-本文提出以 **What / When / How / Where** 四個正交維度進行分解式分析：
 
 ### What to Evolve（演化什麼）
 
