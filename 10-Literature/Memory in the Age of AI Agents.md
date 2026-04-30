@@ -61,22 +61,18 @@ flowchart LR
 
 如果說第一篇 self-evolving agents survey 在回答「agent 怎麼變強」，那這篇更像是在回答：**memory 作為 agent 的核心 primitive，到底是怎麼支撐這個變強過程的。**
 
-<details>
-<summary><strong>Agent memory 和幾個常混淆概念的差別</strong></summary>
-
-### 1) Agent Memory vs. LLM Memory
-- **LLM memory** 通常指模型參數中隱含保留的知識，或 inference 過程中的上下文依賴。
-- **Agent memory** 更強調可持續、可操作、跨互動存在的記憶系統，常包含外部 storage、更新策略與 retrieval policy。
-
-### 2) Agent Memory vs. RAG
-- **RAG** 重點是從外部知識庫取回「相關資訊」。
-- **Agent memory** 不只是 retrieve facts，還要處理經驗、策略、技能、偏好，以及長期演化。
-
-### 3) Agent Memory vs. Context Engineering
-- **Context engineering** 重點是把當下最有用的資訊塞進 prompt。
-- **Agent memory** 更進一步關心：哪些資訊值得留下、何時更新、如何壓縮、怎麼遺忘、未來何時再調出來。
-
-</details>
+> [!info] Agent memory 和幾個常混淆概念的差別
+> **1) Agent Memory vs. LLM Memory**
+> - **LLM memory** 通常指模型參數中隱含保留的知識，或 inference 過程中的上下文依賴。
+> - **Agent memory** 更強調可持續、可操作、跨互動存在的記憶系統，常包含外部 storage、更新策略與 retrieval policy。
+>
+> **2) Agent Memory vs. RAG**
+> - **RAG** 重點是從外部知識庫取回「相關資訊」。
+> - **Agent memory** 不只是 retrieve facts，還要處理經驗、策略、技能、偏好，以及長期演化。
+>
+> **3) Agent Memory vs. Context Engineering**
+> - **Context engineering** 重點是把當下最有用的資訊塞進 prompt。
+> - **Agent memory** 更進一步關心：哪些資訊值得留下、何時更新、如何壓縮、怎麼遺忘、未來何時再調出來。
 
 ## Method
 
