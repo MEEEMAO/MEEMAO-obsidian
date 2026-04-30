@@ -59,7 +59,6 @@ flowchart LR
 4. **Functional taxonomy**：memory 為什麼存在？它是為了幫 agent 做什麼？
 5. **Operational dynamics**：memory 是如何被建立、更新、遺忘、檢索與重組的？
 
-如果說第一篇 self-evolving agents survey 在回答「agent 怎麼變強」，那這篇更像是在回答：**memory 作為 agent 的核心 primitive，到底是怎麼支撐這個變強過程的。**
 
 > [!info] Agent memory 和幾個常混淆概念的差別
 > **1) Agent Memory vs. LLM Memory**
@@ -80,11 +79,11 @@ flowchart LR
 
 作者先回答「記憶載體是什麼」。他們提出三種主要 forms：
 
-| Form | 定義 | 直覺理解 | 優點 | 代價 / 風險 |
-|---|---|---|---|---|
-| **Token-level memory** | 以外顯、離散單位儲存記憶 | 像筆記、記錄、knowledge graph、memory chunks | 可編輯、可檢查、可檢索、可追溯 | 容易受 retrieval 品質限制 |
-| **Parametric memory** | 記憶被內化到模型參數中 | 像把經驗學進 model weights | 推理時使用自然、低顯式管理成本 | 難編輯、難追溯、可能遺忘 |
-| **Latent memory** | 記憶存在 hidden states / latent representations | 像 agent 內部暫存與中介狀態 | 適合連續、上下文依賴的動態表徵 | 可解釋性低、較難控制 |
+| Form                   | 定義                                          | 直覺理解                                 | 優點              | 代價 / 風險            |
+| ---------------------- | ------------------------------------------- | ------------------------------------ | --------------- | ------------------ |
+| **Token-level memory** | 以外顯、離散單位儲存記憶                                | 像筆記、記錄、knowledge graph、memory chunks | 可編輯、可檢查、可檢索、可追溯 | 容易受 retrieval 品質限制 |
+| **Parametric memory**  | 記憶被內化到模型參數中                                 | 像把經驗學進 model weights                 | 推理時使用自然、低顯式管理成本 | 難編輯、難追溯、可能遺忘       |
+| **Latent memory**      | 記憶存在 hidden states / latent representations | 像 agent 內部暫存與中介狀態                    | 適合連續、上下文依賴的動態表徵 | 可解釋性低、較難控制         |
 
 > [!tip] 一句話記住這張表
 > **Token-level 最像外部筆記，Parametric 最像內化習慣，Latent 最像工作中的腦內暫態。**
@@ -95,11 +94,11 @@ flowchart LR
 
 作者認為 memory 不該只按「存多久」分類，而應該按「幫 agent 完成什麼任務」分類。
 
-| Function | 主要用途 | 典型內容 |
-|---|---|---|
-| **Factual memory** | 保存穩定事實 | 使用者偏好、環境狀態、知識片段 |
-| **Experiential memory** | 保存做過的事與學到的經驗 | 成功案例、失敗案例、策略、技能 |
-| **Working memory** | 支撐當下推理與多步任務協調 | 中間變數、當前計畫、最近觀察 |
+| Function                | 主要用途          | 典型內容            |
+| ----------------------- | ------------- | --------------- |
+| **Factual memory**      | 保存穩定事實        | 使用者偏好、環境狀態、知識片段 |
+| **Experiential memory** | 保存做過的事與學到的經驗  | 成功案例、失敗案例、策略、技能 |
+| **Working memory**      | 支撐當下推理與多步任務協調 | 中間變數、當前計畫、最近觀察  |
 
 這個 functional taxonomy 很有用，因為它直接對應到 agent 的三種核心需求：
 - **知道什麼是真的**（factual）
@@ -120,11 +119,11 @@ flowchart TD
 
 這是這篇最有研究感的一部分：作者不把 memory 看成靜態倉庫，而是看成**動態管理流程**。
 
-| Dynamics stage | 問題 | 典型操作 |
-|---|---|---|
-| **Formation** | 什麼資訊值得進 memory？ | summarization, distillation, structured construction, latent encoding |
-| **Evolution** | 已有 memory 要怎麼變？ | consolidation, updating, forgetting |
-| **Retrieval** | 什麼時候、怎麼把 memory 拿回來？ | query construction, retrieval strategy, reranking, post-processing |
+| Dynamics stage | 問題                   | 典型操作                                                                  |
+| -------------- | -------------------- | --------------------------------------------------------------------- |
+| **Formation**  | 什麼資訊值得進 memory？      | summarization, distillation, structured construction, latent encoding |
+| **Evolution**  | 已有 memory 要怎麼變？      | consolidation, updating, forgetting                                   |
+| **Retrieval**  | 什麼時候、怎麼把 memory 拿回來？ | query construction, retrieval strategy, reranking, post-processing    |
 
 ```mermaid
 flowchart LR
@@ -152,16 +151,16 @@ flowchart LR
 
 作者整理的 frontier 很值得直接記起來：
 
-| Frontier | 核心方向 |
-|---|---|
-| **Memory retrieval → memory generation** | 不只撈舊記憶，而是主動生成更適合的新記憶表示 |
-| **Automated memory management** | 從手刻規則走向讓 agent 自己學會存、改、刪、取 |
-| **RL meets memory** | 把 memory 管理變成可學習 policy，而非硬編 heuristics |
-| **Multimodal memory** | 記住的不只文字，也包含圖像、語音、GUI 軌跡等 |
-| **Shared memory in multi-agent systems** | 多 agent 如何共享記憶、避免冗餘與衝突 |
-| **Memory for world model** | 記憶不只是歷史紀錄，也能成為建構 world model 的材料 |
-| **Trustworthy memory** | 處理 hallucination、staleness、privacy、poisoning、misretrieval |
-| **Human-cognitive connections** | 借鏡人類記憶理論來設計 agent memory |
+| Frontier                                 | 核心方向                                                      |
+| ---------------------------------------- | --------------------------------------------------------- |
+| **Memory retrieval → memory generation** | 不只撈舊記憶，而是主動生成更適合的新記憶表示                                    |
+| **Automated memory management**          | 從手刻規則走向讓 agent 自己學會存、改、刪、取                                |
+| **RL meets memory**                      | 把 memory 管理變成可學習 policy，而非硬編 heuristics                   |
+| **Multimodal memory**                    | 記住的不只文字，也包含圖像、語音、GUI 軌跡等                                  |
+| **Shared memory in multi-agent systems** | 多 agent 如何共享記憶、避免冗餘與衝突                                    |
+| **Memory for world model**               | 記憶不只是歷史紀錄，也能成為建構 world model 的材料                          |
+| **Trustworthy memory**                   | 處理 hallucination、staleness、privacy、poisoning、misretrieval |
+| **Human-cognitive connections**          | 借鏡人類記憶理論來設計 agent memory                                  |
 
 ## Contribution
 

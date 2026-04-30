@@ -90,11 +90,11 @@ flowchart LR
 
 ### 4. How to Evolve（如何演化）
 
-| 方法家族 | 核心訊號 | 直覺理解 |
-|---|---|---|
-| **Reward-based** | scalar reward / textual feedback / implicit signal | 用回饋告訴 agent 什麼做得好、什麼不好 |
-| **Imitation & Demonstration** | self-generated 或 cross-agent demonstration | 用好例子教 agent 下次怎麼做 |
-| **Population-based / Evolutionary** | mutation, selection, population search | 不只優化單一 agent，而是讓多個候選解競爭演化 |
+| 方法家族                                | 核心訊號                                               | 直覺理解                      |
+| ----------------------------------- | -------------------------------------------------- | ------------------------- |
+| **Reward-based**                    | scalar reward / textual feedback / implicit signal | 用回饋告訴 agent 什麼做得好、什麼不好    |
+| **Imitation & Demonstration**       | self-generated 或 cross-agent demonstration         | 用好例子教 agent 下次怎麼做         |
+| **Population-based / Evolutionary** | mutation, selection, population search             | 不只優化單一 agent，而是讓多個候選解競爭演化 |
 
 ```mermaid
 flowchart TD
@@ -111,10 +111,10 @@ flowchart TD
 
 作者把應用場景分成兩大類：
 
-| 類型 | 重點 | 例子 |
-|---|---|---|
-| **General domain evolution** | 讓 agent 在廣泛任務中越做越好 | personal assistant, web / mobile assistant |
-| **Specialized domain evolution** | 讓 agent 在某個專業領域越做越深 | coding, GUI, finance, medical, education |
+| 類型                               | 重點                  | 例子                                         |
+| -------------------------------- | ------------------- | ------------------------------------------ |
+| **General domain evolution**     | 讓 agent 在廣泛任務中越做越好  | personal assistant, web / mobile assistant |
+| **Specialized domain evolution** | 讓 agent 在某個專業領域越做越深 | coding, GUI, finance, medical, education   |
 
 其中 paper 特別強調：
 - **General domain** 常靠 memory mechanism、curriculum-driven training、model-agent co-evolution
@@ -156,12 +156,12 @@ flowchart TD
 
 ### 代表性研究地圖（快速記）
 
-| 問題 | 常見答案 |
-|---|---|
-| Agent 改哪裡？ | model / context / tool / architecture |
-| Agent 何時改？ | task 內即時調整 vs task 間長期累積 |
-| Agent 怎麼改？ | reward、reflection、demonstration、population evolution |
-| Agent 在哪裡改最有價值？ | 一般助理場景 + 高 feedback 的專業場景 |
+| 問題              | 常見答案                                                 |
+| --------------- | ---------------------------------------------------- |
+| Agent 改哪裡？      | model / context / tool / architecture                |
+| Agent 何時改？      | task 內即時調整 vs task 間長期累積                             |
+| Agent 怎麼改？      | reward、reflection、demonstration、population evolution |
+| Agent 在哪裡改最有價值？ | 一般助理場景 + 高 feedback 的專業場景                            |
 
 ## Conclusion
 
