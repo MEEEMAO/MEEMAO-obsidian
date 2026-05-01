@@ -3,5 +3,6 @@
   "accentColor": "#5c6ef5",
   "cssTheme": "",
   "interfaceFontFamily": "Chalkboard SE",
-  "textFontFamily": "Georgia"
+  "textFontFamily": "Georgia",
+  "translucency": false
 }

@@ -61,9 +61,8 @@ flowchart LR
 </details>
 
 ## Method
-
 ### 1. 用四個維度建立研究地圖
-
+![[Pasted image 20260421135720.png]]
 作者用 **What / When / How / Where** 來切整個領域，這個框架本身就是這篇 survey 最重要的價值。
 
 ### 2. What to Evolve（演化什麼）

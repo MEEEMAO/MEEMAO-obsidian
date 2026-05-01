@@ -66,7 +66,9 @@ tags: [topic-tag1, topic-tag2]
 > [!important] 所有場景通用規則
 > 1. **寫入 Permanent Note 之前，必須先將內容呈現給使用者確認。** 確認後才可寫入 `20-Permanent/`。
 > 2. **正確性檢查**：若要寫入的筆記 domain 為 `DS` 或 `Finance`，且 source 不是來自 Literature Note，則寫入前需要進行事實與正確性檢查。
-> 3. **筆記美化**：寫入時須整理筆記結構與排版，確保層次分明、方便日後閱讀（善用標題層級、callout、表格、highlight 等 Obsidian 語法）。
+> 3. **筆記美化**：
+> 	1. 寫入時須整理筆記結構與排版，確保層次分明、方便日後閱讀（善用標題層級、callout、表格、highlight 等）。
+> 	2. html 互動式筆記, 放入90-Meta/Html
 
 ### 使用場景 A：給我論文（檔案或連結）
 
