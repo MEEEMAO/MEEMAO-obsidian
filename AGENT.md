@@ -39,12 +39,22 @@ keywords: [keyword1, keyword2]
 ```yaml
 ---
 domain: DS | Finance | Personal-Growth
-source: "[[對應的 Literature Note]]"
+source: "[[]]"
 tags: [topic-tag1, topic-tag2]
 ---
 ```
 - `source`：文字輸入，若來自論文則用 wikilink `[[論文筆記檔名]]`
-- `tags`：描述這個知識點屬於該 domain 的哪個 topic，不預先定義，由建立時依內容決定（1-3 個 tags）
+- `tags`：描述這個知識點屬於該 domain 的哪個 topic（1-3 個 tags）
+
+### Inbox Note
+```yaml
+---
+domain: DS | Finance | Personal-Growth
+source: 
+tags: [topic-tag1, topic-tag2]
+---
+```
+- `tags`：描述這個知識點屬於該 domain 的哪個 topic（1-3 個 tags）
 
 ---
 
