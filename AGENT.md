@@ -132,17 +132,7 @@ tags: [topic-tag1, topic-tag2]
 
 ---
 
-### 使用場景 D：知識問答 & 複習
-
-```bash
- "根據我的 DS 筆記，解釋 Chi-square test 和 LR Test 的差別"
- "從 Finance 的 Permanent Notes 中抽 5 個概念，幫我出複習題"
- "根據我的 DS 和 Finance 筆記，找出可以交叉應用的概念"
-```
-
----
-
-### 使用場景 E：Research Idea 發想
+### 使用場景 D：Research Idea 發想
 
 ```bash
  "根據我現有的 DS 筆記，幫我找出 3 個有潛力的研究方向"
@@ -157,7 +147,7 @@ tags: [topic-tag1, topic-tag2]
 
 ---
 
-### 使用場景 F：筆記整理 & 健檢
+### 使用場景 E：筆記整理 & 健檢
 
 ```bash
  "幫我整理 Permanent Notes，找出重複或遺漏的連結"
@@ -171,7 +161,7 @@ tags: [topic-tag1, topic-tag2]
 
 ---
 
-### 使用場景 G：Project 研究工作區
+### 使用場景 F：Project 研究工作區
 
 ```bash
  "幫我在 40-Projects/ 建立一個新研究主題"
@@ -188,8 +178,6 @@ tags: [topic-tag1, topic-tag2]
 
 **重要原則：**
 - Project 是「研究工作區」，不產生新的原子知識點
-- 研究過程中確認的「已知知識點」由使用者自行加到 `20-Permanent/` 或 `10-Literature/`
-- Project 內只放：待驗證的 idea、Canvas 文獻回顧、相關知識關聯圖
 
 ---
 
