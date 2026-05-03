@@ -1,7 +1,6 @@
 {
 	"nodes":[
 		{"id":"title","type":"text","text":"# 📖 Atomic Habits\n**James Clear｜Personal-Growth**","x":-180,"y":-680,"width":360,"height":100,"color":"0"},
-		{"id":"n-micro","type":"file","file":"20-Permanent/微小改變能帶來巨大差異但需要跨越潛伏期.md","x":-660,"y":-340,"width":400,"height":100,"color":"4"},
 		{"id":"n-identity","type":"file","file":"20-Permanent/改變習慣最有效的方法是改變身分認同.md","x":260,"y":-340,"width":400,"height":100,"color":"4"},
 		{"id":"label-core","type":"text","text":"### 🔄 核心框架","x":-740,"y":-60,"width":220,"height":50,"color":"0"},
 		{"id":"n-reward","type":"file","file":"20-Permanent/讓獎賞令人滿足.md","x":520,"y":285,"width":360,"height":420,"color":"5"},
@@ -9,8 +8,9 @@
 		{"id":"label-laws","type":"text","text":"### ⚡ 行為改變四法則","x":-660,"y":200,"width":240,"height":50,"color":"0"},
 		{"id":"n-response","type":"file","file":"20-Permanent/兩分鐘法則與環境設計讓行動輕而易舉.md","x":80,"y":285,"width":360,"height":420,"color":"5"},
 		{"id":"n-craving","type":"file","file":"20-Permanent/誘惑綑綁與文化群體能讓習慣更有吸引力.md","x":-400,"y":285,"width":360,"height":420,"color":"5"},
-		{"id":"label-foundation","type":"text","text":"### 🧱 基礎觀念","x":-760,"y":-580,"width":220,"height":90,"color":"0"},
-		{"id":"n-cue","type":"file","file":"20-Permanent/讓提示顯而易見能察覺並設計觸發好習慣的環境.md","x":-1020,"y":285,"width":360,"height":420,"color":"5"}
+		{"id":"label-foundation","type":"text","text":"### 🧱 基礎觀念","x":-760,"y":-580,"width":220,"height":60,"color":"0"},
+		{"id":"n-cue","type":"file","file":"20-Permanent/讓提示顯而易見能察覺並設計觸發好習慣的環境.md","x":-1020,"y":285,"width":360,"height":420,"color":"5"},
+		{"id":"n-micro","type":"file","file":"20-Permanent/微小改變能帶來巨大差異但需要跨越潛伏期.md","x":-660,"y":-340,"width":400,"height":100,"color":"4"}
 	],
 	"edges":[
 		{"id":"e-micro-identity","fromNode":"n-micro","fromSide":"right","toNode":"n-identity","toSide":"left","label":"系統思維的核心是身分認同"},
