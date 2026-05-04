@@ -3,9 +3,6 @@ publication_time: "2025-08"
 url: https://arxiv.org/abs/2407.04363
 keywords: [llm-agent, knowledge-graph, episodic-memory, semantic-memory, world-model, self-evolve, textworld, nethack]
 ---
-
-# AriGraph: Learning Knowledge Graph World Models with Episodic Memory for LLM Agents
-
 - **Authors**: Petr Anokhin, Nikita Semenov, Artyom Sorokin, Dmitry Evseev, Andrey Kravchenko, Mikhail Burtsev, Evgeny Burnaev
 - **Venue**: IJCAI 2025 — Proceedings of the Thirty-Fourth International Joint Conference on Artificial Intelligence
 - **Paper URL**: https://arxiv.org/abs/2407.04363
@@ -125,9 +122,9 @@ AriGraph retrieval 分兩階段。
 
 semantic search 找到一批相關 triplets 後，再透過 episodic edges 回到相關 observations。paper 用一個 relevance score 衡量某 episodic memory 和 query triplets 的重疊程度：
 
-```text
+$$
 rel(ve_i) = (n_i / max(N_i, 1)) * log(max(N_i, 1))
-```
+$$
 
 - `n_i`：該 episodic memory 中有多少 semantic triplets 命中目前 query 結果。
 - `N_i`：該 episodic memory 總共連了多少 triplets。

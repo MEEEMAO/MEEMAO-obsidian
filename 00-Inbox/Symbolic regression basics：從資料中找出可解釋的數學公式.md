@@ -1,7 +1,10 @@
 ---
 domain: DS
-source: 
-tags: [symbolic-regression, interpretable-ml, regression]
+source: Langostino
+tags:
+  - symbolic-regression
+  - interpretable-ml
+  - regression
 ---
 
 # Symbolic regression basics：從資料中找出可解釋的數學公式
