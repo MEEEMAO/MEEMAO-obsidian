@@ -44,6 +44,7 @@ A-MEM 認為這種固定結構限制了 agent 在多樣任務中的 adaptability
 4. 如何在長對話 QA 中，讓 retrieval context 更短但回答更準？
 
 ## Method / Architecture
+![[A-MEM - Agentic Memory for LLM Agents.png]]
 
 ### 1. Data structure：structured memory note
 
@@ -132,10 +133,10 @@ A-MEM 覆蓋 observe → write → retrieve → use → reflect/consolidate → 
 
 ### Tasks and datasets
 
-| Dataset | 任務 | 特性 |
-|---|---|---|
-| **LoCoMo** | long-term conversation QA | 約 9k tokens、最多 35 sessions；包含 single-hop、multi-hop、temporal、open-domain、adversarial questions，共 7,512 QA pairs。 |
-| **DialSim** | long-term multi-party dialogue QA | 來自 Friends、The Big Bang Theory、The Office 等長期劇集對話；約 1,300 sessions、350k tokens。 |
+| Dataset     | 任務                                | 特性                                                                                                              |
+| ----------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **LoCoMo**  | long-term conversation QA         | 約 9k tokens、最多 35 sessions；包含 single-hop、multi-hop、temporal、open-domain、adversarial questions，共 7,512 QA pairs。 |
+| **DialSim** | long-term multi-party dialogue QA | 來自 Friends、The Big Bang Theory、The Office 等長期劇集對話；約 1,300 sessions、350k tokens。                                 |
 
 ### Metrics and baselines
 
@@ -152,12 +153,12 @@ A-MEM 覆蓋 observe → write → retrieve → use → reflect/consolidate → 
 
 ### Ablations and analysis
 
-| Ablation | 結果解讀 |
-|---|---|
-| **w/o Link Generation & Memory Evolution** | performance 大幅下降，代表只有 plain memory note 不夠。 |
-| **w/o Memory Evolution** | 比完全移除兩者好，但仍低於 full A-MEM，表示 link generation 是基礎，evolution 提供額外 refined structure。 |
-| **k sensitivity** | $k$ 變大通常會提升到某個 plateau，但過大可能引入 noise。 |
-| **t-SNE visualization** | A-MEM memory embeddings 比 base memory 更有 cluster structure；但這是輔助證據，不等於直接證明 causal mechanism。 |
+| Ablation                                   | 結果解讀                                                                                         |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| **w/o Link Generation & Memory Evolution** | performance 大幅下降，代表只有 plain memory note 不夠。                                                  |
+| **w/o Memory Evolution**                   | 比完全移除兩者好，但仍低於 full A-MEM，表示 link generation 是基礎，evolution 提供額外 refined structure。            |
+| **k sensitivity**                          | $k$ 變大通常會提升到某個 plateau，但過大可能引入 noise。                                                        |
+| **t-SNE visualization**                    | A-MEM memory embeddings 比 base memory 更有 cluster structure；但這是輔助證據，不等於直接證明 causal mechanism。 |
 
 ### 是否證明 long-term improvement / autonomous initiative？
 

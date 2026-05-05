@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mem0 and Cognee through Agent Memory Taxonomy</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #5d6978;
+      --line: #d9dee7;
+      --soft: #f5f7fb;
+      --blue: #1c5d99;
+      --green: #2f7d54;
+      --red: #a9473f;
+      --gold: #9a6a15;
+      --paper: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", sans-serif;
+      line-height: 1.65;
+      color: var(--ink);
+      background: #eef2f7;
+    }
+
+    .page {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 42px 22px 64px;
+    }
+
+    .hero {
+      padding: 34px 38px 30px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(2rem, 4vw, 3.1rem);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 42px 0 16px;
+      font-size: 1.55rem;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 26px 0 10px;
+      font-size: 1.12rem;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    a {
+      color: var(--blue);
+    }
+
+    .subtitle {
+      max-width: 790px;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .section {
+      margin-top: 22px;
+      padding: 30px 34px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0 8px;
+    }
+
+    .two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .box {
+      padding: 16px 17px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 100%;
+    }
+
+    .box strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 2px 6px 6px 0;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 0.84rem;
+      white-space: nowrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 10px;
+      font-size: 0.95rem;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #edf3f8;
+      font-weight: 700;
+    }
+
+    code,
+    pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    pre {
+      margin: 16px 0;
+      padding: 16px;
+      overflow-x: auto;
+      background: #15202b;
+      color: #eef5ff;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .callout {
+      margin: 18px 0;
+      padding: 16px 18px;
+      border-left: 4px solid var(--blue);
+      background: #f2f7fc;
+      border-radius: 6px;
+    }
+
+    .warn {
+      border-left-color: var(--gold);
+      background: #fff8ea;
+    }
+
+    .mem0 {
+      border-top: 4px solid var(--blue);
+    }
+
+    .cognee {
+      border-top: 4px solid var(--green);
+    }
+
+    .amem {
+      border-top: 4px solid var(--red);
+    }
+
+    .label-blue {
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .label-green {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .label-red {
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    ul {
+      margin: 8px 0 16px 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    @media (max-width: 780px) {
+      .page {
+        padding: 18px 12px 38px;
+      }
+
+      .hero,
+      .section {
+        padding: 22px 18px;
+      }
+
+      .grid,
+      .two {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: normal;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="hero">
+      <h1>Mem0 and Cognee through Agent Memory Taxonomy</h1>
+      <p class="subtitle">
+        這份講義用 <em>Memory in the Age of AI Agents</em> 的三個角度，也就是
+        <strong>Forms</strong>、<strong>Functions</strong>、<strong>Dynamics</strong>，
+        來拆解 Mem0 與 Cognee 的 memory structure。重點不是介紹工具功能，而是回答：
+        它們到底把記憶存成什麼、服務什麼能力、又如何被建立、更新與取回。
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>1. 先用同一套框架看 memory</h2>
+      <p>
+        <em>Memory in the Age of AI Agents</em> 不只把 memory 看成「短期或長期」，而是拆成三個分析軸：
+      </p>
+
+      <div class="grid">
+        <div class="box">
+          <strong>Forms: memory lives where?</strong>
+          看記憶的載體。是 token-level 的外部資料、parametric 的 model weights，還是 latent state / hidden representation。
+        </div>
+        <div class="box">
+          <strong>Functions: memory is for what?</strong>
+          看記憶支援什麼功能。它保存事實、保存經驗，還是支撐當下任務的 working memory。
+        </div>
+        <div class="box">
+          <strong>Dynamics: memory changes how?</strong>
+          看記憶如何形成、更新、遺忘與檢索。這是 agent memory 和單純 storage 最大的差別。
+        </div>
+      </div>
+
+      <div class="callout">
+        <p>
+          在這個框架下，Mem0 和 Cognee 都主要屬於 <strong>token-level external memory</strong>：
+          它們不是把知識直接改進模型權重，而是在模型外部建立可查詢、可更新、可追蹤的 memory layer。
+        </p>
+      </div>
+    </div>
+
+    <div class="section mem0">
+      <h2>2. Mem0: long-term conversational memory layer</h2>
+      <p>
+        Mem0 比較像是為 AI assistant / agent 準備的長期對話記憶層。它的核心目標不是建立一個完整的知識圖譜世界，
+        而是從互動中抽出值得保存的 facts、preferences、events，讓 agent 未來能更快、更便宜、更準確地 recall。
+      </p>
+
+      <h3>Memory structure</h3>
+      <pre>conversation / interaction
+→ LLM extraction or distillation
+→ ADD-only memory facts
+→ deduplication + embeddings
+→ entity linking
+→ retrieval by semantic + keyword + entity signals</pre>
+
+      <div class="grid two">
+        <div class="box">
+          <strong class="label-blue">Memory unit</strong>
+          Mem0 的基本記憶單位比較像 distilled memory fact。它不是原封不動保存整段對話，而是把對話壓縮成可 recall 的事實或偏好。
+        </div>
+        <div class="box">
+          <strong class="label-blue">Link structure</strong>
+          Mem0 會做 entity linking，把不同 memory 裡的相同人、地點、物件、事件連起來。這比單純 vector search 更能處理「Alice 是誰」這類 entity-centric query。
+        </div>
+      </div>
+
+      <h3>Through Forms / Functions / Dynamics</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Taxonomy angle</th>
+            <th>Mem0 的位置</th>
+            <th>說明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Forms</td>
+            <td>Token-level memory + vector/entity indexing</td>
+            <td>記憶存在外部 store。memory text、embedding、metadata、entity links 是主要載體。</td>
+          </tr>
+          <tr>
+            <td>Functions</td>
+            <td>Factual memory 為主，部分 experiential memory</td>
+            <td>最適合保存 user preference、personal facts、conversation facts、cross-session updates。若把成功互動也抽成 memory，也可支援 experiential memory。</td>
+          </tr>
+          <tr>
+            <td>Dynamics: formation</td>
+            <td>LLM extraction / distillation</td>
+            <td>系統判斷對話中哪些資訊值得變成 memory fact，而不是把所有 tokens 都放進 context。</td>
+          </tr>
+          <tr>
+            <td>Dynamics: evolution</td>
+            <td>ADD-only temporal preservation + dedup context</td>
+            <td>新的 Mem0 架構傾向保留新舊 facts，避免直接覆蓋而丟掉時間脈絡。這和 A-MEM 的「改寫舊 note 表示」不完全一樣。</td>
+          </tr>
+          <tr>
+            <td>Dynamics: retrieval</td>
+            <td>Multi-signal retrieval</td>
+            <td>同時使用 semantic search、keyword search、entity matching，再融合結果。這是它 production orientation 很強的地方。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <p>
+          用一句話說，Mem0 的 memory structure 是：
+          <strong>把對話壓縮成可長期保存的 memory facts，再用 vector + keyword + entity linking 做高效率 recall。</strong>
+        </p>
+      </div>
+    </div>
+
+    <div class="section cognee">
+      <h2>3. Cognee: graph-vector knowledge memory engine</h2>
+      <p>
+        Cognee 更像是把 raw data、documents、files、URLs 轉成 agent 可以查詢與推理的外部知識記憶系統。
+        如果 Mem0 偏向 conversational memory，Cognee 就更偏向 knowledge memory / structured document memory。
+      </p>
+
+      <h3>Memory structure</h3>
+      <pre>documents / text / files / URLs
+→ ingestion + chunking
+→ entity and relationship extraction
+→ knowledge graph
+→ embeddings
+→ relational provenance
+→ vector + graph hybrid retrieval</pre>
+
+      <div class="grid two">
+        <div class="box">
+          <strong class="label-green">Memory unit</strong>
+          Cognee 的記憶單位可以是 DataPoint、chunk、entity、relationship、summary。它更像是在把資料轉成一組可組合的 graph-vector objects。
+        </div>
+        <div class="box">
+          <strong class="label-green">Link structure</strong>
+          Graph 是 Cognee 的核心之一。它不只是輔助 entity linking，而是讓 agent 能沿著 entities、relations、documents、provenance 進行結構化 traversal。
+        </div>
+      </div>
+
+      <h3>Through Forms / Functions / Dynamics</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Taxonomy angle</th>
+            <th>Cognee 的位置</th>
+            <th>說明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Forms</td>
+            <td>Token-level memory + graph memory + vector memory</td>
+            <td>記憶存在外部 relational store、vector store、graph store。Graph 負責結構，vector 負責語意相似，relational store 負責 provenance。</td>
+          </tr>
+          <tr>
+            <td>Functions</td>
+            <td>Factual memory / knowledge memory 為主</td>
+            <td>適合保存文件知識、研究 corpus、企業資料、程式碼知識、可引用來源。若加入 session memory，也能部分支援 working memory。</td>
+          </tr>
+          <tr>
+            <td>Dynamics: formation</td>
+            <td>cognify / remember pipeline</td>
+            <td>資料被清理、切 chunk、抽 entity、抽 relation、建立 graph、建立 embeddings。formation 比 Mem0 更像 document-to-KG pipeline。</td>
+          </tr>
+          <tr>
+            <td>Dynamics: evolution</td>
+            <td>improve / memify enrichment</td>
+            <td>可以對既有 graph 做 enrichment，例如 derived facts、edge weighting、session-to-permanent memory bridge。它的 evolution 偏 graph refinement。</td>
+          </tr>
+          <tr>
+            <td>Dynamics: retrieval</td>
+            <td>Vector search + graph traversal + hybrid search</td>
+            <td>查詢時可以走語意相似，也可以走 graph relations，或兩者結合。這比單純 chunk RAG 更適合需要結構推理的問題。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <p>
+          用一句話說，Cognee 的 memory structure 是：
+          <strong>把外部資料轉成同時有 embeddings、graph relations、provenance 的 knowledge memory substrate。</strong>
+        </p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>4. 和 A-MEM 放在一起看</h2>
+      <p>
+        前面討論 A-MEM 時，我們把它理解成 weak schema + dynamic semantic organization。把三者放在一起，就能看出它們的 memory structure 重點其實不同。
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Architecture</th>
+            <th>最像什麼</th>
+            <th>基本 memory unit</th>
+            <th>Graph / link 的角色</th>
+            <th>Evolution 的重點</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="label-blue">Mem0</span></td>
+            <td>長期對話記憶層</td>
+            <td>Extracted memory fact</td>
+            <td>Entity linking and retrieval boost</td>
+            <td>保留時間脈絡、去重、提高 recall 效率</td>
+          </tr>
+          <tr>
+            <td><span class="label-green">Cognee</span></td>
+            <td>Graph-vector knowledge engine</td>
+            <td>DataPoint / chunk / entity / relation</td>
+            <td>核心 knowledge graph substrate</td>
+            <td>Graph enrichment、derived knowledge、usage-aware improvement</td>
+          </tr>
+          <tr>
+            <td><span class="label-red">A-MEM</span></td>
+            <td>Self-evolving note network</td>
+            <td>Atomic memory note</td>
+            <td>Zettelkasten-style semantic links</td>
+            <td>新記憶觸發舊記憶的 context / tags / keywords 更新</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <p>
+          因此，如果問題是「KG 的 node 和 edge 不就已經很像 atomic memory 和 links 嗎？」答案是：
+          <strong>對，但差別在 graph 的語意是否固定、更新是否自動、以及 retrieval 是否只靠 graph。</strong>
+        </p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>5. 用一個情境比較</h2>
+      <p>
+        假設使用者長期和 agent 討論 AI memory 研究，並逐漸顯露出自己的研究偏好：
+      </p>
+
+      <pre>User facts:
+- 使用者在讀 agent memory survey
+- 使用者關心 KG memory 和 A-MEM 的差異
+- 使用者偏好先看 architecture-level intuition，再看 paper terminology
+- 使用者可能想發展 AAAI research direction</pre>
+
+      <h3>Mem0 會怎麼存</h3>
+      <p>
+        Mem0 會比較像抽出個人化與對話延續需要的 facts：
+      </p>
+      <pre>Memory fact 1: User is studying agent memory systems.
+Memory fact 2: User is interested in KG-based memory and A-MEM.
+Memory fact 3: User prefers architecture-level explanations before terminology.
+Entity links: User ↔ A-MEM, User ↔ knowledge graph, User ↔ agent memory taxonomy</pre>
+
+      <h3>Cognee 會怎麼存</h3>
+      <p>
+        Cognee 會比較像把 papers、notes、concepts 變成可 traversal 的 knowledge graph：
+      </p>
+      <pre>Document: Memory in the Age of AI Agents
+Concept: Forms / Functions / Dynamics
+Concept: Token-level memory
+Concept: Knowledge graph memory
+Paper: A-MEM
+Relation: A-MEM → uses → Zettelkasten-style note network
+Relation: Cognee → combines → vector store and graph store
+Relation: Mem0 → uses → entity-linked long-term conversational memory</pre>
+
+      <h3>A-MEM 會怎麼存</h3>
+      <p>
+        A-MEM 會比較像把每段討論變成 atomic note，並持續改寫 note 的 context：
+      </p>
+      <pre>Note:
+content: User asks whether KG nodes and edges are already atomic memory and links.
+tags: knowledge graph, memory schema, A-MEM, dynamic links
+context: User is clarifying whether A-MEM's novelty is graph structure itself or dynamic semantic organization.
+links: related to previous note about parametric vs latent memory; related to A-MEM note; related to agent memory taxonomy note.</pre>
+    </div>
+
+    <div class="section">
+      <h2>6. 最精簡結論</h2>
+      <div class="grid">
+        <div class="box">
+          <strong class="label-blue">Mem0</strong>
+          如果你的問題是「agent 如何長期記住使用者和互動歷史」，Mem0 是最直接的例子。
+          它的 memory structure 偏向 extracted facts + entity linking + multi-signal retrieval。
+        </div>
+        <div class="box">
+          <strong class="label-green">Cognee</strong>
+          如果你的問題是「agent 如何把大量資料變成可推理的外部知識結構」，Cognee 是更直接的例子。
+          它的 memory structure 偏向 graph-vector-provenance hybrid。
+        </div>
+        <div class="box">
+          <strong class="label-red">A-MEM</strong>
+          如果你的問題是「memory network 如何自動組織與演化」，A-MEM 是更直接的研究型例子。
+          它的 memory structure 偏向 atomic notes + dynamic links + memory evolution。
+        </div>
+      </div>
+
+      <pre>Mem0: remember the user and conversations.
+Cognee: organize documents and knowledge into graph-vector memory.
+A-MEM: let memory notes self-organize and evolve.</pre>
+    </div>
+
+    <div class="section">
+      <h2>References</h2>
+      <ul>
+        <li><a href="https://arxiv.org/abs/2512.13564">Memory in the Age of AI Agents</a></li>
+        <li><a href="https://docs.mem0.ai/core-concepts/memory-evaluation">Mem0 Memory Evaluation and Architecture Overview</a></li>
+        <li><a href="https://mem0.ai/research">Mem0 Research Page</a></li>
+        <li><a href="https://docs.cognee.ai/getting-started/introduction">Cognee Introduction</a></li>
+        <li><a href="https://docs.cognee.ai/core-concepts/overview">Cognee Core Concepts Overview</a></li>
+        <li><a href="https://docs.cognee.ai/core-concepts/architecture">Cognee Architecture</a></li>
+        <li><a href="https://arxiv.org/abs/2502.12110">A-MEM: Agentic Memory for LLM Agents</a></li>
+      </ul>
+      <p class="small">
+        Note: Mem0 and Cognee are fast-moving systems. This handout focuses on their memory structure as described in the currently available official docs and research pages, interpreted through the survey taxonomy.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

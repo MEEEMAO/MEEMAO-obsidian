@@ -79,11 +79,11 @@ flowchart LR
 
 作者先回答「記憶載體是什麼」。他們提出三種主要 forms：
 
-| Form                   | 定義                                          | 直覺理解                                 | 優點              | 代價 / 風險            |
-| ---------------------- | ------------------------------------------- | ------------------------------------ | --------------- | ------------------ |
-| **Token-level memory** | 以外顯、離散單位儲存記憶                                | 像筆記、記錄、knowledge graph、memory chunks | 可編輯、可檢查、可檢索、可追溯 | 容易受 retrieval 品質限制 |
-| **Parametric memory**  | 記憶被內化到模型參數中                                 | 像把經驗學進 model weights                 | 推理時使用自然、低顯式管理成本 | 難編輯、難追溯、可能遺忘       |
-| **Latent memory**      | 記憶存在 hidden states / latent representations | 像 agent 內部暫存與中介狀態                    | 適合連續、上下文依賴的動態表徵 | 可解釋性低、較難控制         |
+| Form                   | 定義                                          | 直覺理解                                         | 優點              | 代價 / 風險            |
+| ---------------------- | ------------------------------------------- | -------------------------------------------- | --------------- | ------------------ |
+| **Token-level memory** | 以外顯、離散單位儲存記憶                                | 像筆記、記錄、knowledge graph、memory chunks         | 可編輯、可檢查、可檢索、可追溯 | 容易受 retrieval 品質限制 |
+| **Parametric memory**  | 記憶被內化到模型參數中                                 | 像把經驗學進 model weights (pre-trained knowledge) | 推理時使用自然、低顯式管理成本 | 難編輯、難追溯、可能遺忘       |
+| **Latent memory**      | 記憶存在 hidden states / latent representations | 像 agent 內部暫存與中介狀態                            | 適合連續、上下文依賴的動態表徵 | 可解釋性低、較難控制         |
 
 > [!tip] 一句話記住這張表
 > **Token-level 最像外部筆記，Parametric 最像內化習慣，Latent 最像工作中的腦內暫態。**

@@ -27,6 +27,8 @@ views:
       - property: publication_time
         direction: ASC
     limit: 100
+    columnSize:
+      file.name: 302
   - type: table
     name: 依關鍵字分組
     groupBy:

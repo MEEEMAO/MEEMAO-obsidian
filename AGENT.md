@@ -20,6 +20,8 @@ MEEMAO 的 Zettelkasten 第二大腦，結合 Agent 與 Obsidian 的自動化知
 30-MOC/            ← Bases 動態視圖 + Canvas 知識圖
 40-Projects/       ← 進行中的研究、專案筆記
 90-Meta/Templates/ ← 各類模板
+90-Meta/images/ ← 各類筆記解說圖
+90-Meta/Html/ ← 各類筆記解說視覺講義
 ```
 
 ---
