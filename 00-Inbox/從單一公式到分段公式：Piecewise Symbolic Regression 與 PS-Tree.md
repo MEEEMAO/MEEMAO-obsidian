@@ -123,12 +123,12 @@ MOB（Zeileis et al., 2008）的邏輯是：
 
 這和 PS-Tree 的邏輯==幾乎同構==，差別在於：
 
-| | MOB | PS-Tree |
-|---|---|---|
-| 葉節點模型 | 參數模型（線性、GLM 等） | Symbolic expression |
-| 參數估計 | M-estimation / ML | Symbolic regression 搜尋 |
-| 切割判準 | 參數不穩定性檢定 | 擬合改善量 |
-| 可解釋性 | 限於預設模型族 | 公式形式自由，可能更簡潔 |
+|       | MOB               | PS-Tree                |
+| ----- | ----------------- | ---------------------- |
+| 葉節點模型 | 參數模型（線性、GLM 等）    | Symbolic expression    |
+| 參數估計  | M-estimation / ML | Symbolic regression 搜尋 |
+| 切割判準  | 參數不穩定性檢定          | 擬合改善量                  |
+| 可解釋性  | 限於預設模型族           | 公式形式自由，可能更簡潔           |
 
 ### 連結到 Subgroup Analysis 與 NARM-UDRF
 
