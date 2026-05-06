@@ -154,7 +154,11 @@ PS-Tree 把同樣的精神帶入 symbolic regression 的世界：
 也就是說，若硬用一條 global formula 來 fit 全部資料，模型會被迫在兩種不同機制之間取平均；piecewise symbolic regression / PS-Tree 的目標則是先找出分區，再在每個 leaf 裡 fit 比較簡單的 local formula。
 
 > [!note] Demo 定位
-> 這份 R demo 是教學版 **PS-Tree-style approximation**，不是官方 PS-Tree 演算法完整重現。為了讓 demo 可在遠端 R 環境穩定執行，leaf-level symbolic model 用「候選 symbolic terms + BIC stepwise selection」近似，而不是 genetic programming 搜尋。
+> 這份 R demo 是教學版 **PS-Tree-style approximation**，不是官方 PS-Tree 演算法完整重現。兩層都有簡化：
+> - **葉節點公式**：用「候選 symbolic terms + BIC stepwise selection」近似，而不是 genetic programming 搜尋
+> - **切分搜尋**：用 CART-style 窮舉切點 + BIC 改善量選最佳切分，而不是原版 PS-Tree 的 GP-based partition
+>
+> 所以 demo 展示的是 PS-Tree 的「精神」（先分區再 local fit），而非原版演算法的搜尋機制。
 
 ### Demo 評估結果
 
@@ -207,6 +211,7 @@ PS-Tree 把同樣的精神帶入 symbolic regression 的世界：
 2. **切割與公式的耦合問題**：PS-Tree 的切割是根據「擬合改善量」來選，但擬合改善量依賴當前 leaf 裡的 symbolic formula 好壞——如果 GP 在某個 leaf 找到很差的公式，改善量的計算就不準確，導致切割判斷失誤。這是一個==雞生蛋蛋生雞==的問題。
 3. **過度擬合風險**：遞迴分裂 + 每個 leaf 獨立搜尋 formula = 很大的 model capacity。如果沒有好的正則化或 pruning 策略，容易過度擬合。
 4. **切割判準缺乏統計檢定基礎**：PS-Tree 用擬合改善量做切割，不像 MOB 用 parameter instability test（有明確的 $p$-value 和漸近理論）。這讓 PS-Tree 的切割缺乏統計保證——你不知道一個切割是「真的有意義」還是「剛好降低了 training error」。
+5. **本 demo 的簡化**：今日 demo 不只公式搜尋用 BIC stepwise 代替 GP，**切分搜尋也用 CART-style 窮舉切點 + BIC 改善量**，而非原版 PS-Tree 的 GP-based partition。所以 demo 展示的是 PS-Tree 的「精神」（先分區再 local fit），而非原版演算法的搜尋機制。
 
 ### MOB 的局限（作為對照）
 
@@ -215,15 +220,18 @@ PS-Tree 把同樣的精神帶入 symbolic regression 的世界：
 
 ### 交叉觀察：PS-Tree 與 MOB 的互補與 Gap
 
-| 問題 | MOB | PS-Tree | Gap |
-|---|---|---|---|
-| Leaf model 靈活度 | 低（固定 parametric） | 高（symbolic，但搜尋困難） | 需要一種既靈活又可穩定搜尋的 leaf model |
-| 切割統計保證 | 有（instability test） | 無（只有改善量） | 需要在 symbolic regression 情境下有統計基礎的切割判準 |
-| 高維度 / 多變數 | 受限於 model complexity | 搜尋空間爆炸 | 需要可擴展的方法 |
-| 過度擬合控制 | pruning + test 統計量 | 弱 | 需要更好的正則化框架 |
+| 問題 | MOB | PS-Tree | 今日 demo | Gap |
+|---|---|---|---|---|
+| Leaf model 靈活度 | 低（固定 parametric） | 高（symbolic，但 GP 搜尋困難） | 中（候選項 + BIC stepwise） | 需要一種既靈活又可穩定搜尋的 leaf model |
+| 切分搜尋 | instability test 引導 | GP-based partition | CART 窮舉切點 + BIC 改善量 | PS-Tree 原版和 demo 都缺乏統計基礎的切割判準 |
+| 切割統計保證 | 有（instability test） | 無（只有改善量） | 無（只有改善量） | 需要在 symbolic regression 情境下有統計基礎的切割判準 |
+| 高維度 / 多變數 | 受限於 model complexity | 搜尋空間爆炸 | 窮舉切點更慢 | 需要可擴展的方法 |
+| 過度擬合控制 | pruning + test 統計量 | 弱 | 弱 | 需要更好的正則化框架 |
 
 > [!important] 給自己的研究備忘
 > PS-Tree 和 MOB 各有強項也各有弱項。一個可能的 research direction 是：結合 MOB 的統計切割判準 + PS-Tree 的 symbolic leaf model，並加上穩健的搜尋策略和正則化。這正是 DRF / mobDRF 試圖處理的方向，但也還有尚未解決的問題——後續課程會逐步展開。
+>
+> 另外要注意：本 demo 的切分搜尋（CART-style 窮舉切點）也不同於原版 PS-Tree（GP-based partition），所以 demo 展示的是「先分區再 local fit」的直覺和精神，而非原版演算法的搜尋機制。讀 MOB 原文時要特別留意 MOB 的 instability test 是怎麼決定切分變數和切分位置的——那是 PS-Tree 和 demo 都缺少的。
 
 ---
 
@@ -243,7 +251,7 @@ PS-Tree 把同樣的精神帶入 symbolic regression 的世界：
 - **閱讀 MOB 原文**：Zeileis et al. (2008), "Model-Based Recursive Partitioning"，理解統計檢定背後的理論
 - **思考 NARM-UDRF 的定位**：PS-Tree 的 local model 是 symbolic expression；NARM-UDRF 的 local model 是 rule-based 的效應估計——兩者如何對話？
 - **觀察切割變數的選擇**：在 demo 中留意哪些變數被選為切割點，它們是否對應已知的實務知識
-- **帶著 gap 去讀 MOB**：PS-Tree 沒有統計基礎的切割判準，MOB 有——讀 MOB 時思考：這套 instability test 能否移植到 symbolic regression 的情境？
+- **帶著 gap 去讀 MOB**：PS-Tree 和本 demo 都沒有統計基礎的切割判準，MOB 有——讀 MOB 時特別留意：MOB 的 instability test 是怎麼決定切分變數和切分位置的？這個機制能否移植到 symbolic regression 或 rule-based 的情境？
 
 ---
 
