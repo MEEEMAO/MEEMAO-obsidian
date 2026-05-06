@@ -191,13 +191,9 @@ PS-Tree 把同樣的精神帶入 symbolic regression 的世界：
 
 ### Figure 4：學到的 partition tree
 
-![[piecewise_ps_tree_partition_tree.png]]
+![[piecewise_ps_tree_partition_tree.png|531]]
 
 > 這棵樹就是 PS-Tree-style demo 的「先分區」部分。每個 terminal leaf 之後會各自 fit 一個 symbolic-style formula，而不是只存一個常數平均值。
-
-> [!note] Demo artifact 位置
-> 遠端 repo：`/home/langostino/research/symbolic-regression-narm-udrf-demos/research/symbolic-regression/2026-05-06-piecewise-symbolic-regression-ps-tree/`
-> 執行指令：`/usr/bin/Rscript research/symbolic-regression/2026-05-06-piecewise-symbolic-regression-ps-tree/demos/piecewise_symbolic_regression_ps_tree.R research/symbolic-regression/2026-05-06-piecewise-symbolic-regression-ps-tree`
 
 ---
 
