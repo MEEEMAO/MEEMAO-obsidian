@@ -98,6 +98,7 @@ flowchart LR
 > **Token-level 最像外部筆記，Parametric 最像內化習慣，Latent 最像工作中的腦內暫態。**
 
 #### 1.1 Token-level memory：外顯、離散、可操作的記憶
+![[Pasted image 20260506155806.png]]
 
 Token-level memory 的重點是：memory 被存成外部可讀寫的離散單位。這裡的 token 不限文字 token，也可以是 visual tokens、audio frames、chunks、trajectory records、structured entries 等。
 
@@ -129,11 +130,11 @@ Flat memory 的關鍵問題是：它能「存很多」，但不一定「理解�
 
 Planar memory 在單一平面內建立明確拓撲，讓 memory 從「一堆資料」變成「有組織的資料」。作者整理三種常見形式：
 
-| Planar 子類 | 核心做法 | 適合處理 | 代表方向 |
-| --- | --- | --- | --- |
-| **Tree** | 用 parent-child / aggregation tree 組織 chunks 或 conversation | coarse-to-fine retrieval、長文本 / 長對話摘要 | HAT、MemTree |
-| **Graph** | 用 nodes / edges 表示 entity、relation、temporal、causal、persona links | multi-hop reasoning、personalization、KG QA、multimodal entity memory | Ret-LLM、KGT、PREMem、A-Mem、M3-Agent、COMET |
-| **Hybrid** | 結合不同 cognitive modules，共用一個結構化 memory substrate | 同時需要 factual memory、experience pool、reasoning tree | Optimus-1、D-SMART |
+| Planar 子類  | 核心做法                                                             | 適合處理                                                               | 代表方向                                    |
+| ---------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------- |
+| **Tree**   | 用 parent-child / aggregation tree 組織 chunks 或 conversation       | coarse-to-fine retrieval、長文本 / 長對話摘要                               | HAT、MemTree                             |
+| **Graph**  | 用 nodes / edges 表示 entity、relation、temporal、causal、persona links | multi-hop reasoning、personalization、KG QA、multimodal entity memory | Ret-LLM、KGT、PREMem、A-Mem、M3-Agent、COMET |
+| **Hybrid** | 結合不同 cognitive modules，共用一個結構化 memory substrate                  | 同時需要 factual memory、experience pool、reasoning tree                 | Optimus-1、D-SMART                       |
 
 Planar memory 的核心突破是 **linking**：memory units 之間可以互相支援，retrieval 不只靠 similarity search，而可以沿著 edge traversal、key-value lookup、graph search 取得更精準的上下文。
 
@@ -143,10 +144,10 @@ Planar memory 的核心突破是 **linking**：memory units 之間可以互相�
 
 Hierarchical memory 將記憶放在多層結構中，支援不同抽象層級之間的垂直移動。它不是只有「分類資料夾」，而是讓 memory 形成一個可以 lateral + vertical traversal 的 volumetric space。
 
-| Hierarchical 子類 | 核心做法 | 優勢 | 代表方向 |
-| --- | --- | --- | --- |
-| **Pyramid** | 由 raw observations → event summaries → community / insight summaries 逐層抽象 | coarse-to-fine retrieval；先找高層摘要再下鑽細節 | HiAgent、GraphRAG、Zep、ILM-TR、EMG-RAG、G-Memory |
-| **Multi-Layer** | 不同層負責不同資訊型態或功能 | 將 semantic、episodic、passage、sentence graph、topic graph 分層 | H-Mem、HippoRAG、AriGraph、SGMem、CAM |
+| Hierarchical 子類 | 核心做法                                                                      | 優勢                                                        | 代表方向                                         |
+| --------------- | ------------------------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------- |
+| **Pyramid**     | 由 raw observations → event summaries → community / insight summaries 逐層抽象 | coarse-to-fine retrieval；先找高層摘要再下鑽細節                      | HiAgent、GraphRAG、Zep、ILM-TR、EMG-RAG、G-Memory |
+| **Multi-Layer** | 不同層負責不同資訊型態或功能                                                            | 將 semantic、episodic、passage、sentence graph、topic graph 分層 | H-Mem、HippoRAG、AriGraph、SGMem、CAM            |
 
 > [!important] 這裡是作者 taxonomy 裡很重要但原筆記容易漏掉的點
 > Token-level memory 不是只有「外部文字記憶」。作者真正關心的是 **topology complexity**：
