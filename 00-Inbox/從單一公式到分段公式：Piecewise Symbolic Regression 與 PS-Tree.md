@@ -137,7 +137,7 @@ MOB（Zeileis et al., 2008）的邏輯是：
 PS-Tree 把同樣的精神帶入 symbolic regression 的世界：
 
 - 如果資料的生成機制在不同 subgroup 下本質不同，PS-Tree 能同時發現 subgroup 邊界和各 subgroup 的機制公式
-- 這為後續的 **NARM-UDRF**（Nonparametric Average Regression Margin – Unbiased Deep Rule Forest）研究鋪路：NARM-UDRF 關心的是如何在樹狀結構中做無偏的效應估計，而 PS-Tree 提供了「每個葉節點有自己的模型」這個起點
+- 這為後續的 **NARM-UDRF**（Numerical Association Rule Mining – Unsupervised Deep Rule Forest）研究鋪路：NARM-UDRF 關心的是如何在樹狀結構中做無偏的效應估計，而 PS-Tree 提供了「每個葉節點有自己的模型」這個起點
 
 > [!important] 核心洞見
 > Piecewise symbolic regression = 用樹做 subgroup 發現 + 用 symbolic expression 做 local modeling。這是連接統計學的 recursive partitioning 傳統和 symbolic regression 的可解釋性傳統的橋梁。
@@ -197,12 +197,43 @@ PS-Tree 把同樣的精神帶入 symbolic regression 的世界：
 
 ---
 
+## Research Gaps：這些方法哪裡不夠好？
+
+帶著「找 research gap」的目標，我們必須問：這些方法目前做不好什麼？
+
+### PS-Tree 的局限
+
+1. **搜尋空間爆炸**：PS-Tree 原始論文用 Genetic Programming 搜尋每個 leaf 的 symbolic formula，GP 本身的搜尋空間就很大；加上 tree partition 的切割點組合，整體搜尋空間是指數級。實務上很難保證找到好的解，尤其當變數多、資料維度高時。
+2. **切割與公式的耦合問題**：PS-Tree 的切割是根據「擬合改善量」來選，但擬合改善量依賴當前 leaf 裡的 symbolic formula 好壞——如果 GP 在某個 leaf 找到很差的公式，改善量的計算就不準確，導致切割判斷失誤。這是一個==雞生蛋蛋生雞==的問題。
+3. **過度擬合風險**：遞迴分裂 + 每個 leaf 獨立搜尋 formula = 很大的 model capacity。如果沒有好的正則化或 pruning 策略，容易過度擬合。
+4. **切割判準缺乏統計檢定基礎**：PS-Tree 用擬合改善量做切割，不像 MOB 用 parameter instability test（有明確的 $p$-value 和漸近理論）。這讓 PS-Tree 的切割缺乏統計保證——你不知道一個切割是「真的有意義」還是「剛好降低了 training error」。
+
+### MOB 的局限（作為對照）
+
+1. **葉節點模型受限**：MOB 只能放預先指定的 parametric model（如線性、GLM）。如果真實的 local 關係是非線性且形式未知，MOB 的 leaf model 就不夠靈活。
+2. **切割只能用 partitioning variables**：MOB 的 splitting variable 和 model variable 可以不同，但 leaf model 的形式是固定的，不會隨 partition 而改變。
+
+### 交叉觀察：PS-Tree 與 MOB 的互補與 Gap
+
+| 問題 | MOB | PS-Tree | Gap |
+|---|---|---|---|
+| Leaf model 靈活度 | 低（固定 parametric） | 高（symbolic，但搜尋困難） | 需要一種既靈活又可穩定搜尋的 leaf model |
+| 切割統計保證 | 有（instability test） | 無（只有改善量） | 需要在 symbolic regression 情境下有統計基礎的切割判準 |
+| 高維度 / 多變數 | 受限於 model complexity | 搜尋空間爆炸 | 需要可擴展的方法 |
+| 過度擬合控制 | pruning + test 統計量 | 弱 | 需要更好的正則化框架 |
+
+> [!important] 給自己的研究備忘
+> PS-Tree 和 MOB 各有強項也各有弱項。一個可能的 research direction 是：結合 MOB 的統計切割判準 + PS-Tree 的 symbolic leaf model，並加上穩健的搜尋策略和正則化。這正是 DRF / mobDRF 試圖處理的方向，但也還有尚未解決的問題——後續課程會逐步展開。
+
+---
+
 ## Ting 可以帶走的研究直覺
 
 1. **異質性是常態，同質性是假設**：在做 symbolic regression 之前，先問「我的資料是否真的來自同一個機制？」如果不是，piecewise 是比硬擬一條公式更好的起點
 2. **分區本身是有意義的**：PS-Tree 的切割變數和切割點揭示了「什麼條件下機制不同」，這本身就是研究發現
 3. **Symbolic ≠ 僵化**：symbolic regression 的公式族可以很豐富，piecewise 只是讓它更靈活——每個區域用自己的簡單公式，勝過一個區域用一個複雜公式
 4. **從 MOB 到 PS-Tree 到 NARM-UDRF 是一條研究脈絡**：這三者的共同主題是「樹狀分區 + local model」，差別在 local model 的表徵方式和估計的無偏性
+5. **每種方法都帶著它的 gap**：MOB 的 leaf model 太死板、PS-Tree 的搜尋太粗暴且缺乏統計基礎——找到兩者的交叉地帶就是可能的貢獻點
 
 ---
 
@@ -212,10 +243,11 @@ PS-Tree 把同樣的精神帶入 symbolic regression 的世界：
 - **閱讀 MOB 原文**：Zeileis et al. (2008), "Model-Based Recursive Partitioning"，理解統計檢定背後的理論
 - **思考 NARM-UDRF 的定位**：PS-Tree 的 local model 是 symbolic expression；NARM-UDRF 的 local model 是 rule-based 的效應估計——兩者如何對話？
 - **觀察切割變數的選擇**：在 demo 中留意哪些變數被選為切割點，它們是否對應已知的實務知識
+- **帶著 gap 去讀 MOB**：PS-Tree 沒有統計基礎的切割判準，MOB 有——讀 MOB 時思考：這套 instability test 能否移植到 symbolic regression 的情境？
 
 ---
 
 ## 參考資料
 
-- Zhang et al. (2022), *PS-Tree: A Piecewise Symbolic Regression Tree*. 這篇提出 PS-Tree：leaf nodes 不只存常數或線性模型，而是放 symbolic regressors。
 - Zeileis, Hothorn, and Hornik (2008), *Model-Based Recursive Partitioning*. MOB 的核心流程是 fit parametric model → test parameter instability → split by most unstable variable → recursively refit。
+- Zhang et al. (2022), *PS-Tree: A Piecewise Symbolic Regression Tree*. 這篇提出 PS-Tree：leaf nodes 不只存常數或線性模型，而是放 symbolic regressors。
