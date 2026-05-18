@@ -62,9 +62,9 @@ tags: [topic-tag1, topic-tag2]
 
 ## 連結規範（重要）
 
-- **Permanent ↔ Permanent**：唯一需要主動建立的連結類型
-- Literature Note **不**需要連結到 Permanent（方向是單向的：Literature → 生成 → Permanent）
-- **建立連結的方式**：先用 `domain` → `tags` 篩選同主題筆記，再判斷是否有相同、相異、補充關係
+- 需要主動建立的連結類型: **Permanent ↔ Permanent** 
+- Literature and Permanent 不需要 link（relation 是單向: by Permanent's property-source ）
+- **Permanent ↔ Permanent 建立連結的方式**：先用 `domain` → `tags` 篩選同主題筆記，再判斷是否有相同、相異、補充關係
 ```markdown
 ## 相關概念
 - [[相關Permanent1]] — 相同之處：XXX；差異：XXX

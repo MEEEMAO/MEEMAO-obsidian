@@ -79,7 +79,7 @@ PS-Tree（Piecewise Symbolic Tree）的核心直覺來自決策樹：**用樹的
 
 ### 流程（修正版）
 
-更精確地說，PS-Tree 不是單純「先建好一棵 decision tree，再在葉節點做 symbolic regression」，也不是每次切分都用 BIC 比較 symbolic model 的改善量。
+更精確地說，PS-Tree 不是單純「先建好一棵 decision tree，再在葉節點做 symbolic regression」。
 
 以 Zhang et al. (2022) 的 PS-Tree 與官方實作概念來看，它是 **decision-tree partition + Genetic Programming symbolic regression 的互相適應框架**：
 

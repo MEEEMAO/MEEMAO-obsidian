@@ -190,6 +190,7 @@ External parametric memory 是 token-level 與 internal parametric 的折衷：�
 #### 1.3 Latent memory：機器原生、不可讀但高密度的記憶
 
 Latent memory 指 memory 存在 KV cache、activations、hidden states、latent embeddings 等內部表徵。作者依照 latent state 的來源分成三類：
+![[Pasted image 20260507113047.png]]
 
 | Latent type | 記憶怎麼來 | 代表用途 | 優勢 | 風險 |
 | --- | --- | --- | --- | --- |

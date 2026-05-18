@@ -14,12 +14,12 @@ keywords: [long-term-memory, graph-memory, personal-assistant, memory-retrieval,
 
 ## Direction tags
 
-| Tag | 判斷 | 理由 |
-|---|---|---|
-| **Memory** | 強相關 | 核心就是個人助理 long-term conversational memory 的寫入、結構化、檢索與下游 QA。 |
-| **Graph Retrieval** | 強相關 | memory store 是 event-centric graph；retrieval 用 PCST 找 evidence-rich connected subgraph，再用 PPR 做 evidence ranking。 |
-| **Agentic / Self-evolve** | 中等相關 | 有 query-time deliberation，但沒有完整 agent loop、長期 policy learning 或 durable self-improvement。 |
-| **Proactivity** | 弱相關 | 系統仍是 query-triggered，不會自主判斷是否要主動行動。 |
+| Tag                       | 判斷   | 理由                                                                                                                |
+| ------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------- |
+| **Memory**                | 強相關  | 核心就是個人助理 long-term conversational memory 的寫入、結構化、檢索與下游 QA。                                                        |
+| **Graph Retrieval**       | 強相關  | memory store 是 event-centric graph；retrieval 用 PCST 找 evidence-rich connected subgraph，再用 PPR 做 evidence ranking。 |
+| **Agentic / Self-evolve** | 中等相關 | 有 query-time deliberation，但沒有完整 agent loop、長期 policy learning 或 durable self-improvement。                         |
+| **Proactivity**           | 弱相關  | 系統仍是 query-triggered，不會自主判斷是否要主動行動。                                                                               |
 
 ## Research Background
 

@@ -1,8 +1,11 @@
 {
-  "theme": "moonstone",
+  "theme": "obsidian",
   "accentColor": "#5c6ef5",
   "cssTheme": "",
   "interfaceFontFamily": "Chalkboard SE",
   "textFontFamily": "Georgia",
-  "translucency": false
+  "translucency": false,
+  "enabledCssSnippets": [
+    "img_center"
+  ]
 }
