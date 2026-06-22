@@ -5,7 +5,7 @@ tags: [hypothesis-testing]
 ---
 
 > [!abstract] 衡量觀察值與期望值之間偏差是否顯著的統計工具
-> 在不同情況下(選擇的複雜程度), 衡量理想與現實誤差的合理範圍, 以及該誤差值出現的 [[Probability Density Function(PDF)-機率密度函數]]
+> 在不同情況下(選擇的複雜程度), 衡量理想與現實誤差的合理範圍, 以及該誤差值出現的機率 by [[Probability Density Function(PDF)-機率密度函數]]
 
 ## 起源
 
