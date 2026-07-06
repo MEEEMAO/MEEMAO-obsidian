@@ -73,7 +73,14 @@ flowchart LR
 | **Context** | 更新 prompt、memory、reflection、lesson 等外顯上下文 | Reflexion, TextGrad, DSPy, prompt optimization |
 | **Tools** | 創造新工具、熟練工具、管理工具選擇與檢索 | Voyager, DRAFT, ToolGen |
 | **Architecture** | 改寫 workflow、節點結構、multi-agent collaboration topology | AFlow, ADAS, EvoFlow |
-
++ Architecture:
+	+ Single-agent:
+		+ **LLM-invoking node optimization**：優化 workflow 裡的一個 LLM 節點。
+		- **Autonomous-agent optimization**：優化單一 agent 的整體結構。
+	+ Multi-agents:
+		- **Agentic workflow optimization**：優化多 agent 的明確合作流程。
+		- **Multi-autonomous-agent optimization**：讓多個 autonomous agents 在互動中共同學習與演化。
+			- 
 > [!tip] 讀這篇時最值得記住的一句話
 > **Memory 只是 self-evolution 的一個 locus，不是全部。**  
 > 真正的 self-evolving agent 是「模型 × 記憶 × 工具 × 架構」四層都可能被改寫的系統。

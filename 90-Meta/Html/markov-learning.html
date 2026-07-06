@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>馬可夫模型入門講義：從狀態轉移到 Google Matrix</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d9dee7;
+      --paper: #f7f8fb;
+      --panel: #ffffff;
+      --blue: #1a73e8;
+      --green: #188038;
+      --red: #c5221f;
+      --yellow: #fbbc04;
+      --violet: #7b61ff;
+      --teal: #0b8043;
+      --shadow: 0 18px 45px rgba(32, 33, 36, 0.10);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.65;
+    }
+
+    header {
+      background:
+        linear-gradient(120deg, rgba(26, 115, 232, 0.14), rgba(11, 128, 67, 0.10)),
+        #fff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 74vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: 44px;
+      align-items: center;
+      padding: 54px 0 42px;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: clamp(2.35rem, 5vw, 4.9rem);
+      line-height: 1.06;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: clamp(1.55rem, 2.8vw, 2.25rem);
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 1.18rem;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    .lead {
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 1.14rem;
+    }
+
+    .hero-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 22px;
+      color: #174ea6;
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 18px 0 0 var(--green), 36px 0 0 var(--yellow);
+    }
+
+    .hero-visual {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    main {
+      padding: 34px 0 70px;
+    }
+
+    section {
+      padding: 38px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    section:last-child {
+      border-bottom: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: 0 8px 22px rgba(32, 33, 36, 0.06);
+    }
+
+    .callout {
+      background: #e8f0fe;
+      border-left: 5px solid var(--blue);
+      padding: 16px 18px;
+      border-radius: 8px;
+      margin: 18px 0 0;
+    }
+
+    .formula {
+      overflow-x: auto;
+      background: #202124;
+      color: #fff;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.96rem;
+      white-space: pre;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 11px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f1f3f4;
+      font-weight: 800;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .matrix {
+      display: inline-grid;
+      grid-template-columns: repeat(4, minmax(58px, 1fr));
+      gap: 1px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--line);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      max-width: 100%;
+    }
+
+    .matrix span {
+      background: #fff;
+      min-height: 40px;
+      display: grid;
+      place-items: center;
+      padding: 8px;
+    }
+
+    .matrix .head {
+      background: #f1f3f4;
+      font-weight: 800;
+    }
+
+    .steps {
+      counter-reset: step;
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .step {
+      position: relative;
+      padding: 14px 16px 14px 54px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 16px;
+      top: 14px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: var(--blue);
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .interactive {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0 18px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid #185abc;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 7px;
+      padding: 9px 13px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #fff;
+      color: #174ea6;
+    }
+
+    .bars {
+      display: grid;
+      gap: 12px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) 70px;
+      gap: 10px;
+      align-items: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .track {
+      height: 18px;
+      background: #eef2f7;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      width: 0;
+      border-radius: 4px;
+      transition: width 220ms ease;
+    }
+
+    .fill.a { background: var(--blue); }
+    .fill.b { background: var(--green); }
+    .fill.c { background: var(--yellow); }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .tag {
+      display: inline-block;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin: 4px 6px 4px 0;
+      background: #fff;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .tick {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--green);
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 98px;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 0.93rem;
+      padding-top: 24px;
+    }
+
+    @media (max-width: 860px) {
+      .hero,
+      .two,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 34px;
+      }
+
+      .timeline {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-row {
+        grid-template-columns: 28px minmax(0, 1fr) 64px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero">
+      <div>
+        <div class="hero-note"><span class="dot" aria-hidden="true"></span> 初學者版</div>
+        <h1>馬可夫模型入門講義</h1>
+        <p class="lead">從「下一步只看現在」開始，理解馬可夫鏈、隱馬可夫模型、半馬可夫模型，最後接到 PageRank 與 Google matrix。</p>
+        <div class="callout">
+          <strong>一句話總覽：</strong>馬可夫模型是在描述「系統目前在哪個狀態，以及下一步會轉到哪個狀態」；PageRank 則是把網頁瀏覽看成馬可夫鏈，長期穩定分布就是網頁重要性。
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="馬可夫模型概念圖">
+        <svg viewBox="0 0 640 430" role="img">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6368"></path>
+            </marker>
+          </defs>
+          <rect x="0" y="0" width="640" height="430" rx="18" fill="#fff"></rect>
+          <circle cx="155" cy="138" r="64" fill="#e8f0fe" stroke="#1a73e8" stroke-width="3"></circle>
+          <circle cx="485" cy="138" r="64" fill="#e6f4ea" stroke="#188038" stroke-width="3"></circle>
+          <circle cx="320" cy="318" r="64" fill="#fef7e0" stroke="#fbbc04" stroke-width="3"></circle>
+          <text x="155" y="132" text-anchor="middle" font-size="24" font-weight="700" fill="#202124">狀態 A</text>
+          <text x="155" y="164" text-anchor="middle" font-size="16" fill="#5f6368">今天晴天</text>
+          <text x="485" y="132" text-anchor="middle" font-size="24" font-weight="700" fill="#202124">狀態 B</text>
+          <text x="485" y="164" text-anchor="middle" font-size="16" fill="#5f6368">今天雨天</text>
+          <text x="320" y="312" text-anchor="middle" font-size="24" font-weight="700" fill="#202124">狀態 C</text>
+          <text x="320" y="344" text-anchor="middle" font-size="16" fill="#5f6368">今天陰天</text>
+          <path d="M220 125 C300 84 374 84 420 125" fill="none" stroke="#5f6368" stroke-width="4" marker-end="url(#arrow)"></path>
+          <path d="M453 198 C420 252 386 288 370 302" fill="none" stroke="#5f6368" stroke-width="4" marker-end="url(#arrow)"></path>
+          <path d="M270 303 C206 272 170 226 158 204" fill="none" stroke="#5f6368" stroke-width="4" marker-end="url(#arrow)"></path>
+          <text x="320" y="72" text-anchor="middle" font-size="17" fill="#5f6368">轉移機率</text>
+          <text x="448" y="254" text-anchor="middle" font-size="17" fill="#5f6368">下一步</text>
+          <text x="180" y="265" text-anchor="middle" font-size="17" fill="#5f6368">只看現在</text>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="wrap">
+        <h2>1. 先抓住核心直覺</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>狀態 State</h3>
+            <p>系統目前所在的位置。例如：天氣是晴天、使用者在哪個網頁、病人目前在哪個健康狀態。</p>
+          </article>
+          <article class="card">
+            <h3>轉移 Transition</h3>
+            <p>從目前狀態走到下一個狀態的機率。例如：今天晴天，明天有 70% 還是晴天，30% 變雨天。</p>
+          </article>
+          <article class="card">
+            <h3>馬可夫性 Markov Property</h3>
+            <p>預測下一步時，只看「現在狀態」，不直接看更久以前的歷史。</p>
+          </article>
+        </div>
+
+        <div class="formula" aria-label="馬可夫性公式">P(X_{t+1} | X_t, X_{t-1}, ..., X_0) = P(X_{t+1} | X_t)</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap two">
+        <div>
+          <h2>2. 馬可夫鏈：狀態可以直接看見</h2>
+          <p>最基本的馬可夫模型稱為馬可夫鏈。它假設每個時間點的狀態都看得到，而且下一步由轉移矩陣決定。</p>
+          <p>用天氣當例子，狀態只有兩個：晴天、雨天。</p>
+          <div class="formula">p_next = T p_now</div>
+          <p class="small">如果用欄表示「現在」，列表示「下一步」，每一欄加總要等於 1。</p>
+        </div>
+        <div class="card">
+          <h3>天氣轉移矩陣 T</h3>
+          <div class="matrix" aria-label="天氣轉移矩陣">
+            <span class="head"></span><span class="head">from 晴</span><span class="head">from 雨</span><span class="head">說明</span>
+            <span class="head">to 晴</span><span>0.80</span><span>0.40</span><span>明天晴</span>
+            <span class="head">to 雨</span><span>0.20</span><span>0.60</span><span>明天雨</span>
+          </div>
+          <p class="small" style="margin-top:12px;">如果今天 100% 是晴天，明天分布是 [晴 0.80, 雨 0.20]。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>3. Google Matrix 與 PageRank</h2>
+        <p>PageRank 把「人在網頁間移動」看成馬可夫鏈。每個網頁是一個狀態，超連結提供原本的轉移規則。</p>
+        <div class="two">
+          <div class="card">
+            <h3>原本的網頁連結 S</h3>
+            <p>A 連到 B、C；B 連到 C；C 連到 A。</p>
+            <div class="matrix" aria-label="原始連結轉移矩陣">
+              <span class="head"></span><span class="head">from A</span><span class="head">from B</span><span class="head">from C</span>
+              <span class="head">to A</span><span>0</span><span>0</span><span>1</span>
+              <span class="head">to B</span><span>0.5</span><span>0</span><span>0</span>
+              <span class="head">to C</span><span>0.5</span><span>1</span><span>0</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>加入 damping factor</h3>
+            <p>常見設定是 d = 0.85：85% 照連結走，15% 隨機跳到任一頁。</p>
+            <div class="formula">G = 0.85S + 0.15E</div>
+            <p class="small">G 是 Google matrix。PageRank 是反覆套用 G 後收斂的長期機率分布。</p>
+          </div>
+        </div>
+
+        <div class="interactive" style="margin-top:20px;">
+          <h3>互動例子：收斂前與收斂後</h3>
+          <p>初始分布是 A、B、C 各三分之一。每按一次，就做一次 <code>p_next = G p_now</code>。</p>
+          <div class="controls">
+            <button id="nextStep" type="button">下一步</button>
+            <button id="tenSteps" type="button" class="secondary">跑 10 步</button>
+            <button id="reset" type="button" class="secondary">重設</button>
+          </div>
+          <p><strong>目前步數：</strong><span id="stepCount">0</span></p>
+          <div class="bars">
+            <div class="bar-row"><strong>A</strong><div class="track"><div class="fill a" id="barA"></div></div><span id="valA">0.333</span></div>
+            <div class="bar-row"><strong>B</strong><div class="track"><div class="fill b" id="barB"></div></div><span id="valB">0.333</span></div>
+            <div class="bar-row"><strong>C</strong><div class="track"><div class="fill c" id="barC"></div></div><span id="valC">0.333</span></div>
+          </div>
+          <p class="small" style="margin-top:14px;">這個例子最後會接近 [A 0.388, B 0.215, C 0.397]。這就是 PageRank。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>4. 隱馬可夫模型 HMM：狀態看不見，只看得到觀測</h2>
+        <div class="two">
+          <div>
+            <p>有些問題裡，真正狀態不能直接觀察。例如你只看到某人有沒有帶傘，但你不確定實際天氣；你只看到語音訊號，但你不直接知道句子中的詞。</p>
+            <p>HMM 把問題拆成兩層：</p>
+            <span class="tag">隱藏狀態 hidden state</span>
+            <span class="tag">觀測 observation</span>
+            <span class="tag">轉移機率 transition</span>
+            <span class="tag">發射機率 emission</span>
+          </div>
+          <div class="card">
+            <h3>HMM 小例子</h3>
+            <table>
+              <thead>
+                <tr><th>層次</th><th>例子</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>隱藏狀態</td><td>晴天、雨天</td></tr>
+                <tr><td>可觀測資料</td><td>帶傘、沒帶傘</td></tr>
+                <tr><td>轉移問題</td><td>今天雨天，明天多可能還是雨天？</td></tr>
+                <tr><td>發射問題</td><td>今天雨天，多可能看到他帶傘？</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="callout">
+          <strong>HMM 常見任務：</strong>給定觀測序列，推測最可能的隱藏狀態序列；或學出轉移機率與發射機率。
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>5. 半馬可夫模型：狀態會停留一段時間</h2>
+        <p>普通馬可夫鏈通常每一步都問「下一格去哪裡」。半馬可夫模型多考慮一件事：進入某個狀態後，會停留多久。</p>
+        <div class="timeline">
+          <div class="tick"><strong>睡眠</strong><br><span class="small">停留 7 小時</span></div>
+          <div class="tick"><strong>通勤</strong><br><span class="small">停留 40 分鐘</span></div>
+          <div class="tick"><strong>工作</strong><br><span class="small">停留 4 小時</span></div>
+          <div class="tick"><strong>休息</strong><br><span class="small">停留 30 分鐘</span></div>
+          <div class="tick"><strong>工作</strong><br><span class="small">再停留 3 小時</span></div>
+        </div>
+        <div class="callout">
+          <strong>白話：</strong>馬可夫鏈重視「下一個狀態是什麼」；半馬可夫模型同時重視「下一個狀態是什麼」和「目前狀態會維持多久」。
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>6. 四種名字一次對齊</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>模型</th>
+              <th>狀態看得到嗎</th>
+              <th>有明確建模停留時間嗎</th>
+              <th>適合直覺</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>馬可夫鏈 Markov Chain</td>
+              <td>看得到</td>
+              <td>通常沒有</td>
+              <td>天氣、網頁跳轉、棋盤狀態</td>
+            </tr>
+            <tr>
+              <td>隱馬可夫模型 HMM</td>
+              <td>看不到，只看得到觀測</td>
+              <td>通常沒有</td>
+              <td>語音、詞性標註、生物序列</td>
+            </tr>
+            <tr>
+              <td>半馬可夫模型 Semi-Markov</td>
+              <td>看得到</td>
+              <td>有</td>
+              <td>活動分段、設備狀態、流程停留時間</td>
+            </tr>
+            <tr>
+              <td>隱半馬可夫模型 HSMM</td>
+              <td>看不到，只看得到觀測</td>
+              <td>有</td>
+              <td>語音片段、醫療病程、行為階段</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>7. 初學路線</h2>
+        <div class="steps">
+          <div class="step"><strong>先學馬可夫鏈：</strong>狀態、轉移矩陣、長期穩定分布。</div>
+          <div class="step"><strong>接著學 PageRank：</strong>把網頁當狀態，Google matrix 當轉移矩陣，PageRank 當 stationary distribution。</div>
+          <div class="step"><strong>再學 HMM：</strong>把「看不到的狀態」和「看得到的資料」分開。</div>
+          <div class="step"><strong>最後學 Semi-Markov / HSMM：</strong>加入停留時間，處理更真實的序列資料。</div>
+        </div>
+        <p class="footer">建議練習：自己設計 3 個狀態的轉移矩陣，手算前 2 步，再用程式跑到收斂。</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const G = [
+      [0.05, 0.05, 0.90],
+      [0.475, 0.05, 0.05],
+      [0.475, 0.90, 0.05]
+    ];
+
+    let p = [1 / 3, 1 / 3, 1 / 3];
+    let step = 0;
+
+    const ids = {
+      bars: ["barA", "barB", "barC"].map((id) => document.getElementById(id)),
+      vals: ["valA", "valB", "valC"].map((id) => document.getElementById(id)),
+      step: document.getElementById("stepCount")
+    };
+
+    function multiply(matrix, vector) {
+      return matrix.map((row) => row.reduce((sum, value, index) => sum + value * vector[index], 0));
+    }
+
+    function render() {
+      ids.step.textContent = String(step);
+      p.forEach((value, index) => {
+        ids.bars[index].style.width = `${Math.max(0, Math.min(100, value * 100))}%`;
+        ids.vals[index].textContent = value.toFixed(3);
+      });
+    }
+
+    function advance(times) {
+      for (let i = 0; i < times; i += 1) {
+        p = multiply(G, p);
+        step += 1;
+      }
+      render();
+    }
+
+    document.getElementById("nextStep").addEventListener("click", () => advance(1));
+    document.getElementById("tenSteps").addEventListener("click", () => advance(10));
+    document.getElementById("reset").addEventListener("click", () => {
+      p = [1 / 3, 1 / 3, 1 / 3];
+      step = 0;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

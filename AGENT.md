@@ -4,8 +4,9 @@
 
 MEEMAO 的 Zettelkasten 第二大腦，結合 Agent 與 Obsidian 的自動化知識管理系統。
 
-**三大知識領域：**
+**知識領域：**
 - `DS`：Data Science — LLM、Agent、ML、AI 系統設計、統計學方法、假設檢定、機率分布
+- `Math`: 線性代數、離散數學
 - `Finance`：投資、財務規劃、總經指標、退休規劃
 - `Personal-Growth`：習慣養成、自我成長
 
