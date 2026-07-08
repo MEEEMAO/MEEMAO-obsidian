@@ -1,12 +1,9 @@
 ---
-publication_time: "2025-07"
+publication_time: 2025-07
 url: https://arxiv.org/abs/2507.21046
 keywords:
   - self-evolving-agents
-  - continual-learning
-  - agent-architecture
   - agent-memory
-  - multi-agent
 ---
 ## Research Background
 

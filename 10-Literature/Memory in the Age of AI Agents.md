@@ -1,12 +1,8 @@
 ---
-publication_time: "2025-12"
+publication_time: 2025-12
 url: https://arxiv.org/abs/2512.13564
 keywords:
   - agent-memory
-  - LLM-agents
-  - memory-systems
-  - continual-learning
-  - retrieval
 ---
 ## Research Background
 
