@@ -1,7 +1,7 @@
 {
-  "theme": "obsidian",
+  "theme": "moonstone",
   "accentColor": "#5c6ef5",
-  "cssTheme": "",
+  "cssTheme": "Minimal",
   "interfaceFontFamily": "Chalkboard SE",
   "textFontFamily": "Georgia",
   "translucency": false,

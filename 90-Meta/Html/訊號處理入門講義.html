@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>訊號處理入門 — 給臨床端的概念講義</title>
+<style>
+:root{
+  --paper:#FBFAF7;
+  --ink:#17262B;
+  --slate:#5E6B70;
+  --mute:#8B9599;
+  --rule:#DFE3E1;
+  --teal:#0F6E56;
+  --teal-soft:#DCEFE8;
+  --amber:#A8690F;
+  --amber-soft:#F7EBD6;
+  --violet:#4A42A8;
+  --violet-soft:#E8E6F8;
+  --grid:#F0D6D3;
+  --serif:"Songti TC","Noto Serif TC","Source Han Serif TC",Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei","Noto Sans TC","Helvetica Neue",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-size:16.5px;line-height:1.85;
+  font-weight:400;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1160px;margin:0 auto;padding:0 32px 120px}
+
+/* ---------- hero ---------- */
+.hero{position:relative;padding:64px 0 40px;margin-bottom:8px}
+.hero-grid{
+  position:absolute;inset:0;z-index:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:20px 20px;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 55%,transparent 100%);
+  mask-image:linear-gradient(180deg,#000 0%,#000 55%,transparent 100%);
+  opacity:.75;
+}
+.hero-inner{position:relative;z-index:1}
+.hero svg{display:block;width:100%;height:auto;max-width:820px}
+.hero h1{
+  font-family:var(--serif);font-weight:600;letter-spacing:.04em;
+  font-size:clamp(30px,4.4vw,46px);line-height:1.3;margin:26px 0 14px;
+}
+.hero p{max-width:60ch;color:var(--slate);margin:0;font-size:17px}
+.meta{margin-top:26px;color:var(--mute);font-size:14.5px;letter-spacing:.03em}
+
+/* ---------- layout ---------- */
+.cols{display:block}
+@media(min-width:1040px){
+  .cols{display:grid;grid-template-columns:200px 1fr;gap:64px;align-items:start}
+  nav.toc{position:sticky;top:40px}
+}
+nav.toc{margin:0 0 48px;padding:0;border-top:1px solid var(--rule)}
+nav.toc a{
+  display:block;padding:11px 0 11px 34px;position:relative;
+  color:var(--slate);text-decoration:none;font-size:14.5px;line-height:1.4;
+  border-bottom:1px solid var(--rule);
+}
+nav.toc a span{position:absolute;left:0;top:11px;font-family:var(--serif);color:var(--mute);font-size:13px}
+nav.toc a:hover{color:var(--teal)}
+
+section{padding-top:56px;scroll-margin-top:24px}
+section+section{border-top:1px solid var(--rule)}
+h2{
+  font-family:var(--serif);font-weight:600;font-size:27px;line-height:1.4;
+  letter-spacing:.03em;margin:0 0 6px;display:flex;gap:16px;align-items:baseline;
+}
+h2 em{font-style:normal;color:var(--mute);font-size:17px;font-weight:400;flex:none}
+.lede{color:var(--slate);max-width:62ch;margin:0 0 32px}
+h3{
+  font-family:var(--sans);font-weight:600;font-size:18px;margin:44px 0 10px;
+  padding-left:13px;border-left:3px solid var(--teal);line-height:1.5;
+}
+p{max-width:64ch;margin:0 0 18px}
+strong{font-weight:600}
+.q{
+  font-family:var(--serif);font-size:19px;line-height:1.8;color:var(--ink);
+  max-width:56ch;margin:30px 0;padding:2px 0 2px 22px;border-left:2px solid var(--teal);
+}
+
+/* ---------- figures ---------- */
+figure{margin:30px 0 34px;max-width:760px}
+figure svg{display:block;width:100%;height:auto}
+figcaption{
+  margin-top:12px;font-size:14px;line-height:1.7;color:var(--slate);
+  padding-left:14px;border-left:2px solid var(--rule);max-width:60ch;
+}
+.fig-t{font-family:var(--sans);font-size:13px;fill:var(--slate)}
+.fig-k{font-family:var(--sans);font-size:14px;font-weight:600;fill:var(--ink)}
+.fig-kw{font-family:var(--sans);font-size:14px;font-weight:600}
+.ax{stroke:var(--mute);stroke-width:1;fill:none}
+
+/* ---------- small parts ---------- */
+.trio{display:grid;gap:22px;margin:28px 0 8px;max-width:760px}
+@media(min-width:680px){.trio{grid-template-columns:repeat(3,1fr)}}
+.trio > div{padding-top:16px;border-top:2px solid var(--ink)}
+.trio h4{margin:0 0 6px;font-size:16px;font-weight:600}
+.trio p{font-size:14.5px;line-height:1.75;color:var(--slate);margin:0}
+.trio svg{display:block;width:100%;max-width:150px;height:auto;margin-bottom:12px}
+
+table{border-collapse:collapse;margin:24px 0 8px;font-size:15px;max-width:640px;width:100%}
+table.wide{max-width:760px}
+details.more{margin:28px 0;max-width:760px;border-top:1px solid var(--ink);border-bottom:1px solid var(--rule)}
+details.more > summary{
+  cursor:pointer;list-style:none;padding:13px 0;font-size:15px;font-weight:600;
+  color:var(--teal);display:flex;align-items:center;gap:10px;
+}
+details.more > summary::-webkit-details-marker{display:none}
+details.more > summary::before{content:"＋";font-weight:400;font-size:17px;color:var(--mute);line-height:1}
+details.more[open] > summary::before{content:"－"}
+details.more > summary:hover{color:var(--ink)}
+details.more > summary:focus-visible{outline:2px solid var(--teal);outline-offset:4px}
+details.more .body{padding:2px 0 24px}
+details.more .body > :last-child{margin-bottom:0}
+th,td{text-align:left;padding:11px 16px 11px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:600;color:var(--ink);border-bottom:1.5px solid var(--ink);font-size:14px}
+td:first-child{white-space:nowrap;color:var(--teal);font-weight:600}
+
+.note{
+  margin:30px 0;padding:18px 22px;background:var(--amber-soft);
+  font-size:15px;line-height:1.75;max-width:62ch;
+}
+.note b{font-weight:600}
+
+footer{margin-top:80px;padding-top:24px;border-top:1px solid var(--rule);color:var(--mute);font-size:14px}
+
+@media print{
+  body{font-size:11pt}
+  nav.toc,.hero-grid{display:none}
+  .cols{display:block}
+  section{page-break-inside:avoid;padding-top:28px}
+  figure{page-break-inside:avoid}
+  details.more .body{display:block}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <svg viewBox="0 0 820 120" role="img" aria-label="一段心電圖波形">
+      <polyline fill="none" stroke="#0F6E56" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+        points="0,80 60,80 76,68 90,80 106,80 110,94 114,34 118,100 122,80 148,64 166,80 220,80 236,68 250,80 266,80 270,94 274,34 278,100 282,80 308,64 326,80 380,80 396,68 410,80 426,80 430,94 434,34 438,100 442,80 468,64 486,80 540,80 556,68 570,80 586,80 590,94 594,34 598,100 602,80 628,64 646,80 700,80 716,68 730,80 746,80 750,94 754,34 758,100 762,80 788,64 806,80 820,80"/>
+    </svg>
+    <h1>從波形到模型</h1>
+    <p>一份給臨床端的訊號處理概念導覽。不談程式、不推公式，只說明我們拿到一段生理訊號之後做了什麼、為什麼要這樣做，以及每個步驟會影響什麼。</p>
+    <div class="meta">資料科學與臨床合作討論用　·　概念版</div>
+  </div>
+</header>
+
+<div class="cols">
+<nav class="toc">
+  <a href="#s1"><span>一</span>訊號、時域、頻域、雜訊</a>
+  <a href="#s2"><span>二</span>前處理：濾波</a>
+  <a href="#s3"><span>三</span>前處理：切段</a>
+  <a href="#s4"><span>四</span>頻域轉換的三種方法</a>
+  <a href="#s5"><span>五</span>分析路線的兩個選擇</a>
+</nav>
+
+<main>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <h2><em>一</em>訊號、時域、頻域、雜訊</h2>
+  <p class="lede">生理訊號是一種特別密集的時間序列。心電圖每秒可能記錄五百個點，十秒就是五千個數字。我們要處理的第一個問題是：這麼多數字，怎麼看才看得出東西。</p>
+
+  <h3>同一段訊號，兩種看法</h3>
+  <p>假設有一段訊號，它其實是「一個慢的起伏」加上「一個快的抖動」疊在一起。下圖上半是我們直接錄到的樣子，下半是同一段資料換一種方式攤開。</p>
+
+  <figure>
+    <svg viewBox="0 0 680 430" role="img" aria-label="同一段訊號的時域波形與頻域成分對照">
+      <polyline fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"
+        points="80,110 90,92.1 100,87.8 110,94.8 120,97.9 130,88.0 140,72.7 150,68.6 160,79.9 170,94.4 180,98.0 190,90.9 200,87.9 210,100.0 220,120.0 230,132.1 240,129.1 250,122.1 260,125.6 270,140.1 280,151.4 290,147.3 300,132.1 310,122.3 320,125.2 330,132.6 340,127.9 350,110 360,92.1 370,87.4 380,94.8 390,97.7 400,87.9 410,72.7 420,68.6 430,79.9 440,94.4 450,97.9 460,90.9 470,87.9 480,100.0 490,120.0 500,132.1 510,129.1 520,122.0 530,125.6 540,140.1 550,151.4 560,147.3 570,132.0 580,122.1 590,125.2 600,132.2 610,127.9 620,110"/>
+      <line x1="80" y1="110" x2="620" y2="110" stroke="#C9CFCD" stroke-width="1" stroke-dasharray="3 4"/>
+      <text class="fig-t" x="80" y="52">時域：訊號隨時間起伏</text>
+      <line class="ax" x1="80" y1="180" x2="620" y2="180"/>
+      <text class="fig-t" x="350" y="200" text-anchor="middle">時間</text>
+
+      <text class="fig-t" x="80" y="250">頻域：由哪些頻率組成</text>
+      <line class="ax" x1="80" y1="382" x2="620" y2="382"/>
+      <rect x="181" y="374" width="13" height="8" fill="#C3CAC7"/>
+      <rect x="235" y="377" width="13" height="5" fill="#C3CAC7"/>
+      <rect x="424" y="372" width="13" height="10" fill="#C3CAC7"/>
+      <rect x="505" y="376" width="13" height="6" fill="#C3CAC7"/>
+      <rect x="559" y="375" width="13" height="7" fill="#C3CAC7"/>
+      <rect x="127" y="272" width="14" height="110" fill="#0F6E56"/>
+      <rect x="343" y="338" width="14" height="44" fill="#0F6E56"/>
+      <text class="fig-k" x="134" y="263" text-anchor="middle">2 Hz</text>
+      <text class="fig-k" x="350" y="329" text-anchor="middle">10 Hz</text>
+      <text class="fig-t" x="80" y="400" text-anchor="middle">0</text>
+      <text class="fig-t" x="350" y="400" text-anchor="middle">10</text>
+      <text class="fig-t" x="620" y="400" text-anchor="middle">20</text>
+      <text class="fig-t" x="350" y="422" text-anchor="middle">頻率（每秒震盪幾次）</text>
+    </svg>
+    <figcaption>上下是同一段資料，資訊沒有增減。時域上看起來很複雜的一條曲線，在頻域只剩兩根柱子——它其實只由兩個單純的成分組成。旁邊矮矮的灰色是雜訊。</figcaption>
+  </figure>
+
+  <p class="q">時域回答「什麼時候發生了什麼」，頻域回答「整體由哪些成分組成」。兩邊看得見的東西不一樣。</p>
+
+  <table>
+    <tr><th>看法</th><th>擅長回答的問題</th></tr>
+    <tr><td>時域</td><td>這個尖峰出現在第幾秒？這一下的波形形狀正不正常？兩次心跳隔多久？</td></tr>
+    <tr><td>頻域</td><td>有沒有週期性？能量集中在慢的還是快的？有沒有某個固定頻率特別強？</td></tr>
+  </table>
+  <p>反過來說，時域看不出兩種頻率混在一起；頻域則完全不知道事情發生在第幾秒。這是為什麼後面會出現「時頻圖」這種折衷的東西。</p>
+
+  <h3>雜訊住在哪裡</h3>
+  <p>我們錄到的從來不只有心臟。肌肉活動、呼吸造成的電極位移、插座的電，全部疊在同一條線上。在時域這些完全分不開，但換到頻域就看得出它們各自佔據不同的區間。</p>
+
+  <figure>
+    <svg viewBox="0 0 680 230" role="img" aria-label="心電訊號與各種雜訊在頻率軸上的分佈">
+      <rect x="60" y="104" width="90" height="50" rx="5" fill="#E7EEF1" stroke="#B8C6CC" stroke-width="1"/>
+      <text class="fig-kw" x="105" y="134" text-anchor="middle" fill="#3D5460">基線漂移</text>
+      <rect x="150" y="104" width="270" height="50" rx="5" fill="#DCEFE8" stroke="#7FBFA8" stroke-width="1"/>
+      <text class="fig-kw" x="285" y="127" text-anchor="middle" fill="#0F6E56">心跳訊號</text>
+      <text class="fig-t" x="285" y="145" text-anchor="middle" fill="#0F6E56">要保留的部分</text>
+      <rect x="420" y="104" width="220" height="50" rx="5" fill="#F7EBD6" stroke="#DDBA82" stroke-width="1"/>
+      <text class="fig-kw" x="560" y="134" text-anchor="middle" fill="#8A5509">肌電雜訊</text>
+      <rect x="466" y="80" width="10" height="74" rx="2" fill="#B03A38"/>
+      <text class="fig-t" x="471" y="70" text-anchor="middle" fill="#B03A38">市電 60 Hz</text>
+      <line class="ax" x1="60" y1="176" x2="640" y2="176"/>
+      <text class="fig-t" x="60" y="196" text-anchor="middle">慢</text>
+      <text class="fig-t" x="350" y="196" text-anchor="middle">頻率</text>
+      <text class="fig-t" x="634" y="196" text-anchor="middle">快</text>
+    </svg>
+    <figcaption>呼吸與電極移動造成的漂移最慢，肌電雜訊最快，心跳訊號夾在中間，市電干擾則固定落在 60 Hz。因為它們不在同一個位置，才有辦法分開處理。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <h2><em>二</em>前處理：濾波</h2>
+  <p class="lede">濾波只做一件事：決定哪些頻率留下、哪些擋掉。它之所以有效，完全是因為上一張圖——訊號和雜訊剛好住在不同的頻率區間。</p>
+
+  <h3>四種基本型態</h3>
+  <figure>
+    <svg viewBox="0 0 680 340" role="img" aria-label="低通、高通、帶通、陷波四種濾波器的通過範圍">
+      <text class="fig-kw" x="145" y="70" text-anchor="end" fill="#17262B">低通</text>
+      <text class="fig-t" x="145" y="89" text-anchor="end">去高頻抖動</text>
+      <rect x="170" y="52" width="470" height="34" rx="5" fill="#EDEFEE" stroke="#D3D8D6" stroke-width="1"/>
+      <rect x="170" y="52" width="190" height="34" rx="5" fill="#DCEFE8" stroke="#7FBFA8" stroke-width="1"/>
+
+      <text class="fig-kw" x="145" y="128" text-anchor="end" fill="#17262B">高通</text>
+      <text class="fig-t" x="145" y="147" text-anchor="end">去基線漂移</text>
+      <rect x="170" y="110" width="470" height="34" rx="5" fill="#EDEFEE" stroke="#D3D8D6" stroke-width="1"/>
+      <rect x="280" y="110" width="360" height="34" rx="5" fill="#DCEFE8" stroke="#7FBFA8" stroke-width="1"/>
+
+      <text class="fig-kw" x="145" y="186" text-anchor="end" fill="#17262B">帶通</text>
+      <text class="fig-t" x="145" y="205" text-anchor="end">只留中間一段</text>
+      <rect x="170" y="168" width="470" height="34" rx="5" fill="#EDEFEE" stroke="#D3D8D6" stroke-width="1"/>
+      <rect x="260" y="168" width="220" height="34" rx="5" fill="#DCEFE8" stroke="#7FBFA8" stroke-width="1"/>
+
+      <text class="fig-kw" x="145" y="244" text-anchor="end" fill="#17262B">陷波</text>
+      <text class="fig-t" x="145" y="263" text-anchor="end">只挖掉一個點</text>
+      <rect x="170" y="226" width="470" height="34" rx="5" fill="#DCEFE8" stroke="#7FBFA8" stroke-width="1"/>
+      <rect x="448" y="226" width="22" height="34" rx="2" fill="#EDEFEE" stroke="#D3D8D6" stroke-width="1"/>
+
+      <line class="ax" x1="170" y1="292" x2="640" y2="292"/>
+      <text class="fig-t" x="170" y="312" text-anchor="middle">慢</text>
+      <text class="fig-t" x="405" y="312" text-anchor="middle">頻率</text>
+      <text class="fig-t" x="634" y="312" text-anchor="middle">快</text>
+    </svg>
+    <figcaption>綠色是保留、灰色是擋掉。帶通其實就是高通加低通串起來，是心電訊號最常用的一種。</figcaption>
+  </figure>
+
+  <table>
+    <tr><th>步驟</th><th>心電訊號的常見設定</th><th>拿掉什麼</th></tr>
+    <tr><td>高通</td><td>0.5 Hz 以下擋掉</td><td>呼吸、電極移動造成的基線漂移</td></tr>
+    <tr><td>低通</td><td>40 Hz 以上擋掉</td><td>肌電雜訊</td></tr>
+    <tr><td>陷波</td><td>挖掉 60 Hz</td><td>市電干擾（台灣、美國為 60 Hz）</td></tr>
+  </table>
+
+  <h3>階數：分界線有多陡</h3>
+  <p>濾波器不會在截止頻率上乾淨地一刀兩斷，而是有一段過渡。<strong>階數</strong>就是控制這段過渡有多陡的參數。</p>
+
+  <figure>
+    <svg viewBox="0 0 680 260" role="img" aria-label="低階與高階濾波器的過渡陡峭程度比較">
+      <line class="ax" x1="80" y1="200" x2="646" y2="200"/>
+      <line class="ax" x1="80" y1="50" x2="80" y2="200"/>
+      <line x1="260" y1="52" x2="260" y2="200" stroke="#B8C6CC" stroke-width="1" stroke-dasharray="4 4"/>
+      <polyline fill="none" stroke="#A8690F" stroke-width="2" stroke-linejoin="round"
+        points="80,60 125,60.3 170,64.2 215,78 260,101 305,124.5 350,143.1 395,156.5 440,166.1 485,172.9 530,177.9 575,181.6 620,184.5"/>
+      <polyline fill="none" stroke="#0F6E56" stroke-width="2" stroke-linejoin="round"
+        points="80,60 125,60 170,60 215,62.2 233,69 260,101 287,144.4 314,171.6 350,187.8 395,195.1 440,197.8 530,199.4 620,199.8"/>
+      <text class="fig-kw" x="318" y="86" text-anchor="middle" fill="#0F6E56">高階：分界銳利</text
+      ><text class="fig-kw" x="512" y="148" text-anchor="middle" fill="#A8690F">低階：過渡平緩</text>
+      <text class="fig-t" x="70" y="64" text-anchor="end">保留</text>
+      <text class="fig-t" x="70" y="204" text-anchor="end">擋掉</text>
+      <text class="fig-t" x="260" y="222" text-anchor="middle">截止頻率</text>
+      <text class="fig-t" x="646" y="222" text-anchor="end">頻率</text>
+    </svg>
+    <figcaption>階數低，截止頻率附近的過渡很平緩，該留的成分可能也被削掉一截；階數高，分界乾淨俐落。單看這張圖會覺得階數愈高愈好，代價要看下一張。</figcaption>
+  </figure>
+
+  <p>把同一個心跳分別用低階與高階濾波，結果是這樣（灰色虛線是原始波形的位置）：</p>
+
+  <figure>
+    <svg viewBox="0 0 680 395" role="img" aria-label="同一個心跳經過低階與高階濾波之後的波形比較">
+      <text class="fig-t" x="80" y="22">原始：一個乾淨的心跳</text>
+      <polyline fill="none" stroke="#5E6B70" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"
+        points="80,92 190,92 200,87 210,84 220,87 230,92 274,92 280,99 286,96 292,44 297,108 304,100 310,92 355,92 375,82 395,76 415,82 435,92 640,92"/>
+
+      <text class="fig-t" x="80" y="144" fill="#A8690F">低階：尖峰被削鈍、變矮，但沒有多出東西</text>
+      <polyline fill="none" stroke="#C9CFCD" stroke-width="1" stroke-dasharray="4 4"
+        points="80,214 190,214 200,209 210,206 220,209 230,214 274,214 280,221 286,218 292,166 297,230 304,222 310,214 355,214 375,204 395,198 415,204 435,214 640,214"/>
+      <polyline fill="none" stroke="#A8690F" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"
+        points="80,214 190,214 200,209 210,206 220,209 230,214 274,214 280,218 285,213 288,192 292,178 296,192 300,222 305,226 311,220 317,214 355,214 375,204 395,198 415,204 435,214 640,214"/>
+
+      <text class="fig-t" x="80" y="266" fill="#0F6E56">高階：尖峰保住了，但前後多出一串來回震盪</text>
+      <polyline fill="none" stroke="#C9CFCD" stroke-width="1" stroke-dasharray="4 4"
+        points="80,336 190,336 200,331 210,328 220,331 230,336 274,336 280,343 286,340 292,288 297,352 304,344 310,336 355,336 375,326 395,320 415,326 435,336 640,336"/>
+      <polyline fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"
+        points="80,336 190,336 200,331 210,328 220,331 230,336 240,336 246,332 252,341 258,330 264,343 270,329 274,336 280,343 286,340 292,288 297,354 302,343 306,352 310,340 314,348 318,341 322,346 326,339 330,344 334,338 340,341 346,338 352,336 355,336 375,326 395,320 415,326 435,336 640,336"/>
+
+      <text class="fig-t" x="252" y="308" text-anchor="middle" fill="#0F6E56">多出來的偏折</text>
+      <line x1="252" y1="312" x2="252" y2="327" stroke="#0F6E56" stroke-width="0.8"/>
+      <text class="fig-t" x="328" y="378" text-anchor="middle" fill="#0F6E56">ST 段被弄髒</text>
+      <line x1="328" y1="372" x2="322" y2="350" stroke="#0F6E56" stroke-width="0.8"/>
+    </svg>
+    <figcaption>高階那一條在 QRS 之前就已經開始抖動——這在生理上不可能發生，是濾波器自己製造出來的。它落在 QRS 前會看起來像多了一個小偏折，落在 QRS 後則會讓 ST 段變得不平整。</figcaption>
+  </figure>
+
+  <p>會這樣是因為：一個尖銳的 QRS 是由非常多不同快慢的成分疊加而成的。階數高等於在某個頻率上突然一刀切斷，剩下的成分重新疊起來還原不出原本的尖角，只好在尖峰前後來回震盪來補償。階數低的過渡平緩，就不會出現這種補償。</p>
+
+  <p class="q">低階的失真是「少了東西」，高階的失真是「多出了原本不存在的東西」。後者在臨床上危險得多——因為它看起來像真的。</p>
+
+  <div class="note">
+    <b>臨床上要留意的取捨。</b>低通設在 40 Hz 會讓 QRS 的高頻細節被削掉一些，波形看起來會比原本圓鈍。如果分析的重點是波形形態（例如 QRS 寬度、ST 段），這個設定要放寬；如果重點是心律與節奏，40 Hz 已經足夠。這是一個會直接影響臨床判讀的選擇，值得一起討論。
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <h2><em>三</em>前處理：切段</h2>
+  <p class="lede">模型需要固定長度的輸入，所以連續的紀錄要先切成一段一段。切法有兩種，選哪一種取決於要看的是什麼。</p>
+
+  <figure>
+    <svg viewBox="0 0 680 330" role="img" aria-label="固定窗切段與事件對齊切段的比較">
+      <polyline fill="none" stroke="#0F6E56" stroke-width="1.6" stroke-linejoin="round"
+        points="80,88 100,88 108,82 114,88 122,88 124,96 126,53 128,100 130,88 144,80 154,88 200,88 208,82 214,88 222,88 224,96 226,53 228,100 230,88 244,80 254,88 300,88 308,82 314,88 322,88 324,96 326,53 328,100 330,88 344,80 354,88 400,88 408,82 414,88 422,88 424,96 426,53 428,100 430,88 444,80 454,88 500,88 508,82 514,88 522,88 524,96 526,53 528,100 530,88 544,80 554,88 620,88"/>
+      <text class="fig-t" x="80" y="34">固定窗：每隔固定時間切一刀，彼此重疊</text>
+      <rect x="90" y="118" width="200" height="10" rx="5" fill="#0F6E56" opacity=".78"/>
+      <rect x="190" y="134" width="200" height="10" rx="5" fill="#0F6E56" opacity=".55"/>
+      <rect x="290" y="150" width="200" height="10" rx="5" fill="#0F6E56" opacity=".78"/>
+      <rect x="390" y="166" width="200" height="10" rx="5" fill="#0F6E56" opacity=".55"/>
+
+      <text class="fig-t" x="80" y="222">事件對齊：先找出 R 波，每一下各切一段</text>
+      <polyline fill="none" stroke="#0F6E56" stroke-width="1.6" stroke-linejoin="round"
+        points="80,278 100,278 108,272 114,278 122,278 124,286 126,243 128,290 130,278 144,270 154,278 200,278 208,272 214,278 222,278 224,286 226,243 228,290 230,278 244,270 254,278 300,278 308,272 314,278 322,278 324,286 326,243 328,290 330,278 344,270 354,278 400,278 408,272 414,278 422,278 424,286 426,243 428,290 430,278 444,270 454,278 500,278 508,272 514,278 522,278 524,286 526,243 528,290 530,278 544,270 554,278 620,278"/>
+      <g fill="none" stroke="#4A42A8" stroke-width="1.2" stroke-dasharray="4 3">
+        <rect x="96" y="234" width="68" height="70" rx="5"/>
+        <rect x="196" y="234" width="68" height="70" rx="5"/>
+        <rect x="296" y="234" width="68" height="70" rx="5"/>
+        <rect x="396" y="234" width="68" height="70" rx="5"/>
+        <rect x="496" y="234" width="68" height="70" rx="5"/>
+      </g>
+      <g fill="#4A42A8">
+        <circle cx="126" cy="243" r="3"/><circle cx="226" cy="243" r="3"/><circle cx="326" cy="243" r="3"/>
+        <circle cx="426" cy="243" r="3"/><circle cx="526" cy="243" r="3"/>
+      </g>
+    </svg>
+    <figcaption>上半不管訊號內容，固定每隔幾秒切一段，相鄰的段落互相重疊；下半先偵測每一個 R 波，再以它為中心切出單一心跳，所有樣本天然對齊。</figcaption>
+  </figure>
+
+  <table>
+    <tr><th>切法</th><th>適合的問題</th><th>典型長度</th></tr>
+    <tr><td>固定窗</td><td>一段時間的整體表現：心律不整、睡眠分期、併發症風險</td><td>5–10 秒；心率變異需 5 分鐘</td></tr>
+    <tr><td>事件對齊</td><td>單次事件的形狀：異位搏動、波形異常</td><td>R 波前 250 毫秒、後 400 毫秒</td></tr>
+  </table>
+
+  <p>兩者可以合用：先以事件對齊算出每一下心跳的特徵，再用固定窗把一段時間內的心跳統計起來。心率變異分析走的就是這個邏輯。</p>
+
+  <div class="note">
+    <b>一個必須從臨床端確認的問題。</b>固定窗切完之後，每一段的標籤要從原始標註推導出來，常見的規則是「窗內只要出現事件就算陽性」。但窗開多長、事件只出現在邊緣算不算、品質太差的段落要不要整段剔除，這些都會改變陽性的定義，也會改變最後報出來的數字代表什麼。這部分需要臨床的判斷，不是技術面能單獨決定的。
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <h2><em>四</em>頻域轉換的三種方法</h2>
+  <p class="lede">把訊號換成「由哪些頻率組成」的方式有好幾種。差別在於：轉換之後，還保留多少「這件事發生在第幾秒」的資訊。</p>
+
+  <h3>傅立葉轉換：整段一次算完</h3>
+  <p>把整段訊號拆成各個頻率的強度，也就是第一章那張圖做的事。最單純，但轉換完之後時間資訊完全消失——我們會知道訊號裡有 10 Hz 的成分，卻不知道它是從頭到尾都在，還是只出現在中間三秒。</p>
+  <p>所以它適合穩定、性質不太隨時間改變的訊號。心律不整、發作性事件這類「會變化」的情況，它就不夠用了。</p>
+
+  <h3>短時距轉換：切成小段，一段一段算</h3>
+  <p>做法很直覺：既然整段算會失去時間資訊，那就切成很多小段，每一小段各算一次，再把結果並排起來。</p>
+  <p>下圖的波形是一段<strong>愈來愈快</strong>的訊號。單看波形能感覺到右邊比較密，但說不出快了多少；把它切成六段、每段各算一次頻率組成之後，就變成下半那張圖。</p>
+
+  <figure>
+    <svg viewBox="0 0 680 300" role="img" aria-label="一段由慢漸快的波形，以及它切段之後對應的時頻圖">
+      <polyline fill="none" stroke="#0F6E56" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"
+        points="100,70 110,64.8 120,59.5 130,54.7 140,50.9 150,48.5 160,48.1 170,50.0 180,54.2 190,60.7 200,68.7 210,77.1 220,84.6 230,90.2 240,92.0 250,90.0 260,83.1 270,73.2 280,62.5 290,53.3 300,48.4 310,49.4 320,56.5 330,68.2 340,80.8 350,89.6 360,91.7 370,85.6 380,73.0 390,59.0 400,49.5 410,49.2 420,59.0 430,74.0 440,87.4 450,91.9 460,84.5 470,68.1 480,53.0 490,48.2 500,57.3 510,74.9 520,89.4 530,90.4 540,76.6 550,57.4 560,48.0 570,56.2 580,75.9 590,90.8 600,87.7 610,68.5 620,50.6 630,51.0 640,70"/>
+      <text class="fig-t" x="100" y="34">拆解前：一段愈來愈快的訊號</text>
+      <g stroke="#C9CFCD" stroke-width="1" stroke-dasharray="3 4">
+        <line x1="190" y1="46" x2="190" y2="132"/><line x1="280" y1="46" x2="280" y2="132"/>
+        <line x1="370" y1="46" x2="370" y2="132"/><line x1="460" y1="46" x2="460" y2="132"/>
+        <line x1="550" y1="46" x2="550" y2="132"/>
+      </g>
+      <text class="fig-t" x="100" y="152">拆解後：每一段各自的頻率組成，並排起來</text>
+
+      <g stroke="#FBFAF7" stroke-width="2">
+        <rect x="100" y="162" width="90" height="30" fill="#EDEFEE"/><rect x="190" y="162" width="90" height="30" fill="#EDEFEE"/><rect x="280" y="162" width="90" height="30" fill="#EDEFEE"/><rect x="370" y="162" width="90" height="30" fill="#EDEFEE"/><rect x="460" y="162" width="90" height="30" fill="#B5D3C8"/><rect x="550" y="162" width="90" height="30" fill="#0F6E56"/>
+        <rect x="100" y="192" width="90" height="30" fill="#EDEFEE"/><rect x="190" y="192" width="90" height="30" fill="#EDEFEE"/><rect x="280" y="192" width="90" height="30" fill="#B5D3C8"/><rect x="370" y="192" width="90" height="30" fill="#0F6E56"/><rect x="460" y="192" width="90" height="30" fill="#7FBFA8"/><rect x="550" y="192" width="90" height="30" fill="#B5D3C8"/>
+        <rect x="100" y="222" width="90" height="30" fill="#B5D3C8"/><rect x="190" y="222" width="90" height="30" fill="#0F6E56"/><rect x="280" y="222" width="90" height="30" fill="#7FBFA8"/><rect x="370" y="222" width="90" height="30" fill="#B5D3C8"/><rect x="460" y="222" width="90" height="30" fill="#EDEFEE"/><rect x="550" y="222" width="90" height="30" fill="#EDEFEE"/>
+        <rect x="100" y="252" width="90" height="30" fill="#0F6E56"/><rect x="190" y="252" width="90" height="30" fill="#B5D3C8"/><rect x="280" y="252" width="90" height="30" fill="#EDEFEE"/><rect x="370" y="252" width="90" height="30" fill="#EDEFEE"/><rect x="460" y="252" width="90" height="30" fill="#EDEFEE"/><rect x="550" y="252" width="90" height="30" fill="#EDEFEE"/>
+      </g>
+      <text class="fig-t" x="92" y="180" text-anchor="end">快</text>
+      <text class="fig-t" x="92" y="270" text-anchor="end">慢</text>
+      <text class="fig-t" x="370" y="296" text-anchor="middle">時間</text>
+    </svg>
+    <figcaption>下半每一直行是一小段時間，每一橫列是一種快慢，顏色深代表該段時間內這個快慢的成分很強。深色從左下往右上爬升，就直接看出「訊號愈來愈快」。這張圖稱為時頻圖，可以當成一張影像來處理。</figcaption>
+  </figure>
+
+  <p>代價是：切得愈短，時間定位愈準，但每一小段裡能分辨的頻率就愈粗糙；切得愈長則相反。這個取捨沒辦法兩全，而且<strong>一旦選定窗長，整張圖的格子大小就固定了</strong>——不管是慢的成分還是快的成分，都用同一個尺度去看。</p>
+
+  <h3>小波轉換：拆成不同快慢的幾層</h3>
+  <p>小波換了一個思路：不是切時間，而是<strong>把訊號拆成好幾層，每一層負責一種快慢</strong>。</p>
+
+  <figure>
+    <svg viewBox="0 0 680 340" role="img" aria-label="一段混合波形被拆解成慢、中、快三個成分">
+      <text class="fig-t" x="100" y="32">拆解前：實際錄到的波形</text>
+      <polyline fill="none" stroke="#0F6E56" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"
+        points="100,70.0 110,59.8 120,60.4 130,56.9 140,48.7 150,52.0 160,58.0 170,54.7 180,56.0 190,63.9 200,61.5 210,55.6 220,57.5 230,55.4 240,44.8 250,43.2 260,46.6 270,41.7 280,41.4 290,52.0 300,56.3 310,56.3 320,66.0 330,73.3 340,69.4 350,70.5 360,75.7 370,70.0 380,64.3 390,69.5 400,70.6 410,66.7 420,74.0 430,83.7 440,83.7 450,88.0 460,98.6 470,98.3 480,93.4 490,96.8 500,95.2 510,84.6 520,82.5 530,84.4 540,78.5 550,76.1 560,84.0 570,85.3 580,82.0 590,88.0 600,91.3 610,83.1 620,79.6 630,80.2 640,70.0"/>
+      <line x1="100" y1="120" x2="640" y2="120" stroke="#DFE3E1" stroke-width="1"/>
+      <text class="fig-t" x="100" y="148">拆解後：三個不同快慢的層次疊起來，就是上面那條線</text>
+
+      <text class="fig-t" x="100" y="176" fill="#4A42A8">慢　整體趨勢</text>
+      <polyline fill="none" stroke="#4A42A8" stroke-width="1.7" stroke-linejoin="round"
+        points="100,195 120,191.3 140,187.8 160,184.7 180,182.2 200,180.3 220,179.2 240,179.0 260,179.7 280,181.1 300,183.4 320,186.2 340,189.5 360,193.1 380,196.9 400,200.5 420,203.8 440,206.6 460,208.9 480,210.3 500,211.0 520,210.8 540,209.7 560,207.8 580,205.3 600,202.2 620,198.7 640,195"/>
+
+      <text class="fig-t" x="100" y="234" fill="#0F6E56">中　主要節律</text>
+      <polyline fill="none" stroke="#0F6E56" stroke-width="1.7" stroke-linejoin="round"
+        points="100,253.0 110,249.0 120,245.8 130,244.1 140,244.4 150,246.5 160,249.9 170,254.0 180,258.0 190,260.8 200,262.0 210,261.2 220,258.8 230,255.1 240,250.9 250,247.2 260,244.7 270,244.0 280,245.2 290,248.1 300,252.0 310,256.1 320,259.5 330,261.6 340,261.9 350,260.3 360,257.2 370,253.0 380,249.0 390,245.8 400,244.1 410,244.4 420,246.5 430,249.9 440,254.0 450,258.0 460,260.8 470,262.0 480,261.2 490,258.8 500,255.1 510,250.9 520,247.2 530,244.7 540,244.0 550,245.2 560,248.1 570,252.0 580,256.1 590,259.5 600,261.6 610,261.9 620,260.3 630,257.2 640,253.0"/>
+
+      <text class="fig-t" x="100" y="292" fill="#A8690F">快　細節與雜訊</text>
+      <polyline fill="none" stroke="#A8690F" stroke-width="1.5" stroke-linejoin="round"
+        points="100,308 108.4,304.5 116.9,303 125.3,304.5 133.8,308 142.2,311.5 150.6,313 159.1,311.5 167.5,308 175.9,304.5 184.4,303 192.8,304.5 201.3,308 209.7,311.5 218.1,313 226.6,311.5 235,308 243.4,304.5 251.9,303 260.3,304.5 268.8,308 277.2,311.5 285.6,313 294.1,311.5 302.5,308 310.9,304.5 319.4,303 327.8,304.5 336.3,308 344.7,311.5 353.1,313 361.6,311.5 370,308 378.4,304.5 386.9,303 395.3,304.5 403.8,308 412.2,311.5 420.6,313 429.1,311.5 437.5,308 445.9,304.5 454.4,303 462.8,304.5 471.3,308 479.7,311.5 488.1,313 496.6,311.5 505,308 513.4,304.5 521.9,303 530.3,304.5 538.8,308 547.2,311.5 555.6,313 564.1,311.5 572.5,308 580.9,304.5 589.4,303 597.8,304.5 606.3,308 614.7,311.5 623.1,313 631.6,311.5 640,308"/>
+    </svg>
+    <figcaption>上面那條看起來雜亂的波形，其實是下面三條加起來的結果。小波把它們一層一層剝開，最慢的一層就是基線走向，最快的一層通常就是雜訊——想去雜訊，把最快那層丟掉再加回來即可。</figcaption>
+  </figure>
+
+  <p>這種拆法有一個很實用的性質：<strong>慢的層用長的尺度去看，快的層用短的尺度去看</strong>。因為慢的成分本來就不需要精準的時間定位（基線漂移不會突然發生），而快的成分往往是短促的事件（一個尖峰、一次干擾），需要知道它落在哪裡。</p>
+  <p>這正好符合生理訊號的特性，所以小波在去雜訊和抓 QRS 位置上特別常用。</p>
+
+  <details class="more">
+    <summary>小波實際上是怎麼運作的</summary>
+    <div class="body">
+      <p>小波本身是一小段<strong>有頭有尾的波形</strong>，是數學上事先定義好的固定形狀，不是從資料學出來的。這是它跟正弦波最大的差別：正弦波無限延伸，只能說「有沒有這個頻率」；小波是局部的，所以能同時說出「有沒有」和「在哪裡」。</p>
+      <p>做法是把這個樣板<strong>拉寬或壓窄</strong>，然後沿著訊號滑過去，每個位置算一次「像不像」。</p>
+
+      <figure>
+        <svg viewBox="0 0 680 360" role="img" aria-label="小波樣板以三種寬度掃過訊號">
+          <defs><g id="wv"><polyline fill="none" stroke="currentColor" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round" points="-30,1.8 -25,4.6 -20,8.1 -15,8.1 -10,0 -5,-13.2 0,-20 5,-13.2 10,0 15,8.1 20,8.1 25,4.6 30,1.8"/></g></defs>
+          <text class="fig-t" x="80" y="26">一段訊號：有緩慢的起伏，也有一個短促的尖峰</text>
+          <polyline fill="none" stroke="#5E6B70" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" points="80,70 100,64.1 120,58.8 140,54.8 160,52.4 180,52.1 200,53.8 220,57.3 240,62.2 260,68.0 280,74.0 300,79.6 320,84.1 340,87.0 360,88.0 380,87.0 400,84.1 420,79.6 432,76 436,38 440,100 444,74 460,68.0 480,62.2 500,57.3 520,53.8 540,52.1 560,52.4 580,54.8 600,58.8 620,64.1 640,70"/>
+          <text class="fig-t" x="80" y="140" fill="#4A42A8">樣板拉寬：對上慢的起伏</text>
+          <g color="#A9A3E0"><use href="#wv" transform="translate(180,172) scale(3,1)"/><use href="#wv" transform="translate(540,172) scale(3,1)"/></g>
+          <g color="#4A42A8"><use href="#wv" transform="translate(360,172) scale(3,1)"/></g>
+          <text class="fig-t" x="80" y="212" fill="#0F6E56">中等寬度：兩邊都不太像</text>
+          <g color="#7FBFA8"><use href="#wv" transform="translate(125,244) scale(1.5,1)"/><use href="#wv" transform="translate(215,244) scale(1.5,1)"/><use href="#wv" transform="translate(305,244) scale(1.5,1)"/><use href="#wv" transform="translate(395,244) scale(1.5,1)"/><use href="#wv" transform="translate(485,244) scale(1.5,1)"/><use href="#wv" transform="translate(575,244) scale(1.5,1)"/></g>
+          <text class="fig-t" x="80" y="284" fill="#A8690F">樣板壓窄：對上短促的尖峰</text>
+          <g color="#E3C79B"><use href="#wv" transform="translate(125,316) scale(0.75,1)"/><use href="#wv" transform="translate(170,316) scale(0.75,1)"/><use href="#wv" transform="translate(215,316) scale(0.75,1)"/><use href="#wv" transform="translate(260,316) scale(0.75,1)"/><use href="#wv" transform="translate(305,316) scale(0.75,1)"/><use href="#wv" transform="translate(350,316) scale(0.75,1)"/><use href="#wv" transform="translate(395,316) scale(0.75,1)"/><use href="#wv" transform="translate(485,316) scale(0.75,1)"/><use href="#wv" transform="translate(530,316) scale(0.75,1)"/><use href="#wv" transform="translate(575,316) scale(0.75,1)"/><use href="#wv" transform="translate(620,316) scale(0.75,1)"/></g>
+          <g color="#A8690F"><use href="#wv" transform="translate(440,316) scale(0.75,1)"/></g>
+          <line x1="438" y1="104" x2="438" y2="292" stroke="#A8690F" stroke-width="0.9" stroke-dasharray="3 4"/>
+        </svg>
+        <figcaption>同一個樣板，三種寬度。寬的與緩慢的起伏相符，窄的與那個尖峰相符。每個位置算出來的「像不像」分數就是一個係數。</figcaption>
+      </figure>
+
+      <p>把所有寬度、所有位置的係數排起來，就是前面那張格子圖。<strong>格子大小不一樣的原因也在這裡</strong>：樣板拉得愈寬，涵蓋的時間範圍愈長，就說不出事件確切落在第幾毫秒；壓得愈窄，時間定位愈準，但分辨頻率的能力愈粗糙。</p>
+      <p>樣板的形狀有一整個型錄可以挑，常見的有 Daubechies、Symlet、Morlet 等。選擇原則是<strong>挑一個長得像你要找的東西的樣板</strong>——想抓 QRS，就選形狀接近尖銳雙向擺動的那幾種。</p>
+    </div>
+  </details>
+
+  <h3>三者的差別，一句話</h3>
+  <div class="trio">
+    <div>
+      <svg viewBox="0 0 150 80" role="img" aria-label="整段訊號的頻譜示意">
+        <line x1="8" y1="70" x2="142" y2="70" stroke="#B8C6CC" stroke-width="1"/>
+        <rect x="30" y="22" width="9" height="48" fill="#0F6E56"/>
+        <rect x="62" y="44" width="9" height="26" fill="#0F6E56"/>
+        <rect x="86" y="60" width="9" height="10" fill="#C3CAC7"/>
+        <rect x="110" y="63" width="9" height="7" fill="#C3CAC7"/>
+      </svg>
+      <h4>傅立葉轉換</h4>
+      <p>只有頻率，沒有時間。適合性質穩定、不隨時間改變的訊號。</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 150 80" role="img" aria-label="時頻圖的等大小格子示意">
+        <g stroke="#FBFAF7" stroke-width="1.5">
+          <rect x="8" y="8" width="22" height="15" fill="#DCEFE8"/><rect x="30" y="8" width="22" height="15" fill="#DCEFE8"/><rect x="52" y="8" width="22" height="15" fill="#DCEFE8"/><rect x="74" y="8" width="22" height="15" fill="#B5D3C8"/><rect x="96" y="8" width="22" height="15" fill="#0F6E56"/><rect x="118" y="8" width="24" height="15" fill="#0F6E56"/>
+          <rect x="8" y="23" width="22" height="15" fill="#DCEFE8"/><rect x="30" y="23" width="22" height="15" fill="#B5D3C8"/><rect x="52" y="23" width="22" height="15" fill="#0F6E56"/><rect x="74" y="23" width="22" height="15" fill="#7FBFA8"/><rect x="96" y="23" width="22" height="15" fill="#B5D3C8"/><rect x="118" y="23" width="24" height="15" fill="#DCEFE8"/>
+          <rect x="8" y="38" width="22" height="15" fill="#B5D3C8"/><rect x="30" y="38" width="22" height="15" fill="#0F6E56"/><rect x="52" y="38" width="22" height="15" fill="#7FBFA8"/><rect x="74" y="38" width="22" height="15" fill="#DCEFE8"/><rect x="96" y="38" width="22" height="15" fill="#DCEFE8"/><rect x="118" y="38" width="24" height="15" fill="#DCEFE8"/>
+          <rect x="8" y="53" width="22" height="17" fill="#0F6E56"/><rect x="30" y="53" width="22" height="17" fill="#B5D3C8"/><rect x="52" y="53" width="22" height="17" fill="#DCEFE8"/><rect x="74" y="53" width="22" height="17" fill="#DCEFE8"/><rect x="96" y="53" width="22" height="17" fill="#DCEFE8"/><rect x="118" y="53" width="24" height="17" fill="#DCEFE8"/>
+        </g>
+      </svg>
+      <h4>短時距轉換</h4>
+      <p>時間與頻率兼顧，但格子大小固定，快慢成分用同一把尺去看。</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 150 80" role="img" aria-label="小波轉換的不等大小格子示意">
+        <g stroke="#FBFAF7" stroke-width="1.5">
+          <rect x="8" y="8" width="17" height="15" fill="#F7EBD6"/><rect x="25" y="8" width="17" height="15" fill="#E3C79B"/><rect x="42" y="8" width="17" height="15" fill="#F7EBD6"/><rect x="59" y="8" width="17" height="15" fill="#A8690F"/><rect x="76" y="8" width="17" height="15" fill="#F7EBD6"/><rect x="93" y="8" width="17" height="15" fill="#E3C79B"/><rect x="110" y="8" width="16" height="15" fill="#F7EBD6"/><rect x="126" y="8" width="16" height="15" fill="#A8690F"/>
+          <rect x="8" y="23" width="34" height="17" fill="#DCEFE8"/><rect x="42" y="23" width="34" height="17" fill="#0F6E56"/><rect x="76" y="23" width="34" height="17" fill="#B5D3C8"/><rect x="110" y="23" width="32" height="17" fill="#DCEFE8"/>
+          <rect x="8" y="40" width="67" height="14" fill="#B5D3C8"/><rect x="75" y="40" width="67" height="14" fill="#DCEFE8"/>
+          <rect x="8" y="54" width="134" height="16" fill="#E8E6F8"/>
+        </g>
+      </svg>
+      <h4>小波轉換</h4>
+      <p>格子大小隨快慢改變：慢的看得細，快的定位準。最貼近生理訊號的特性。</p>
+    </div>
+  </div>
+
+  <p style="margin-top:32px">這三種不是互斥的。同一段訊號可以先用小波去雜訊，再用傅立葉算整段的頻率組成，最後用短時距轉換畫成時頻圖交給模型。</p>
+
+  <h3>轉換之後可以做什麼</h3>
+  <p>轉換完並不是只能拿去萃取特徵。這些轉換大多是<strong>可逆的</strong>——可以改動之後再轉回原本的波形，這也是它們最有用的性質之一。</p>
+  <table class="wide">
+    <tr><th>做法</th><th>說明</th><th>典型用途</th></tr>
+    <tr><td>萃取特徵</td><td>從係數整理出少數幾個代表性的數值</td><td>各頻帶能量、低高頻比值</td></tr>
+    <tr><td>改係數再逆轉換</td><td>把某些係數歸零或壓低，然後做逆轉換，得到一段修改過的訊號</td><td>去雜訊、去除偽跡、分離成分</td></tr>
+    <tr><td>在係數上定位</td><td>不轉回波形，直接在係數裡找特別強的位置</td><td>R 波偵測、事件定位</td></tr>
+    <tr><td>當成影像</td><td>時頻圖有橫軸、縱軸與強度，結構上就是一張圖</td><td>交給影像類的深度模型</td></tr>
+    <tr><td>丟掉小的係數</td><td>只保留少數重要的係數，波形幾乎看不出差別</td><td>長時間紀錄的壓縮儲存</td></tr>
+  </table>
+  <p style="margin-top:20px">第二列值得特別留意。傳統濾波是「整段紀錄、所有時間，一律砍掉某個頻段」；改係數的做法則可以只在雜訊出現的那幾個瞬間動手，因為係數同時帶有時間與頻率的資訊。想去掉肌電雜訊又不想把 QRS 磨鈍時，這個差別很關鍵。</p>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <h2><em>五</em>分析路線的兩個選擇</h2>
+  <p class="lede">前處理做完之後，接下來有兩個彼此獨立的決定：訊號要用什麼形式表示，以及要用什麼模型。這兩個可以自由組合。</p>
+
+  <figure>
+    <svg viewBox="0 0 680 300" role="img" aria-label="訊號表示方式與模型選擇的四種組合">
+      <text class="fig-kw" x="310" y="52" text-anchor="middle" fill="#17262B">人工特徵 ＋ 傳統統計模型</text>
+      <text class="fig-kw" x="540" y="52" text-anchor="middle" fill="#17262B">深度學習模型</text>
+      <text class="fig-kw" x="185" y="130" text-anchor="end" fill="#17262B">時域波形</text>
+      <text class="fig-kw" x="185" y="240" text-anchor="end" fill="#17262B">頻域／時頻圖</text>
+
+      <rect x="200" y="80" width="220" height="90" rx="6" fill="#DCEFE8" stroke="#7FBFA8" stroke-width="1"/>
+      <text class="fig-kw" x="310" y="118" text-anchor="middle" fill="#0F6E56">形態與節律指標</text>
+      <text class="fig-t" x="310" y="140" text-anchor="middle" fill="#0F6E56">RR 間期、波幅、心率變異</text>
+
+      <rect x="440" y="80" width="200" height="90" rx="6" fill="#EDEFEE" stroke="#CBD2D0" stroke-width="1"/>
+      <text class="fig-kw" x="540" y="118" text-anchor="middle" fill="#41545B">一維卷積網路</text>
+      <text class="fig-t" x="540" y="140" text-anchor="middle" fill="#41545B">直接讀原始波形</text>
+
+      <rect x="200" y="190" width="220" height="90" rx="6" fill="#E8E6F8" stroke="#A9A3E0" stroke-width="1"/>
+      <text class="fig-kw" x="310" y="228" text-anchor="middle" fill="#4A42A8">頻譜指標</text>
+      <text class="fig-t" x="310" y="250" text-anchor="middle" fill="#4A42A8">各頻帶能量、低高頻比值</text>
+
+      <rect x="440" y="190" width="200" height="90" rx="6" fill="#EDEFEE" stroke="#CBD2D0" stroke-width="1"/>
+      <text class="fig-kw" x="540" y="228" text-anchor="middle" fill="#41545B">二維卷積網路</text>
+      <text class="fig-t" x="540" y="250" text-anchor="middle" fill="#41545B">把時頻圖當成影像</text>
+    </svg>
+    <figcaption>左欄的產出是臨床上有名字、有文獻、看得懂的數值；右欄由模型自行從資料中找出判別依據，通常準確率較高，但很難說明它看的是什麼。</figcaption>
+  </figure>
+
+  <p class="q">這兩欄的差別不只是技術偏好，而是「模型要能被解釋」和「模型要準」之間的取捨。</p>
+
+  <p>在資料量有限、而且結果需要向臨床說明的情境下，左欄通常是比較合適的主線：產出的指標有既有文獻可以對照，也能進一步整理成可讀的規則。右欄則適合當作對照組，用來估計「如果完全不要求可解釋，準確率的上限在哪裡」。如果兩邊差距很小，就代表人工指標已經抓到了大部分的資訊。</p>
+</section>
+
+<footer>本講義僅涵蓋概念層面，實作參數與驗證設計另行討論。</footer>
+
+</main>
+</div>
+</div>
+</body>
+</html>
