@@ -51,4 +51,4 @@ tags: ['probability-distribution']
 ## 相關概念
 - [[Chi-square test]] — 卡方分布本身就是一種 PDF
 - [[Poisson 分布是連續單位下事件發生次數的機率分布]] — 離散分布的 PDF 形式
-- [[二項分布是離散單位下事件發生次數的機率分布]] — 離散事件的機率分布
+- [[Bernoulli 2 binomial 2 Poisson distribution]] — 離散事件的機率分布

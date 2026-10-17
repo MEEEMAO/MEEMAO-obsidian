@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>重複事件分析講義：五種模型怎麼理解、怎麼選</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f5f7f9; --surface:#ffffff; --ink:#17212b; --muted:#566474; --line:#d9e0e7;
+  --accent:#0b6e8a; --accent-soft:#e1f1f6; --amber:#8a5a00; --amber-soft:#fbf1da;
+  --seg-a:#0b6e8a; --seg-b:#6aa9bd; --sig:#0b6e8a; --code-bg:#eef2f5;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0f161d; --surface:#17212b; --ink:#e6edf3; --muted:#9aa9b8; --line:#2a3744;
+    --accent:#5cc3de; --accent-soft:#12303a; --amber:#e6b94a; --amber-soft:#2b2410;
+    --seg-a:#5cc3de; --seg-b:#2f7d93; --sig:#5cc3de; --code-bg:#1d2a35;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0f161d; --surface:#17212b; --ink:#e6edf3; --muted:#9aa9b8; --line:#2a3744;
+  --accent:#5cc3de; --accent-soft:#12303a; --amber:#e6b94a; --amber-soft:#2b2410;
+  --seg-a:#5cc3de; --seg-b:#2f7d93; --sig:#5cc3de; --code-bg:#1d2a35;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px);scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.85 var(--sans);-webkit-text-size-adjust:100%}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.shell{max-width:1140px;margin:0 auto;display:grid;grid-template-columns:190px minmax(0,1fr);gap:48px;padding:0 24px}
+nav.toc{position:sticky;top:24px;align-self:start;padding:32px 0;font-size:14px;line-height:1.5}
+nav.toc a{display:block;padding:7px 0 7px 12px;color:var(--muted);text-decoration:none;border-left:2px solid var(--line)}
+nav.toc a:hover{color:var(--ink)}
+nav.toc a.on{color:var(--ink);border-left-color:var(--accent);font-weight:500}
+main{min-width:0;max-width:760px;padding-bottom:96px}
+
+header.hero{padding:56px 0 24px}
+header.hero h1{font:700 clamp(30px,5vw,46px)/1.25 var(--serif);margin:0 0 14px;letter-spacing:.01em}
+header.hero p.sub{font-size:18px;color:var(--muted);margin:0 0 22px}
+.meta{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+
+section{padding-top:56px}
+h2{font:700 clamp(23px,3.4vw,30px)/1.35 var(--serif);margin:0 0 18px}
+h3{font:600 19px/1.5 var(--serif);margin:32px 0 10px}
+p{margin:0 0 14px}
+ul,ol{padding-left:1.3em;margin:0 0 14px}
+li{margin-bottom:6px}
+strong{font-weight:700}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--code-bg);padding:.1em .4em;border-radius:4px}
+
+.box{border-left:4px solid var(--accent);background:var(--accent-soft);padding:14px 18px;border-radius:0 8px 8px 0;margin:20px 0}
+.box.warn{border-left-color:var(--amber);background:var(--amber-soft)}
+.box.extra{border-left-color:var(--muted);background:var(--code-bg)}
+.box b.t{display:block;margin-bottom:4px}
+.box p:last-child,.box ul:last-child{margin-bottom:0}
+
+.tablewrap{overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;line-height:1.6}
+th,td{padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{font-weight:700;background:var(--code-bg);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tablewrap.cmp table{min-width:760px}
+.tablewrap.cmp td:first-child{font-weight:700;white-space:nowrap}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;margin:22px 0}
+.panel h3{margin-top:0}
+
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+.seg button{font:inherit;font-size:14px;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.seg button[aria-selected="true"],.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .seg button[aria-selected="true"],:root:not([data-theme="light"]) .seg button[aria-pressed="true"]{color:#06222b}}
+:root[data-theme="dark"] .seg button[aria-selected="true"],:root[data-theme="dark"] .seg button[aria-pressed="true"]{color:#06222b}
+
+select{font:inherit;font-size:14px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);max-width:100%}
+label.sel{font-size:14px;color:var(--muted);margin-right:10px;display:inline-block;margin-bottom:8px}
+
+svg{display:block;max-width:100%;height:auto}
+svg text{font-family:var(--sans);fill:var(--muted)}
+.axis{stroke:var(--line)}
+.caption{font-size:14px;color:var(--muted);margin-top:10px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card b{display:block;margin-bottom:4px}
+.card p{font-size:14.5px;line-height:1.7;margin:0}
+dl.terms{margin:0}
+dl.terms dt{font-weight:700;margin-top:16px}
+dl.terms dd{margin:2px 0 0;color:var(--ink)}
+
+.mdl dl{display:grid;grid-template-columns:7.5em 1fr;gap:10px 14px;margin:0}
+.mdl dt{font-weight:700;color:var(--muted);font-size:14.5px}
+.mdl dd{margin:0}
+.tagline{font:600 18px/1.6 var(--serif);margin:0 0 14px}
+
+details{background:var(--surface);border:1px solid var(--line);border-radius:8px;margin:10px 0;padding:0 16px}
+summary{cursor:pointer;padding:12px 0;font-weight:500}
+details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
+details p{font-size:15px}
+
+.result{margin-top:14px;padding:16px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--line)}
+.result h4{margin:0 0 6px;font:700 18px/1.5 var(--serif)}
+.result p{margin-bottom:8px;font-size:15px}
+.result p:last-child{margin-bottom:0}
+
+pre{background:var(--code-bg);padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.65;margin:12px 0}
+pre code{background:none;padding:0}
+
+footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+
+@media (max-width:880px){
+  .shell{display:block;padding:0 18px}
+  nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;display:flex;gap:4px;overflow-x:auto;background:var(--bg);padding:8px 18px;margin:0 -18px;border-bottom:1px solid var(--line);white-space:nowrap}
+  nav.toc a{border-left:0;border-bottom:2px solid transparent;padding:6px 10px}
+  nav.toc a.on{border-bottom-color:var(--accent)}
+  header.hero{padding-top:32px}
+  .grid2{grid-template-columns:1fr}
+  .mdl dl{grid-template-columns:1fr;gap:2px}
+  .mdl dd{margin-bottom:10px}
+}
+
+.formula{font:400 19px/1.9 var(--serif);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;overflow-x:auto;text-align:center}
+.formula i{font-style:italic}
+.stT{font:700 18px/1.5 var(--serif);margin:6px 0 8px}
+ul.stL{list-style:none;padding:0;margin:8px 0 6px;font-size:14.5px}
+ul.stL li{display:grid;grid-template-columns:7.5em 1fr;gap:10px;margin-bottom:4px}
+ul.stL b{font-family:var(--serif);font-weight:600}
+.navbtns{display:flex;gap:8px;margin-top:10px}
+.navbtns button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.navbtns button:disabled{opacity:.4;cursor:default}
+@media (max-width:880px){ul.stL li{grid-template-columns:1fr;gap:0}}
+
+.part{font:700 clamp(20px,3vw,26px)/1.4 var(--serif);color:var(--accent);padding:0 0 10px;margin-bottom:22px;border-bottom:2px solid var(--accent)}
+nav.toc .grp{display:block;font-size:12.5px;color:var(--muted);margin:18px 0 4px;padding-left:12px;font-weight:700}
+nav.toc .grp:first-child{margin-top:0}
+@media (max-width:880px){nav.toc .grp{display:inline-block;margin:0 4px;padding:6px 8px;border-left:2px solid var(--line);align-self:center}nav.toc .grp:first-child{border-left:0}}
+
+.panel h4,.calcT{font:600 16.5px/1.5 var(--serif);margin:20px 0 6px}
+.calc table{min-width:660px}
+.calc tr.no td{opacity:.55}
+.calc td:nth-child(4){white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="toc" aria-label="章節">
+  <span class="grp">第一部分　背景與模型</span>
+  <a href="#basics">存活分析基礎</a>
+  <a href="#why">為什麼要特別處理</a>
+  <a href="#concepts">核心概念</a>
+  <a href="#models">五個模型</a>
+  <a href="#compare">比較與選擇</a>
+  <span class="grp">第二部分　這篇論文</span>
+  <a href="#paper">論文導讀</a>
+  <a href="#cases">兩個實例</a>
+  <a href="#software">軟體與資料格式</a>
+  <a href="#cautions">限制與提醒</a>
+  <a href="#quiz">自我檢測</a>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>重複事件的存活分析</h1>
+  <p class="sub">先從頭建立背景知識，認識處理「同一個人多次事件」的五種模型，最後才帶到這篇論文怎麼使用它們。</p>
+  <div class="meta">改編自：Amorim LDAF &amp; Cai J. <i>Modelling recurrent events: a tutorial for analysis in epidemiology.</i> Int J Epidemiol 2015;44(1):324–333</div>
+
+  <div class="box">
+    <b class="t">閱讀地圖</b>
+    <ol>
+      <li><strong>第一部分：背景知識與模型介紹</strong>（不涉及論文）：<a href="#basics">存活分析基礎</a> → <a href="#why">為什麼要特別處理重複事件</a> → <a href="#concepts">核心概念</a> → <a href="#models">五個模型</a> → <a href="#compare">比較</a>與<a href="#choose">選擇</a>。</li>
+      <li><strong>第二部分：這篇論文</strong>：<a href="#paper">論文導讀</a> → <a href="#cases">兩個實例</a> → <a href="#software">軟體與資料格式</a> → <a href="#cautions">限制與提醒</a> → <a href="#quiz">自我檢測</a>。</li>
+    </ol>
+  </div>
+  <div class="box extra">
+    <b class="t">標記方式</b>
+    <p>第一部分是為了幫助理解而用我自己的話整理的通用背景，不是論文原文。第二部分才依論文內容整理。灰底的「補充」是額外說明，同樣<strong>不是論文原文</strong>，請與原文分開看待。論文的附錄（資料格式與各軟體語法）沒有附在你上傳的檔案中。</p>
+  </div>
+</header>
+
+<section id="basics">
+  <div class="part">第一部分　背景知識與模型介紹</div>
+  <h2>存活分析基礎</h2>
+
+
+    <h3>1. 存活分析在分析什麼資料</h3>
+    <p>存活分析是一整類方法，用來分析<strong>「從某個起點到事件發生，經過了多久」</strong>。這裡的「存活」不一定指生死，事件可以是死亡、癌症復發、住院、感染，也可以是機器故障。</p>
+    <p>每個人在資料裡只留下兩個數字：<strong>時間</strong>，以及<strong>結果（status）</strong>：事件發生了（1），或是被<strong>設限</strong>（0）。設限是指追蹤結束、或病人中途失聯時，我們只知道「到那時為止還沒發生事件」，至於之後會不會發生，並不知道。</p>
+    <div class="box warn">
+      <b class="t">為什麼不能用一般的平均數或迴歸</b>
+      <p>設限的人不能直接丟掉（那是浪費資訊，還會讓結果偏向早發生事件的人），也不能當成「事件已發生」（他們其實可能還活得好好的）。存活分析的價值，就是能<strong>把設限的人在「還被觀察到的那段時間」裡貢獻的資訊用上</strong>。</p>
+    </div>
+
+    <h3>2. 兩個最基本的概念</h3>
+    <dl class="terms">
+      <dt>存活函數 S(t)</dt>
+      <dd>到時間 t 為止，還沒發生事件的人所佔的比例。一開始是 1（100%），隨時間只會下降或持平。</dd>
+      <dt>風險函數 h(t)（hazard）</dt>
+      <dd>到時間 t 還沒發生事件的人，在這一刻之後極短的時間內發生事件的速率。你可以把它想成「此刻的瞬間風險」：風險高的時期，存活曲線下降得快。</dd>
+    </dl>
+
+    <h3>3. 三種常見方法：用同一份 5 人資料一次看完</h3>
+    <p>三種方法回答的問題不同。為了看得出差別，下面全部用同一份很小的資料（自編示範，單位：月）。x 是「治療」這個共變項（1＝治療組，0＝對照組），Cox 與 log-rank 會用到。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>人</th><th class="num">時間</th><th>結果</th><th class="num">治療 x</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td class="num">2</td><td>事件</td><td class="num">0</td></tr>
+          <tr><td>B</td><td class="num">3</td><td>設限</td><td class="num">1</td></tr>
+          <tr><td>C</td><td class="num">5</td><td>事件</td><td class="num">1</td></tr>
+          <tr><td>D</td><td class="num">6</td><td>設限</td><td class="num">0</td></tr>
+          <tr><td>E</td><td class="num">8</td><td>事件</td><td class="num">1</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="figData"></div>
+    <p class="caption">方塊＝事件，空心圓＝設限；每個人都從時間 0 開始被追蹤。</p>
+
+    <div class="panel">
+      <div class="stT">A. Kaplan–Meier 曲線與 log-rank 檢定：先看一眼、比較兩組</div>
+      <p><strong>做什麼：</strong>Kaplan–Meier（KM）估計並畫出存活函數 S(t)，是階梯狀曲線：每次有人發生事件，曲線往下一階；設限的人只是默默離開風險集，曲線不下降。log-rank 檢定則檢驗兩組的存活曲線是否真的不同。</p>
+      <p><strong>優點：</strong>簡單直觀，不需要分布假設。<strong>限制：</strong>不含共變項，沒辦法同時調整多個因素，也不給效應大小（沒有 HR）。</p>
+
+      <h4>例子 1：用 5 人畫出 KM 曲線</h4>
+      <div id="figKM"></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>時間</th><th>發生什麼</th><th class="num">此刻還在風險中</th><th class="num">事件數</th><th>S(t) 怎麼算</th><th class="num">S(t)</th></tr></thead>
+          <tbody>
+            <tr><td>2</td><td>A 發生事件</td><td class="num">5</td><td class="num">1</td><td>1 × (5−1)/5</td><td class="num">0.80</td></tr>
+            <tr><td>3</td><td>B 設限</td><td class="num">—</td><td class="num">0</td><td>曲線不下降，B 離開風險集</td><td class="num">0.80</td></tr>
+            <tr><td>5</td><td>C 發生事件</td><td class="num">3</td><td class="num">1</td><td>0.80 × (3−1)/3</td><td class="num">0.53</td></tr>
+            <tr><td>6</td><td>D 設限</td><td class="num">—</td><td class="num">0</td><td>曲線不下降，D 離開風險集</td><td class="num">0.53</td></tr>
+            <tr><td>8</td><td>E 發生事件</td><td class="num">1</td><td class="num">1</td><td>0.53 × (1−1)/1</td><td class="num">0.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>重點：B 雖然被設限，但在第 2 個月時他還在風險集裡，所以分母是 5，他的資訊有被用上；等到他離開，後面的分母就少了他。這就是「設限資料不被浪費」的意思。</p>
+
+      <h4>例子 2：log-rank 檢定，比較治療組與對照組</h4>
+      <p>在每個事件時間問：「如果兩組風險一樣，這一次事件落在對照組（x = 0）的機率應該是多少？」把各時間點的「期望」加總，和實際發生的次數比較。</p>
+      <div class="box">
+        <b class="t">為什麼期望事件數這樣算</b>
+        <p>如果兩組風險真的沒有差別，那麼在某個事件時間，「這一次事件是誰發生」就像從風險集裡<strong>隨機抽一個人</strong>，風險集裡每個人被抽中的機會相同。所以抽到對照組的機率 ＝ 風險集中的對照組人數 ÷ 風險集的總人數。例如第 2 個月，風險集有 5 人、其中 2 人是對照組，抽到對照組的機率就是 <strong>2/5</strong>。</p>
+        <p>已經發生過事件或已經設限離開的人，不可能再發生這一次事件，所以不放進「抽籤」的人裡。</p>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>時間</th><th class="num">風險集人數<br>對照 / 治療</th><th>誰發生事件</th><th>對照組的期望事件數</th></tr></thead>
+          <tbody>
+            <tr><td>2</td><td class="num">2 / 3</td><td>A（對照）</td><td>2/5 = 0.40</td></tr>
+            <tr><td>5</td><td class="num">1 / 2</td><td>C（治療）</td><td>1/3 ≈ 0.33</td></tr>
+            <tr><td>8</td><td class="num">0 / 1</td><td>E（治療）</td><td>0</td></tr>
+            <tr><th>合計</th><td></td><th>實際 O = 1</th><th>期望 E ≈ 0.73</th></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>對照組實際只有 1 次事件，期望約 0.73 次，兩者很接近，所以 log-rank 看不出差異（統計量 (O−E)²/V ≈ 0.15，p ≈ 0.69）。當然只有 5 個人，這純粹是示範。</p>
+    </div>
+
+    <div class="panel">
+      <div class="stT">B. Cox 比例風險模型：同時調整多個因素，估出效應大小</div>
+      <p><strong>做什麼：</strong>把一個人的風險寫成「基線風險 × 共變項的影響」：h(t | x) = h<sub>0</sub>(t) × exp(β′x)。其中 h<sub>0</sub>(t) 是基線風險，<strong>完全不指定它的形狀</strong>，所以叫「半參數」；共變項的部分才用參數（β）。</p>
+      <p><strong>怎麼讀結果：</strong>exp(β) 就是風險比 HR。HR = 1 代表沒有影響；HR &gt; 1 代表風險較高；HR &lt; 1 代表風險較低。例如 HR = 0.63，就是風險約低了 37%。</p>
+      <p><strong>關鍵假設：</strong>(1) <strong>比例風險</strong>：HR 不隨時間改變；(2) <strong>觀察值彼此獨立</strong>，這正是重複事件要處理的地方。</p>
+
+      <h4>例子：Cox 怎麼從這 5 人估出 HR</h4>
+      <p>事件發生在第 2、5、8 個月。每次事件都問同一個問題：<strong>「在此刻還有可能發生事件的人（風險集）裡，剛好是發生事件的那個人的機率有多大？」</strong>每個人的風險是 h(t | x) = h<sub>0</sub>(t) × exp(βx)：對照組（x = 0）是 h<sub>0</sub>(t)，治療組（x = 1）是 h<sub>0</sub>(t) × r，其中 r = exp(β)。所以 <strong>r 不是風險 h 本身，而是「治療組風險 ÷ 對照組風險」的比值，也就是 HR</strong>。算「誰發生事件」的機率時，每個人的風險都帶著同一個 h<sub>0</sub>(t)，分子分母約掉後，只剩「相對權重」：對照組算 1、治療組算 r：</p>
+      <ul>
+        <li><strong>第 2 個月</strong>：A 發生。風險集是 A、B、C、D、E，其中 B、C、E 是治療組 → <span class="mono">1 ÷ (1 + r + r + 1 + r) = 1 ÷ (2 + 3r)</span></li>
+        <li><strong>第 5 個月</strong>：C 發生。風險集是 C、D、E（A 已發生、B 已設限）→ <span class="mono">r ÷ (r + 1 + r) = r ÷ (1 + 2r)</span></li>
+        <li><strong>第 8 個月</strong>：E 發生，風險集只剩 E → <span class="mono">r ÷ r = 1</span></li>
+      </ul>
+      <p>把三項乘起來，得到只和 r 有關的「偏概似」：</p>
+      <div class="formula"><i>L</i>(<i>r</i>) = 1/(2+3<i>r</i>) × <i>r</i>/(1+2<i>r</i>) × 1 = <i>r</i> / ( (2+3<i>r</i>)(1+2<i>r</i>) )</div>
+      <p>找出讓 L(r) 最大的 r，就是 HR 的估計值。下表試了幾個 r：</p>
+      <div id="coxTbl"></div>
+      <div id="figCoxL"></div>
+      <p>L(r) 在 r ≈ 0.58 最大，所以這份資料估計 <strong>HR ≈ 0.58</strong>（治療組風險約是對照組的 0.58 倍）。這只是 5 人的示範；真實分析人數多，還要同時估計信賴區間。</p>
+      <div class="box">
+        <b class="t">為什麼 Cox 不必指定基線風險 h₀(t)</b>
+        <p>每一項的分子與分母都乘著同一個 h₀(t)，在比較「風險集裡誰發生事件」時被約掉了，剩下的只有 exp(β′x) 的比值。這就是半參數的由來。</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="stT">C. 參數模型（Weibull、指數模型等）：先假設事件時間的分布</div>
+      <p><strong>做什麼：</strong>直接假設事件時間服從某種分布。<strong>指數模型</strong>假設風險是常數（任何時間點都一樣）；<strong>Weibull 模型</strong>讓風險可以隨時間單調上升或下降，由一個形狀參數控制。</p>
+      <p><strong>優點：</strong>分布若選對，估計較有效率，也能外推到追蹤期以外。<strong>限制：</strong>分布假設若選錯，結果就會偏掉；所以很多研究更偏好不必假設形狀的 Cox。</p>
+
+      <h4>例子：指數模型估計這 5 人</h4>
+      <p>指數模型假設風險是一個不變的常數 λ，而 λ 的最佳估計很直覺：<strong>事件數 ÷ 總觀察時間</strong>。總觀察時間 = 2 + 3 + 5 + 6 + 8 = 24 個月，事件有 3 次，所以 λ̂ = 3 ÷ 24 = 0.125（每月）。</p>
+      <div class="formula"><i>S</i>(<i>t</i>) = exp(−<i>λ t</i>) = exp(−0.125 <i>t</i>)</div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>時間</th><th class="num">KM（跟著資料跳）</th><th class="num">指數模型（平滑曲線）</th></tr></thead>
+          <tbody>
+            <tr><td>2</td><td class="num">0.80</td><td class="num">0.78</td></tr>
+            <tr><td>5</td><td class="num">0.53</td><td class="num">0.54</td></tr>
+            <tr><td>8</td><td class="num">0.00</td><td class="num">0.37</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="figPar"></div>
+      <p>KM 是跟著資料一階一階跳的階梯；指數模型是一條平滑曲線，可以外推到追蹤結束之後，但前提是「風險真的不變」。Weibull 多一個形狀參數，讓風險可以上升或下降；Cox 則完全不指定風險的形狀。</p>
+      <div class="box">
+        <b class="t">參數模型也可以放共變項：分布就是基線風險的形狀</b>
+        <p>上面的例子為了簡單，沒有放共變項，但參數模型一樣可以。寫法和 Cox 幾乎相同，差別只在基線風險是「指定好的形狀」：</p>
+        <div class="formula" style="font-size:17px"><i>h</i>(<i>t</i> | <i>x</i>) = <i>h</i><sub>0</sub>(<i>t</i>) · exp(<i>β′x</i>)，　指數：<i>h</i><sub>0</sub>(<i>t</i>) = <i>λ</i>　｜　Weibull：<i>h</i><sub>0</sub>(<i>t</i>) = <i>λ p t</i><sup><i>p</i>−1</sup></div>
+        <p><strong>「假設事件時間的分布」和「假設基線風險的形狀」幾乎是同一件事</strong>：選指數分布，基線風險就是常數；選 Weibull，基線風險就是單調上升或下降。而共變項只是再乘上一個 exp(β′x)，所以它不改變風險曲線的形狀，只把整條曲線整體乘上一個倍數（取對數後就是上下平移），HR 不隨時間改變。也就是說，共變項的效應與基線風險是分開的。</p>
+        <p><strong>用固定的數字畫畫看：</strong>假設基線風險是常數 λ = 0.10（每月），共變項效應 β = ln 2 ≈ 0.69，也就是 exp(β) = 2。兩個人只差在 x：</p>
+        <ul>
+          <li>x = 0 的人：h = 0.10 × exp(0) = <strong>0.10</strong></li>
+          <li>x = 1 的人：h = 0.10 × exp(0.69) = <strong>0.20</strong></li>
+        </ul>
+        <div id="figCov"></div>
+        <p><strong>左圖</strong>是指數模型：兩人的風險都是水平線，x = 1 的那條高 2 倍，這個倍數就是 HR，不隨時間改變。<strong>右圖</strong>把基線換成 Weibull（風險隨時間上升），並把縱軸改成對數刻度：兩條曲線的形狀完全一樣，只是整條向上<strong>平移</strong>了 β = ln 2。</p>
+        <p class="caption">線性刻度上，共變項是「把整條曲線乘上 exp(β)」；在對數刻度上，乘法就變成「平移 β」，所以看起來是平行的兩條線。</p>
+        <p>補充：這個「共變項只是乘上去」的結構叫比例風險。指數與 Weibull 剛好都符合，但不是所有參數模型都這樣（例如 log-normal 等 AFT 模型，共變項改變的是時間尺度，HR 就不再固定）。</p>
+      </div>
+
+      <div class="box">
+        <b class="t">補充：Cox 的基線風險可以是任意形狀</b>
+        <p>Cox 的基線風險 h<sub>0</sub>(t) 不受形狀限制：它可以隨時間任意起伏（不必像指數模型那樣是常數，也不必像 Weibull 那樣只能單調上升或下降）。圖中灰色的點狀起伏曲線就是示意。</p>
+        <p>而且「時間」這條軸也不一定是追蹤時間，可以依研究需要換成<strong>年齡</strong>等其他尺度（把年齡當作時間軸）；也可以依某個變數<strong>分層</strong>，讓每一層有自己的基線風險。後面 PWP 依「第幾次事件」分層，用的就是這個概念。</p>
+      </div>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>方法</th><th>能放共變項？</th><th>給出什麼</th><th>需要假設什麼</th></tr></thead>
+        <tbody>
+          <tr><td>KM + log-rank</td><td>否</td><td>存活曲線、兩組是否不同（p 值）</td><td>幾乎沒有（需獨立設限）</td></tr>
+          <tr><td>Cox</td><td>是</td><td>各共變項的 HR</td><td>比例風險；觀察值獨立</td></tr>
+          <tr><td>參數模型</td><td>是</td><td>HR 或事件時間的比，以及完整的風險曲線</td><td>事件時間服從指定分布</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="box">
+      <b class="t">接下來</b>
+      <p>Cox 模型假設觀察值彼此獨立，所以原本只適合「每人一個事件」。一旦同一個人會發生多次事件，這個假設就不成立。接下來會介紹的五個模型，都是從 Cox 模型延伸出來，專門處理「同一個人多次事件」的方法。</p>
+    </div>
+</section>
+
+<section id="why">
+  <h2>為什麼要特別處理重複事件</h2>
+  <p>很多臨床結果會在同一個人身上反覆發生：住院、跌倒、偏頭痛、癌症復發、呼吸道或耳朵感染。這些事件有個共同特點：<strong>同一個人的事件之間本來就有內在相關</strong>。</p>
+
+  <div class="box warn">
+    <b class="t">不處理相關性的後果</b>
+    <p>信賴區間會被人為縮窄，虛無假設被拒絕的頻率超過應有的水準（type I error 膨脹）。所以一定要對「個體內相關」做調整。</p>
+  </div>
+
+  <h3>常見但不理想的三種做法</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>做法</th><th>問題</th></tr></thead>
+      <tbody>
+        <tr><td>Cox 模型只取第一次事件</td><td>原始 Cox 的獨立性假設，只適合建模「到第一次事件的時間」，後面的事件資料全部丟掉。例如一位病人有 6 次事件，只用第 1 次就丟掉了 5 次。</td></tr>
+        <tr><td>Poisson / 負二項（計數模型）</td><td>只看固定期間內的總次數，<strong>忽略事件發生的時間</strong>，也看不出效應是否隨時間改變。後來被整合進 GEE 與隨機效應模型以處理相關性，但仍沒用到時間資訊。</td></tr>
+        <tr><td>Logistic regression</td><td>在世代研究中，既然已有能處理重複事件的方法，就<strong>沒什麼理由</strong>再用它來估計風險。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>存活分析在以下情況比計數模型更合適：每個人追蹤時間長短不一、有時變共變項、或效應會隨時間改變。</p>
+</section>
+
+<section id="concepts">
+  <h2>先把核心概念弄清楚</h2>
+  <p>重複事件資料有兩個基本特徵：事件<strong>有先後順序</strong>，而且一個人<strong>同一時間只會面臨一個事件的風險</strong>（要先發生第 1 次，才輪到第 2 次）。分析時通常還會假設「給定共變項後，事件時間與設限時間獨立」，即<strong>獨立設限假設</strong>。</p>
+
+  <dl class="terms">
+    <dt>事件 vs 設限（censoring）</dt>
+    <dd>事件是我們關心的現象（如腫瘤復發）。設限是追蹤結束或中途失聯，我們只知道「到那時為止沒再發生」。圖中實心方塊是事件，空心圓是設限。</dd>
+    <dt>風險集（risk set）</dt>
+    <dd>在某個時間點「還有可能發生該事件」的人。PWP 模型的風險集是依「前面已發生幾次」分層後的小集合。</dd>
+    <dt>總時間 TT（total time）與間隔時間 GT（gap time）</dt>
+    <dd>TT：從進入研究（隨機分派）起算的時間。GT：從上一次事件起算的時間，每次事件後時鐘歸零（隱含「更新過程 renewal process」的假設）。</dd>
+    <dt>計數過程（counting process）</dt>
+    <dd>把「到目前為止發生了幾次事件」視為隨時間遞增的計數，模型描述的是這個計數的增量。AG 與邊際模型都用這個觀點。</dd>
+    <dt>強度（intensity）vs 比率／均值（rate／mean）</dt>
+    <dd>強度：在已知個人過去歷史的條件下，下一瞬間發生事件的風險。比率／均值：不去指定歷史，直接描述整體事件的平均發生速率或期望次數。</dd>
+    <dt>穩健（sandwich）變異數</dt>
+    <dd>當你不想（或無法）把個體內相關完整建模時，用穩健的標準誤去「校正」相關性對不確定性的影響。</dd>
+    <dt>馬可夫（Markov）式假設 vs 共享隨機效應</dt>
+    <dd>AG、PWP、MSM 假設未來事件只依賴<strong>最近的過去</strong>；脆弱模型則假設相關性來自<strong>每個人共有的隱藏隨機效應</strong>。</dd>
+  </dl>
+
+  <div class="panel" id="cut">
+    <h3>同一位病人，各模型怎麼「切」資料？</h3>
+    <p>取一位示範病人（病人 1）：在第 4、6、9、12、15、28 個月發生事件，研究結束（第 60 個月）時被設限。點選不同模型，看資料列與時間軸怎麼變。</p>
+    <div class="seg" role="group" aria-label="選擇模型" id="cutBtns">
+      <button type="button" data-m="ag" aria-pressed="true">AG</button>
+      <button type="button" data-m="tt" aria-pressed="false">PWP-TT</button>
+      <button type="button" data-m="gt" aria-pressed="false">PWP-GT</button>
+      <button type="button" data-m="mm" aria-pressed="false">邊際均值/比率</button>
+    </div>
+    <div id="cutSvg"></div>
+    <p class="caption" id="cutCap"></p>
+    <div class="tablewrap"><table id="cutTbl"></table></div>
+    <div class="box extra">
+      <b class="t">補充</b>
+      <p>資料列的 (start, stop] 寫法是存活分析軟體常見的「計數過程格式」。每個模型需要的資料格式略有不同，下面各模型會再說明；這裡的表是依通用寫法為這位病人示範的。</p>
+    </div>
+  </div>
+</section>
+
+<section id="models">
+  <h2>五個模型逐一看</h2>
+
+  <div class="panel" id="fromCox">
+    <h3>先搞懂：從 Cox 一步步推廣到多次事件</h3>
+    <p>你已經知道 Cox 的公式：<span class="formula" style="display:inline-block;padding:2px 10px;margin:0;font-size:17px"><i>h</i>(<i>t</i> | <i>x</i>) = <i>h</i><sub>0</sub>(<i>t</i>) · exp(<i>β′x</i>)</span>。</p>
+    <div class="box">
+      <b class="t">先抓住一個重點</b>
+      <p>這條公式本身並沒有規定「一個人只能有一個事件」。限制來自兩件事：一般 Cox 的資料是「一人一列、只記一個事件」，而且假設各列<strong>彼此獨立</strong>。所以從 Cox 推廣到重複事件，其實是在調整下面三個零件（動一個或兩個）：</p>
+      <ol>
+        <li><strong>資料列怎麼切</strong>：一人一列 → 一人多列。</li>
+        <li><strong>基線風險 h₀ 怎麼放</strong>：全部共用、依第幾次事件分層、再乘上個人倍數，或每條轉換各一個。</li>
+        <li><strong>相關性怎麼處理</strong>：靠共變項、靠分層、靠穩健標準誤，或靠隨機效應。</li>
+      </ol>
+    </div>
+    <p>下面用<strong>同一位病人（病人 1）</strong>：事件在第 4、6、9、12、15、28 個月，第 60 個月設限，從 Cox 出發，一步步看每個方法改了什麼、病人 1 的資料怎麼被使用。</p>
+    <h3>實際計算用的小資料（自編示範）</h3>
+    <p>為了看得出「每個方法到底拿誰來比較」，我們把病人 1 放進一個 6 人的小群組。只有病人 1 的事件時間沿用上面的設定，其餘 5 人是自編的示範資料。x = 1 是治療組，x = 0 是對照組；假設治療組的風險是對照組的 <strong>r = exp(β) = 2</strong> 倍。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>病人</th><th class="num">治療 x</th><th>事件發生的月份</th><th class="num">追蹤到（設限）</th></tr></thead>
+        <tbody>
+          <tr><td>病人 1</td><td class="num">1</td><td>4、6、9、12、15、28</td><td class="num">60</td></tr>
+          <tr><td>病人 2</td><td class="num">0</td><td>5、14</td><td class="num">40</td></tr>
+          <tr><td>病人 3</td><td class="num">0</td><td>3、8</td><td class="num">10</td></tr>
+          <tr><td>病人 4</td><td class="num">0</td><td>—</td><td class="num">60</td></tr>
+          <tr><td>病人 5</td><td class="num">1</td><td>2</td><td class="num">7</td></tr>
+          <tr><td>病人 6</td><td class="num">0</td><td>2、5</td><td class="num">40</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="box">
+      <b class="t">每一步要算的是什麼</b>
+      <p>Cox 家族的模型都用「偏概似」估計 β：每當有人發生事件，就問一次「在風險集裡，剛好是發生事件的那個人的機率有多大？」</p>
+      <div class="formula" style="font-size:17px">該項 ＝ 發生事件者的風險倍數 ÷ 風險集中所有人的風險倍數加總</div>
+      <p>軟體把所有事件時間的這種項連乘，找出讓乘積最大的 β（和上面 5 人的例子一樣）。<strong>各方法的差別，就在於「風險集是誰」，以及「每個人的倍數怎麼算」。</strong>下面每一步都用同一個時間點算一次：第 9 個月，病人 1 的第 3 次事件（Cox 看不到這一項，所以改算第 4 個月他的第 1 次事件）。</p>
+    </div>
+    <div class="seg" id="stBtns" role="group" aria-label="推廣步驟"></div>
+    <div id="stPanel"></div>
+
+    <h3>對照表：和 Cox 比，三個零件各自怎麼變</h3>
+    <div class="tablewrap cmp">
+      <table>
+        <thead><tr><th></th><th>① 資料列</th><th>② 基線風險</th><th>③ 相關性怎麼處理</th></tr></thead>
+        <tbody>
+          <tr><td>Cox</td><td>一人一列（只用第 1 次事件）</td><td>一個 h₀(t)</td><td>假設獨立</td></tr>
+          <tr><td>AG</td><td>一人多列 (start, stop]</td><td>全部共用一個 h₀(t)</td><td>靠時變共變項（如前次事件數）；必要時用穩健標準誤</td></tr>
+          <tr><td>PWP</td><td>一人多列，並標記第 k 次</td><td>每層一個 h₀ₖ(t)</td><td>以「前面發生幾次」分層為條件</td></tr>
+          <tr><td>邊際</td><td>一人多列（視為一條計數線）</td><td>基線均值函數 μ₀(t)</td><td>不建模；用以「人」為單位的穩健標準誤</td></tr>
+          <tr><td>脆弱</td><td>一人多列</td><td>共用 h₀(t)，再乘上個人倍數 zᵢ</td><td>隨機效應 zᵢ</td></tr>
+          <tr><td>多狀態</td><td>一人多列（每列是一次轉換）</td><td>每條轉換各有一個 α₀,ₗₖ(t)</td><td>以目前所在的狀態為條件（馬可夫）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3>逐一看每個模型的細節</h3>
+  <p>點選下面的分頁。每個模型都先給一張示意圖和一句白話比喻，再用同一套欄位說明，方便你對照。圖中的方塊是事件、空心圓是設限。</p>
+  <div class="seg" role="tablist" aria-label="模型" id="mTabs"></div>
+  <div class="panel mdl" id="mPanel" role="tabpanel" tabindex="0"></div>
+</section>
+
+<section id="compare">
+  <h2>一張表比較</h2>
+  <div class="tablewrap cmp">
+    <table>
+      <thead><tr><th></th><th>AG</th><th>PWP-TT / GT</th><th>邊際均值/比率</th><th>脆弱模型</th><th>多狀態 MSM</th></tr></thead>
+      <tbody>
+        <tr><td>時間尺度</td><td>總時間（自進入研究）</td><td>TT：總時間<br>GT：自上次事件</td><td>總時間</td><td>總時間</td><td>各狀態間的轉換時間</td></tr>
+        <tr><td>基線風險</td><td>所有事件共用一個</td><td>依第幾次事件分層，各自一個</td><td>所有事件視為單一計數過程</td><td>共用，再乘上個人隨機效應</td><td>每種轉換各有轉換強度</td></tr>
+        <tr><td>共變項效應</td><td>全域一個參數</td><td>可為整體共同效應，也可每次事件不同</td><td>全域一個參數</td><td>全域，但為個人特定的條件效應</td><td>每種轉換各自估計</td></tr>
+        <tr><td>相關性怎麼處理</td><td>由過去事件／時變共變項解釋；不足時加穩健變異數</td><td>用分層（以前面事件次數為條件）</td><td>不指定相依結構，用穩健變異數校正</td><td>共享隨機效應（gamma，平均 1）</td><td>依賴目前狀態與歷史（馬可夫或半馬可夫）</td></tr>
+        <tr><td>回答的問題</td><td>整體事件<strong>強度</strong>的效應</td><td>第 k 次事件的風險效應</td><td>事件<strong>期望次數／發生率</strong>的效應</td><td>控制個人隱藏易感性後的相對風險</td><td>轉換風險與轉換機率</td></tr>
+        <tr><td>主要限制</td><td>漏掉重要共變項會低估標準誤</td><td>後面層的風險集變很小，估計不穩，常需截斷</td><td>不探討相依結構本身</td><td>需要足夠的事件數與個體數才穩定</td><td>2014 年時軟體支援很少</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="box">
+    <b class="t">粗略分類</b>
+    <p>事件<strong>不多</strong>、各次風險<strong>不同</strong>：偏向分層模型（PWP、MSM）。事件<strong>頻繁</strong>、各次風險<strong>大致相同</strong>：偏向用穩健變異數、時變共變項或脆弱效應來處理相關性（邊際、AG、脆弱模型）。</p>
+  </div>
+</section>
+
+<section id="choose">
+  <h2>怎麼選模型</h2>
+  <p>常見的做法分三步驟：(1) 依資料特性與科學問題選模型；(2) 準備符合該模型的資料結構；(3) 在軟體中用正確的指令與選項去配適。影響選擇的因素包括：事件數、事件間的關係、效應是否隨次數改變、生物機制、相依結構。</p>
+
+  <div class="panel">
+    <h3>選模型小幫手</h3>
+    <label class="sel" for="wiz">你最想回答的問題是？</label>
+    <select id="wiz"></select>
+    <div class="result" id="wizOut"></div>
+  </div>
+
+  <h3>兩個實務提醒</h3>
+  <ul>
+    <li><strong>PWP 與後面幾次事件：</strong>風險集很小時估計不穩，所以常會截斷在前幾次事件（例如前 3–4 次）。AG、邊際模型與脆弱模型則可以使用完整資料。</li>
+    <li><strong>生物機制先想清楚：</strong>首次感染後下一次感染的風險可能上升（例如免疫、肺部惡化），這時 PWP 比 AG 更合理；若風險與先前事件數無關，AG 就足夠。</li>
+  </ul>
+
+  <div class="box">
+    <b class="t">到這裡，你已經有工具了</b>
+    <p>你已經知道 Cox 怎麼延伸到重複事件，也知道五個模型各自回答什麼問題、怎麼選。第二部分會帶你看：這篇論文怎麼把這些模型用在兩份真實資料上。</p>
+  </div>
+</section>
+
+<section id="paper">
+  <div class="part">第二部分　這篇論文</div>
+  <h2>論文導讀：它做了什麼</h2>
+  <p>有了前面的背景，現在來看這篇論文。Amorim 與 Cai（2015）是一篇給流行病學者的<strong>教學型論文</strong>：整理處理重複事件的模型、示範怎麼在統計軟體中配適，並給出選模型的建議。</p>
+  <h3>論文怎麼做</h3>
+  <ul>
+    <li>介紹五種做法：AG、PWP（TT/GT）、邊際均值/比率、脆弱模型、多狀態模型，也就是第一部分的內容。</li>
+    <li>用兩份真實資料（膀胱癌復發、兒童急性下呼吸道感染）把五個模型都跑一遍。為了能互相比較，兩份資料都先截斷到前幾次事件。</li>
+    <li>說明在 SAS、Stata、R 中怎麼配適（完整語法在補充資料的附錄）。</li>
+    <li>最後討論怎麼選模型，以及各方法的限制。</li>
+  </ul>
+  <div class="box">
+    <b class="t">三句話帶走</b>
+    <ol>
+      <li>重複事件在<strong>同一個人身上彼此相關</strong>，忽略這點會讓信賴區間太窄、假陽性變多。</li>
+      <li>只分析第一次事件（一般 Cox）或只數次數（Poisson），都浪費資訊；本文比較五種 Cox 延伸：<strong>AG、PWP（TT/GT）、邊際均值/比率、脆弱模型、多狀態模型</strong>。</li>
+      <li>五個模型回答的是<strong>略有不同的問題</strong>，數字不應直接比大小；選模型要看研究問題、事件數、事件間的關係與生物機制。</li>
+    </ol>
+  </div>
+
+  <h3>論文章節與講義對照</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>論文章節</th><th>對應的講義位置</th></tr></thead>
+      <tbody>
+        <tr><td>Introduction</td><td><a href="#why">為什麼要特別處理</a></td></tr>
+        <tr><td>Methods：理論與五個模型</td><td><a href="#concepts">核心概念</a>、<a href="#models">五個模型</a>、<a href="#compare">一張表比較</a></td></tr>
+        <tr><td>Existing software</td><td><a href="#software">軟體與資料格式</a></td></tr>
+        <tr><td>Applications 與 Results</td><td><a href="#cases">兩個實例</a></td></tr>
+        <tr><td>Discussion</td><td><a href="#choose">怎麼選模型</a>、<a href="#cautions">限制與提醒</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="cases">
+  <h2>兩個實例：數字怎麼讀</h2>
+  <p>論文用兩份資料把五個模型都跑一遍（兩份資料都先截斷到前幾次事件，使各模型可以比較）。</p>
+
+  <div class="grid2">
+    <div class="card">
+      <b>應用 1：膀胱癌腫瘤復發</b>
+      <p>85 位病人，比較 thiotepa（一種膀胱內使用的抗癌藥）與安慰劑。事件為腫瘤復發。最多追蹤 64 個月；55% 至少復發一次，共 130 次復發，每人 0–9 次。共變項：治療組、基線腫瘤數、最大腫瘤大小（公分）。分析時截斷到第 4 次事件（112 次）。</p>
+    </div>
+    <div class="card">
+      <b>應用 2：兒童急性下呼吸道感染（ALRI）</b>
+      <p>1207 位巴西兒童，隨機分派接受高劑量維生素 A 或安慰劑，追蹤 1 年。ALRI 定義為咳嗽加上呼吸速率達標（未滿 12 個月 ≥50 次/分，較大 ≥40 次/分）。僅 16% 至少發病一次，共 321 次，截斷到第 3 次。共變項：治療、性別、年齡（≤12 個月 vs &gt;12 個月）、家中有無廁所（衛生習慣的代理變項）。</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>五個模型的結果並排看</h3>
+    <p>實心點代表 95% 信賴區間不含 1，空心點代表含 1。X 軸為對數刻度，虛線是 HR = 1（無效應）。</p>
+    <label class="sel" for="dsSel">資料集</label><select id="dsSel"></select>
+    <label class="sel" for="cvSel" style="margin-left:6px">共變項</label><select id="cvSel"></select>
+    <div id="forest"></div>
+    <div class="tablewrap"><table id="forestTbl"></table></div>
+    <p class="caption">資料來源：論文 Table 1（膀胱癌）與 Table 2（ALRI）。AG 與邊際模型的點估計相同，因為 AG 沒有加入事件史的時變共變項。</p>
+  </div>
+
+  <h3>膀胱癌：重點讀法</h3>
+  <ul>
+    <li><strong>治療效應會因模型而「過不過線」。</strong>AG 的 HR = 0.63（0.40–0.99），剛好不含 1；邊際模型的點估計相同，但區間（0.38–1.04）因變異數估計方式不同而含 1；PWP 與脆弱模型也都含 1。</li>
+    <li><strong>基線腫瘤數</strong>是穩定的預後因子：AG HR = 1.19；脆弱模型為 1.26（1.05–1.51），解讀為「在相同隱藏易感性與共變項下，每多一顆基線腫瘤，復發風險增加 26%」。</li>
+    <li>最大腫瘤大小在五個模型中都沒有顯著關聯。</li>
+    <li>AG 與邊際模型<strong>點估計相同但解讀不同</strong>：AG 建模的是強度函數，邊際模型建模的是事件發生率（rate）。</li>
+  </ul>
+
+  <h3>膀胱癌：多狀態模型（Figure 3）</h3>
+  <p>此處只考慮一種轉換：復發後立即回到「無腫瘤」狀態（事件可立即逆轉），所以關心的是「健康 → 疾病」的轉換機率。圖中四種病人類型：病人 1、2 為安慰劑，3、4 為 thiotepa；病人 1、3 基線 1 顆腫瘤、1 公分；病人 2、4 基線 7 顆、最大 4 公分。結果：<strong>病人 3（thiotepa、腫瘤少且小）復發機率最低，病人 2（安慰劑、腫瘤多且大）最高</strong>。</p>
+
+  <h3>ALRI：重點讀法</h3>
+  <ul>
+    <li><strong>年齡 ≤12 個月</strong>的孩子更容易反覆感染：PWP-TT HR = 3.62（2.76–4.74）；AG 5.17；脆弱模型 6.50。</li>
+    <li><strong>家中有廁所</strong>使風險降低約 40%（PWP-TT HR = 0.60，0.46–0.77）。</li>
+    <li>維生素 A 與性別在所有模型都沒有明顯效應（HR 約 0.9 與 1.1，區間含 1）。</li>
+    <li><strong>脆弱模型的變異數 = 2.51（P &lt; 0.001）</strong>，換算成個體內相關為 Kendall's tau = 55.7%，表示同一個孩子的事件之間相關很強。論文提醒：脆弱模型估的是「孩子內部」的相對風險。</li>
+  </ul>
+  <div class="box extra">
+    <b class="t">補充：Kendall's tau 怎麼來</b>
+    <p>對 gamma 脆弱模型，τ = θ / (θ + 2)，其中 θ 是脆弱效應變異數。代入 θ = 2.51：2.51 / 4.51 ≈ 0.557，與論文的 55.7% 吻合。此外，脆弱模型的效應是「條件於個人隨機效應」的，一般而言數值會與邊際型模型不同，這也是年齡 HR 從 3.62 到 6.50 差這麼多的部分原因（屬一般統計常識，論文沒有展開）。</p>
+  </div>
+
+  <h3>ALRI：多狀態模型的兩種轉換（Table 3）</h3>
+  <p>因為有每次感染的持續時間，可以同時看「健康 → ALRI」與「ALRI → 康復」兩種轉換：</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>共變項</th><th class="num">健康 → ALRI<br>HR (95% CI)</th><th class="num">ALRI → 康復<br>HR (95% CI)</th></tr></thead>
+      <tbody>
+        <tr><td>治療（對照：安慰劑）</td><td class="num">0.94 (0.74, 1.19)</td><td class="num">0.96 (0.71, 1.29)</td></tr>
+        <tr><td>性別（對照：女孩）</td><td class="num">1.10 (0.87, 1.39)</td><td class="num">1.00 (0.75, 1.34)</td></tr>
+        <tr><td>年齡 ≤12 個月（對照：&gt;12 個月）</td><td class="num">5.17 (4.08, 6.56)</td><td class="num">0.38 (0.28, 0.51)</td></tr>
+        <tr><td>家中有廁所（對照：無）</td><td class="num">0.54 (0.43, 0.69)</td><td class="num">2.26 (1.67, 3.06)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>第二欄的 HR 是「康復的速率」：&lt;1 代表康復較慢。年幼的孩子<strong>更容易生病、也更慢康復</strong>（HR = 0.38）；家中有廁所的孩子<strong>較少生病、康復也較快</strong>（HR = 2.26）。這是 MSM 比其他四個模型多出來的資訊。</p>
+  <div class="box warn">
+    <b class="t">論文特別提醒</b>
+    <p>第二種轉換（ALRI → 康復）只針對「已經生病的孩子」估計，不是整體族群，存在潛在的選擇偏誤，解讀要小心。</p>
+  </div>
+
+  <div class="box">
+    <b class="t">兩個實例的共同結論</b>
+    <p>「各模型有各自的假設，結果不應直接比較；選擇取決於你要回答的科學問題。」不過在這兩個例子中，主要結論大致一致。</p>
+  </div>
+</section>
+
+<section id="software">
+  <h2>軟體與資料格式</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>軟體</th><th>論文提到的做法</th></tr></thead>
+      <tbody>
+        <tr><td>SAS</td><td>多變量時間事件資料用 <code>PROC PHREG</code>；脆弱模型可用 <code>PROC NLMIXED</code>；多狀態模型用巨集 <code>PTRANSIT</code></td></tr>
+        <tr><td>Stata</td><td>先用 <code>stset</code> 設定存活時間、設限與個體識別，再用 <code>stcox</code> 配適 Cox 與其延伸；當時沒有現成的 MSM 選項</td></tr>
+        <tr><td>R</td><td>用 <code>survival</code> 套件的 <code>coxph</code>，以不同選項指定各方法；當時沒有 MSM 可用</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>論文的 Appendix 1–3 有各模型的資料格式與完整語法，但沒有附在你上傳的 PDF。要實作時請去 IJE 網站下載補充資料。</p>
+
+  <div class="box extra">
+    <b class="t">補充：R 的常見寫法（示意，非論文原文）</b>
+    <p>以下是 <code>survival</code> 套件常見的對應寫法，僅供理解各模型「資料怎麼放」；細節（變異數選項等）請以論文附錄與套件文件為準。</p>
+<pre><code># 資料為計數過程格式：每人多列，欄位 start, stop, status, enum(第幾次事件)
+# AG：共用基線風險
+coxph(Surv(start, stop, status) ~ rx + number + size + cluster(id), data = d)
+
+# PWP-TT：以第幾次事件分層，時間仍為總時間
+coxph(Surv(start, stop, status) ~ rx + number + size + strata(enum) + cluster(id), data = d)
+
+# PWP-GT：分層，時間改用間隔時間（每列從 0 起算）
+coxph(Surv(gap, status) ~ rx + number + size + strata(enum) + cluster(id), data = d)
+
+# 脆弱模型：gamma 共享脆弱效應
+coxph(Surv(start, stop, status) ~ rx + number + size + frailty(id), data = d)</code></pre>
+    <p>另外，論文寫作時（2014）多狀態模型的軟體支援有限；之後已有較新的套件（例如 R 的 <code>mstate</code>），實際可用性請自行查證。</p>
+  </div>
+</section>
+
+<section id="cautions">
+  <h2>限制與提醒</h2>
+  <ul>
+    <li><strong>獨立設限假設：</strong>論文所有方法都在這個假設下討論。處理相依設限的方法已有人提出，但當時尚未納入主流軟體。</li>
+    <li><strong>AG 的隱憂：</strong>若遺漏了重要共變項，事件間就會產生未被解釋的相依，標準誤被低估、type I error 膨脹。補救：加入「前次事件數」之類的時變共變項，或使用穩健變異數。</li>
+    <li><strong>邊際模型 vs 事件史：</strong>若把事件史放進模型，共變項效應可能比邊際效應被稀釋（變小）。</li>
+    <li><strong>脆弱模型要有足夠資料：</strong>隨機效應大時，較少事件也能估得動；否則需要更多事件。</li>
+    <li><strong>截斷的代價：</strong>為了讓分層模型穩定而截斷，會損失後面事件的資訊；論文也用完整資料跑了 AG、邊際與脆弱模型作確認。</li>
+    <li><strong>不只適用於「有順序」的事件：</strong>家人間的發病時間、同一個人兩個器官的同種事件，也有相關性但沒有順序，方法可在調整後沿用。</li>
+  </ul>
+  <p>最後一句論文的呼籲：盡量使用完整資料，並做能幫助理解危險因子在疾病歷程中角色的分析。</p>
+</section>
+
+<section id="quiz">
+  <h2>自我檢測</h2>
+  <p>先自己想，再點開看答案。</p>
+
+  <details><summary>1. 為什麼原始 Cox 模型只適合第一次事件？</summary>
+    <p>因為 Cox 模型假設觀察值彼此獨立，而同一個人的重複事件彼此相關。若硬套，會低估標準誤；若只取第一次事件，則丟失後面的資料。</p></details>
+
+  <details><summary>2. AG 與邊際均值/比率模型在什麼條件下點估計相同？差別在哪？</summary>
+    <p>當 AG 模型沒有加入反映事件史的時變共變項時，兩者點估計相同。差別在變異數估計（邊際模型在三明治估計中使用 score residuals 校正相依結構），因此信賴區間不同；解讀上，AG 對應強度，邊際模型對應事件率（無時變共變項時可解讀為期望事件數）。</p></details>
+
+  <details><summary>3. PWP-TT 與 PWP-GT 的差別？</summary>
+    <p>兩者都依「前面發生幾次」分層。TT 的時間是自進入研究起算；GT 的時間在每次事件後歸零（自上次事件起算），隱含更新過程假設，適合事件不常發生、事件後像「重新開始」，或想預測下一次事件的情境。</p></details>
+
+  <details><summary>4. PWP 為什麼常常要截斷事件次數？</summary>
+    <p>只有發生過前一次事件的人才進入下一層的風險集，層數越後人數越少，估計變得不穩定，所以通常限制在前幾次事件。</p></details>
+
+  <details><summary>5. 脆弱模型變異數 2.51 代表什麼？</summary>
+    <p>代表孩子之間未被共變項解釋的易感性差異很大；換算為 Kendall's tau 約 55.7%，即同一個孩子的事件之間相關性很強。給定共變項與隨機效應後，事件被視為獨立。</p></details>
+
+  <details><summary>6. 多狀態模型比其他模型多提供了什麼？要小心什麼？</summary>
+    <p>多提供「轉換機率」與不同轉換（如健康→生病、生病→康復）各自的效應，適合事件可逆或有多種狀態的情況。要小心第二種轉換只針對已生病的人估計，存在選擇偏誤；且當時軟體支援不足。</p></details>
+
+  <details><summary>7. 若研究只想知道「平均每人會發生幾次事件」且不在意事件間的相依結構，該用哪個？</summary>
+    <p>邊際均值/比率模型。它把同一人的所有事件視為單一計數過程，不需指定相依結構，比 AG 更簡潔彈性。</p></details>
+
+  <footer>講義依 Amorim &amp; Cai (2015) 整理；灰底「補充」為輔助說明，非論文原文。實際分析請回到原文與其補充資料確認細節。</footer>
+</section>
+</main>
+</div>
+
+<script>
+(function(){
+  /* ---------- 切資料示範 ---------- */
+  var ev=[4,6,9,12,15,28], END=60;
+  var starts=[0].concat(ev), stops=ev.concat([END]), status=[1,1,1,1,1,1,0];
+  var caps={
+    ag:'AG：所有區間共用同一個基線風險，時間軸是「自進入研究起算」的總時間。每位病人被切成連續的 (start, stop] 區間；最後一段是設限（status = 0）。',
+    tt:'PWP-TT：區間與 AG 相同，但依「第幾次事件」分層（右側標示 k）。第 k 層的風險集只包含已經發生 k−1 次事件的人。',
+    gt:'PWP-GT：同樣分層，但時間改成「自上一次事件起算」，每一段都從 0 開始（renewal 假設）。最後一段是 60−28 = 32 個月的設限時間。',
+    mm:'邊際均值/比率：資料列與 AG 相同；差別在於不去指定事件間的相依結構，而是用穩健（score residual）變異數來校正，所以信賴區間不同。'
+  };
+  var mode='ag';
+  function el(id){return document.getElementById(id)}
+  function renderCut(){
+    var gt=mode==='gt', multi=(mode==='tt'||mode==='gt');
+    var gaps=stops.map(function(s,i){return s-starts[i]});
+    var maxT=gt?Math.max.apply(null,gaps):END;
+    var L=70,R=670,W=700, rowH=26, top=26;
+    var rows=multi?7:1, H=top+rows*rowH+40;
+    function x(t){return L+(t/maxT)*(R-L)}
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="病人1的資料切分示意">';
+    var ticks=gt?[0,8,16,24,32]:[0,12,24,36,48,60];
+    var axisY=top+rows*rowH+6;
+    s+='<line class="axis" x1="'+L+'" x2="'+R+'" y1="'+axisY+'" y2="'+axisY+'"/>';
+    ticks.forEach(function(t){
+      s+='<line class="axis" x1="'+x(t)+'" x2="'+x(t)+'" y1="'+(top-8)+'" y2="'+axisY+'" stroke-dasharray="2 4"/>';
+      s+='<text x="'+x(t)+'" y="'+(axisY+18)+'" font-size="13" text-anchor="middle">'+t+'</text>';
+    });
+    s+='<text x="'+R+'" y="'+(axisY+34)+'" font-size="12" text-anchor="end">'+(gt?'自上次事件起算的月數':'自進入研究起算的月數')+'</text>';
+    for(var i=0;i<7;i++){
+      var a=gt?0:starts[i], b=gt?gaps[i]:stops[i];
+      var y=multi?top+i*rowH+rowH/2:top+rowH/2;
+      var col=(i%2===0)?'var(--seg-a)':'var(--seg-b)';
+      var cens=status[i]===0;
+      if(multi){
+        s+='<text x="'+(L-10)+'" y="'+(y+4)+'" font-size="13" text-anchor="end">k = '+(i+1)+'</text>';
+        s+='<rect x="'+x(a)+'" y="'+(y-6)+'" width="'+Math.max(2,x(b)-x(a))+'" height="12" rx="3" fill="'+col+'" opacity="'+(cens?0.45:0.9)+'"/>';
+      }else{
+        s+='<line x1="'+x(a)+'" x2="'+x(b)+'" y1="'+y+'" y2="'+y+'" stroke="'+col+'" stroke-width="6" stroke-linecap="butt" opacity="'+(cens?0.55:1)+'"/>';
+      }
+      if(cens){
+        s+='<circle cx="'+x(b)+'" cy="'+y+'" r="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>';
+      }else{
+        s+='<rect x="'+(x(b)-5)+'" y="'+(y-5)+'" width="10" height="10" fill="var(--ink)"/>';
+      }
+    }
+    s+='</svg>';
+    el('cutSvg').innerHTML=s;
+    el('cutCap').textContent=caps[mode];
+    var hdr='<thead><tr><th class="num">列</th><th class="num">start</th><th class="num">stop</th><th class="num">status</th>'+(multi?'<th class="num">分層 k</th>':'')+'</tr></thead><tbody>';
+    var body='';
+    for(var j=0;j<7;j++){
+      var st=gt?0:starts[j], sp=gt?gaps[j]:stops[j];
+      body+='<tr><td class="num">'+(j+1)+'</td><td class="num">'+st+'</td><td class="num">'+sp+'</td><td class="num">'+status[j]+'</td>'+(multi?'<td class="num">'+(j+1)+'</td>':'')+'</tr>';
+    }
+    el('cutTbl').innerHTML=hdr+body+'</tbody>';
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#cutBtns button'),function(b){
+    b.addEventListener('click',function(){
+      mode=b.getAttribute('data-m');
+      Array.prototype.forEach.call(document.querySelectorAll('#cutBtns button'),function(o){o.setAttribute('aria-pressed',o===b?'true':'false')});
+      renderCut();
+    });
+  });
+  renderCut();
+
+  /* ---------- 模型分頁 ---------- */
+  var M=[
+    {k:'AG',name:'Andersen–Gill（AG）',tag:'把 Cox 模型推廣成「計數過程」，所有事件共用同一個基線風險。',
+     rows:[
+      ['核心想法','模型描述事件數隨時間的增量。結果是從進入研究起算的總時間，所有事件共用基線風險，並估計一個全域效應。'],
+      ['相關性假設','個人內的事件相關可被「過去事件」與已測量的共變項解釋，因此給定共變項後，事件間的時間增量條件上不相關。'],
+      ['怎麼補救','若假設不成立，可用穩健三明治變異數；或加入「前次事件數」等時變共變項來捕捉相依。'],
+      ['適合情境','相依性完全透過時變共變項傳遞，且想看對事件發生強度的整體效應；各次風險大致相同的頻繁事件。'],
+      ['優點','能處理時變共變項與不連續的風險區間。'],
+      ['陷阱','遺漏重要共變項會造成未解釋的相依 → 標準誤被低估 → type I error 膨脹。'],
+      ['常見應用','基底細胞癌反覆發生、老年人因各種原因或心血管疾病反覆住院。']]},
+    {k:'PWP',name:'Prentice–Williams–Peterson（PWP）',tag:'依「前面已發生幾次事件」分層；第 k 層只有已發生 k−1 次的人在風險集中。',
+     rows:[
+      ['核心想法','用分層建模有順序的多重事件。所有人都在第 1 層風險集，只有在前一層發生事件的人才進入下一層。'],
+      ['兩個版本','<b>PWP-TT</b>：總時間（自進入研究起算）。<b>PWP-GT</b>：間隔時間（自上次事件起算，時間歸零，假設 renewal process）。'],
+      ['效應','可估整體共同效應，也可估每次事件各自的效應；不像 AG 被迫只有一個。'],
+      ['適合情境','效應可能隨次數改變（病毒感染產生免疫、囊腫性纖維化的肺部惡化）；相信第一次事件會增加再發機率；想分別估計各次事件；GT 適合事件不常發生、事件後像重新開始，或想預測下一次事件。'],
+      ['陷阱','後面層的風險集很小，估計不穩，通常要截斷在前幾次事件。'],
+      ['常見應用','兒童感染性疾病、囊腫性纖維化的肺部惡化。']]},
+    {k:'MM',name:'邊際均值／比率模型',tag:'把同一人的所有事件視為單一計數過程，不指定事件間的相依結構。',
+     rows:[
+      ['核心想法','直接建模事件的平均數（均值函數）或發生速率。沒有時變共變項時，可解讀為「期望事件數」。'],
+      ['與 AG 的關係','若 AG 沒有加入反映事件史的時變共變項，兩者<b>點估計相同</b>；差別在變異數（邊際模型的三明治估計中間用 score residuals 校正相依）。'],
+      ['適合情境','相依結構複雜、未知、也不是研究重點，且無法靠時變共變項描述；研究關心期望次數或發生率。更簡潔彈性。'],
+      ['注意','把事件史放進模型，共變項效應可能被稀釋，比邊際效應小。'],
+      ['常見應用','累積醫療費用、慢性肉芽腫病患者的多次感染。']]},
+    {k:'FR',name:'脆弱模型（frailty）',tag:'在模型中加入「每個人專屬的隱藏隨機效應」，由它誘發事件間的相關。',
+     rows:[
+      ['核心想法','隨機效應代表個人的超額風險（易感性），捕捉共變項無法解釋的未測量異質性。最常見的是共享脆弱模型，隨機效應服從 gamma 分布，平均 1、變異數未知。'],
+      ['假設','給定共變項與隨機效應後，事件時間彼此獨立。'],
+      ['解讀','個人特定（subject-specific）的條件解讀，類似縱貫資料的混合模型；估的是「個體內」的相對風險。'],
+      ['適合情境','存在異質的易感性，但差異的原因沒有被量測到。例如洗腎病人導管插入處的反覆感染：族群像是不同風險個體的混合。'],
+      ['資料量','隨機效應大時，較少事件也可估得動；否則需要較多事件與個體。'],
+      ['軟體','SAS 的 PROC NLMIXED 等；比其他幾個模型較不易取得。']]},
+    {k:'MSM',name:'多狀態模型（MSM）',tag:'把病程畫成「方框（狀態）」與「箭頭（轉換）」，估計各轉換的強度與機率。',
+     rows:[
+      ['核心想法','最簡單的是「存活→死亡」兩狀態。重複事件時，每次事件視為一次狀態改變（無事件 → 第 1 次 → 第 2 次 → …）。以轉換機率與轉換強度（在已處於某狀態下，瞬間進入另一狀態的風險）為核心。'],
+      ['怎麼建模','各轉換強度可用單變量 Cox 模型，重複事件則可用 AG 或 PWP 的方式建模。可為 Markov 或半 Markov，視對轉換率依賴性的假設而定。'],
+      ['最常見應用','疾病—死亡模型（illness-death）：例如把心衰竭病人的多次住院與死亡放在一起，區分兩種臨床事件。'],
+      ['適合情境','關心進展速率與危險因子對各轉換的效應；事件可逆（如導管喪失、感染後康復），想估轉換機率。'],
+      ['限制','2014 年前後軟體支援不足（SAS 巨集 PTRANSIT；Stata 與 R 沒有專用選項），所以很少用於重複事件資料。']]}
+  ];
+  /* ---------- 模型示意圖 ---------- */
+  var FX0=40, FX1=600;
+  function defs(){return '<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--ink)"/></marker></defs>';}
+  function sq(x,y){return '<rect x="'+(x-5)+'" y="'+(y-5)+'" width="10" height="10" style="fill:var(--ink)"/>';}
+  function oc(x,y){return '<circle cx="'+x+'" cy="'+y+'" r="6" style="fill:var(--surface);stroke:var(--ink);stroke-width:2"/>';}
+  function TX(x,y,t,o){o=o||{};return '<text x="'+x+'" y="'+y+'" font-size="'+(o.s||13)+'" text-anchor="'+(o.a||'middle')+'"'+(o.st?' style="'+o.st+'"':'')+'>'+t+'</text>';}
+  function opn(h,label){return '<svg viewBox="0 0 640 '+h+'" role="img" aria-label="'+label+'">'+defs();}
+  function fig(s,cap){return '<div style="margin:6px 0 20px">'+s+'</svg><p class="caption">'+cap+'</p></div>';}
+  var INK='fill:var(--ink)', ONACC='fill:var(--surface)';
+
+  function figAG(){
+    var ev=[4,6,9,12,15,28],T=60,sc=(FX1-FX0)/T;
+    function X(t){return FX0+t*sc}
+    var s=opn(160,'AG 模型示意圖');
+    s+=TX(FX0,14,'病人 1 的時間軸（0 到 60 個月）',{a:'start'});
+    s+='<line x1="'+X(0)+'" x2="'+X(T)+'" y1="34" y2="34" style="stroke:var(--seg-a);stroke-width:5"/>';
+    ev.forEach(function(t){s+=sq(X(t),34)});
+    s+=oc(X(T),34);
+    s+=TX(FX0,64,'每一段開始時，已經發生過幾次事件（時變共變項）',{a:'start'});
+    var b=[0].concat(ev), e=ev.concat([T]);
+    for(var i=0;i<7;i++){
+      s+=TX((X(b[i])+X(e[i]))/2,92,String(i),{s:14,st:INK});
+      if(i>0)s+='<line x1="'+X(b[i])+'" x2="'+X(b[i])+'" y1="72" y2="100" style="stroke:var(--line);stroke-dasharray:2 3"/>';
+    }
+    s+='<rect x="'+FX0+'" y="114" width="'+(FX1-FX0)+'" height="34" rx="8" style="fill:var(--accent-soft);stroke:var(--accent)"/>';
+    s+=TX((FX0+FX1)/2,136,'所有區間共用同一個基線風險 h₀(t)，也共用同一個效應 β',{st:INK});
+    return fig(s,'<b>白話：</b>每一段時間都用「同一把尺」衡量風險；若要讓風險隨「前面發生過幾次」改變，就把前次事件數當成時變共變項放進模型。');
+  }
+
+  function figPWP(){
+    var rows=[['第 1 層：所有人',460],['第 2 層：已發生第 1 次者',370],['第 3 層：已發生第 2 次者',290],['第 4 層：已發生第 3 次者',220]];
+    var cx=250, s=opn(236,'PWP 模型分層示意圖');
+    rows.forEach(function(r,i){
+      var y=14+i*50, w=r[1];
+      s+='<rect x="'+(cx-w/2)+'" y="'+y+'" width="'+w+'" height="34" rx="8" style="fill:var(--seg-a);opacity:'+(1-i*0.15)+'"/>';
+      s+=TX(cx,y+22,r[0],{st:ONACC});
+      s+=TX(512,y+22,'效應 β'+['₁','₂','₃','₄'][i],{a:'start'});
+      if(i<3)s+='<line x1="'+cx+'" x2="'+cx+'" y1="'+(y+36)+'" y2="'+(y+48)+'" marker-end="url(#ah)" style="stroke:var(--ink);stroke-width:1.5"/>';
+    });
+    s+=TX(cx,222,'每一層有自己的基線風險；人數越來越少（寬度為示意）',{s:12.5});
+    return fig(s,'<b>白話：</b>像闖關遊戲：要先通過第 1 關（發生第 1 次事件）才有資格進第 2 關。每一關各有自己的風險基準，效應也可以各不相同；但後面的關卡人太少，估計會不穩，所以常要截斷。');
+  }
+
+  function figMM(){
+    var T=60,x0=60,x1=600,y0=196,u=20;
+    function X(t){return x0+t/T*(x1-x0)}
+    function Y(n){return y0-n*u}
+    function stair(evs){var d='M'+X(0)+' '+Y(0),n=0;evs.forEach(function(t){d+=' H'+X(t)+' V'+Y(n+1);n++;});return d+' H'+X(T);}
+    var p1=[4,6,9,12,15,28],p3=[12,47];
+    var all=p1.concat(p3).sort(function(a,b){return a-b});
+    function cnt(a,t){return a.filter(function(e){return e<=t}).length}
+    var d='M'+X(0)+' '+Y(0);
+    all.forEach(function(t){d+=' H'+X(t)+' V'+Y((cnt(p1,t)+cnt(p3,t))/2)});
+    d+=' H'+X(T);
+    var s=opn(250,'邊際均值模型示意圖');
+    s+='<line x1="'+x0+'" x2="'+x1+'" y1="'+y0+'" y2="'+y0+'" class="axis"/><line x1="'+x0+'" x2="'+x0+'" y1="'+Y(6)+'" y2="'+y0+'" class="axis"/>';
+    [0,12,24,36,48,60].forEach(function(t){s+=TX(X(t),y0+18,t,{s:12})});
+    [0,2,4,6].forEach(function(n){s+=TX(x0-8,Y(n)+4,n,{a:'end',s:12})});
+    s+=TX(x0,Y(6)-12,'累積事件數 N(t)',{a:'start',s:12});
+    s+=TX(x1,y0+36,'月',{a:'end',s:12});
+    s+='<path d="'+stair(p1)+'" style="fill:none;stroke:var(--seg-b);stroke-width:2.5"/>';
+    s+='<path d="'+stair(p3)+'" style="fill:none;stroke:var(--muted);stroke-width:2.5;stroke-dasharray:6 4"/>';
+    s+='<path d="'+d+'" style="fill:none;stroke:var(--seg-a);stroke-width:4.5"/>';
+    var lg=[['病人 1','stroke:var(--seg-b);stroke-width:2.5',230],['病人 3','stroke:var(--muted);stroke-width:2.5;stroke-dasharray:6 4',330],['兩人平均（示意）','stroke:var(--seg-a);stroke-width:4.5',430]];
+    lg.forEach(function(l){s+='<line x1="'+l[2]+'" x2="'+(l[2]+24)+'" y1="20" y2="20" style="'+l[1]+'"/>'+TX(l[2]+30,24,l[0],{a:'start',s:12.5})});
+    return fig(s,'<b>白話：</b>不去管事件之間怎麼相關，只看「平均而言，累積次數長得多快」。粗線是平均累積次數，模型描述的就是它的成長速度。病人 1、3 的事件時間為示範資料，平均線為示意，沒有處理設限。');
+  }
+
+  function figFR(){
+    var T=60,x0=170,x1=600;
+    function X(t){return x0+t/T*(x1-x0)}
+    var P=[['低易感性　z = 0.5',[30]],['一般　z = 1.0',[10,35]],['高易感性　z = 2.0',[3,6,9,13,17,22,30,41]]];
+    var s=opn(190,'脆弱模型示意圖');
+    P.forEach(function(p,i){
+      var y=30+i*44;
+      s+=TX(x0-14,y+4,p[0],{a:'end',s:12.5});
+      s+='<line x1="'+X(0)+'" x2="'+X(T)+'" y1="'+y+'" y2="'+y+'" style="stroke:var(--seg-a);stroke-width:4"/>';
+      p[1].forEach(function(t){s+=sq(X(t),y)});
+      s+=oc(X(T),y);
+    });
+    s+=TX(320,166,'個人風險 = z × 基線風險 × exp(βx)　（三人的共變項相同）',{st:INK});
+    return fig(s,'<b>白話：</b>每個人身上都有一個看不見的「易感性倍數」z（平均為 1）。條件完全相同，z 大的人事件就是特別多；這個共同的倍數也是「同一個人的事件彼此相關」的來源。圖中的事件時間為示意。');
+  }
+
+  function box(x,y,w,t){return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="38" rx="8" style="fill:var(--surface);stroke:var(--seg-a);stroke-width:2"/>'+TX(x+w/2,y+24,t,{st:INK,s:13.5});}
+  function arr(x1,y1,x2,y2){return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" marker-end="url(#ah)" style="stroke:var(--ink);stroke-width:1.8"/>';}
+  function figMSM(){
+    var s=opn(236,'多狀態模型示意圖');
+    s+=TX(14,18,'① 把每一次事件當成「換一個狀態」',{a:'start',s:12.5});
+    s+=box(14,30,100,'無事件')+box(164,30,100,'第 1 次事件')+box(314,30,100,'第 2 次事件')+box(526,30,100,'第 k 次事件');
+    s+=arr(116,49,160,49)+arr(266,49,310,49)+arr(416,49,452,49)+arr(490,49,522,49);
+    s+=TX(470,54,'…',{s:16});
+    s+=TX(138,40,'α₀₁(t)',{s:12})+TX(288,40,'α₁₂(t)',{s:12});
+    s+=TX(14,120,'② 事件可逆時：健康 ⇄ 生病（例如感染後康復）',{a:'start',s:12.5});
+    s+=box(110,136,130,'健康')+box(400,136,150,'生病');
+    s+=arr(244,148,396,148)+arr(396,166,244,166);
+    s+=TX(320,142,'健康 → 生病',{s:12})+TX(320,184,'生病 → 康復',{s:12});
+    s+=TX(320,222,'α(t) 是「轉換強度」：在目前狀態下，此刻轉到另一狀態的風險',{s:12.5});
+    return fig(s,'<b>白話：</b>像一張病程地圖：方框是狀態，箭頭是轉換，每條箭頭有自己的風險。若事件可以逆轉（例如感染後康復），往與返兩條路都要估。');
+  }
+  var FIGS={AG:figAG(),PWP:figPWP(),MM:figMM(),FR:figFR(),MSM:figMSM()};
+
+  /* ---------- 第一部分：5 人例子的圖 ---------- */
+  function wrapS(x){return '<div style="margin:12px 0">'+x+'</svg></div>';}
+  function figDataSvg(){
+    var T=9,x0=84,x1=610,sc=(x1-x0)/T;
+    function X(t){return x0+t*sc}
+    var P=[['A',0,2,1],['B',1,3,0],['C',1,5,1],['D',0,6,0],['E',1,8,1]];
+    var s=opn(206,'5 人資料的時間軸');
+    P.forEach(function(p,i){
+      var y=24+i*30;
+      s+=TX(x0-12,y+4,p[0]+'（x = '+p[1]+'）',{a:'end',s:12.5,st:INK});
+      s+='<line x1="'+X(0)+'" x2="'+X(p[2])+'" y1="'+y+'" y2="'+y+'" style="stroke:var(--seg-a);stroke-width:5"/>';
+      s+= p[3] ? sq(X(p[2]),y) : oc(X(p[2]),y);
+    });
+    var ay=164;
+    s+='<line class="axis" x1="'+x0+'" x2="'+x1+'" y1="'+ay+'" y2="'+ay+'"/>';
+    for(var t=0;t<=9;t++){s+=TX(X(t),ay+18,t,{s:12})}
+    s+=TX(x1,ay+36,'月',{a:'end',s:12});
+    return wrapS(s);
+  }
+  function figKMSvg(){
+    var T=9,x0=84,x1=610,sc=(x1-x0)/T;
+    function X(t){return x0+t*sc}
+    function Y(v){return 190-v*140}
+    var s=opn(250,'Kaplan–Meier 曲線');
+    s+=TX(x0,22,'S(t)：還沒發生事件的比例',{a:'start',s:12.5});
+    s+='<line class="axis" x1="'+x0+'" x2="'+x1+'" y1="'+Y(0)+'" y2="'+Y(0)+'"/><line class="axis" x1="'+x0+'" x2="'+x0+'" y1="'+Y(1)+'" y2="'+Y(0)+'"/>';
+    [0,0.5,1].forEach(function(v){s+=TX(x0-8,Y(v)+4,v,{a:'end',s:12})});
+    for(var t=0;t<=9;t++){s+=TX(X(t),Y(0)+17,t,{s:12})}
+    s+=TX(x1,Y(0)+34,'月',{a:'end',s:12});
+    var s5=0.8*2/3;
+    s+='<path d="M'+X(0)+' '+Y(1)+' H'+X(2)+' V'+Y(0.8)+' H'+X(5)+' V'+Y(s5)+' H'+X(8)+' V'+Y(0)+' H'+X(9)+'" style="fill:none;stroke:var(--seg-a);stroke-width:3.5"/>';
+    [[3,0.8],[6,s5]].forEach(function(c){s+='<line x1="'+X(c[0])+'" x2="'+X(c[0])+'" y1="'+(Y(c[1])-8)+'" y2="'+(Y(c[1])+8)+'" style="stroke:var(--ink);stroke-width:2"/>'});
+    s+=TX(X(2)-8,Y(0.9)+4,'A 事件',{a:'end',s:12})+TX(X(4.3),Y(0.8)-8,'0.80',{s:12.5,st:INK});
+    s+=TX(X(5)-8,Y(0.67)+4,'C 事件',{a:'end',s:12})+TX(X(7.2),Y(s5)-8,'0.53',{s:12.5,st:INK});
+    s+=TX(X(8)-8,Y(0.25)+4,'E 事件',{a:'end',s:12})+TX(X(8)+22,Y(0)-8,'0',{s:12.5,st:INK});
+    s+=TX(X(3),Y(0.8)-14,'B 設限',{s:12})+TX(X(6),Y(s5)-14,'D 設限',{s:12});
+    var ry=Y(0)+52;
+    s+=TX(x0-12,ry,'風險集人數',{a:'end',s:12});
+    [[0,5],[2,5],[5,3],[8,1]].forEach(function(r){s+=TX(X(r[0]),ry,r[1],{s:13,st:INK})});
+    return wrapS(s);
+  }
+  function coxL(r){return r/((2+3*r)*(1+2*r))}
+  function figCoxSvg(){
+    var x0=84,x1=610,Y0=180;
+    function X(r){return x0+r/2*(x1-x0)}
+    function Y(v){return Y0-v/0.08*140}
+    var s=opn(232,'Cox 偏概似曲線');
+    s+=TX(x0,22,'L(r)：偏概似',{a:'start',s:12.5});
+    s+='<line class="axis" x1="'+x0+'" x2="'+x1+'" y1="'+Y0+'" y2="'+Y0+'"/><line class="axis" x1="'+x0+'" x2="'+x0+'" y1="'+Y(0.08)+'" y2="'+Y0+'"/>';
+    [0,0.04,0.08].forEach(function(v){s+=TX(x0-8,Y(v)+4,v.toFixed(2),{a:'end',s:12})});
+    [0,0.5,1,1.5,2].forEach(function(r){s+=TX(X(r),Y0+17,r,{s:12})});
+    s+=TX((x0+x1)/2,Y0+38,'r = exp(β)：治療組相對對照組的風險倍數',{s:12.5});
+    var pts=[];for(var r=0;r<=2.001;r+=0.02){pts.push(X(r).toFixed(1)+','+Y(coxL(r)).toFixed(1))}
+    s+='<polyline points="'+pts.join(' ')+'" style="fill:none;stroke:var(--seg-a);stroke-width:3.5"/>';
+    var rh=1/Math.sqrt(3);
+    s+='<line x1="'+X(rh)+'" x2="'+X(rh)+'" y1="'+Y(coxL(rh))+'" y2="'+Y0+'" style="stroke:var(--ink);stroke-dasharray:4 3"/>';
+    s+='<circle cx="'+X(rh)+'" cy="'+Y(coxL(rh))+'" r="5" style="fill:var(--ink)"/>';
+    s+=TX(X(rh),Y(coxL(rh))-12,'最大值：r ≈ 0.58',{s:12.5,st:INK});
+    s+='<circle cx="'+X(1)+'" cy="'+Y(coxL(1))+'" r="5" style="fill:var(--surface);stroke:var(--ink);stroke-width:2"/>';
+    s+=TX(X(1)+10,Y(coxL(1))-12,'r = 1（沒有效應）',{a:'start',s:12.5});
+    return wrapS(s);
+  }
+  function coxTable(){
+    var rows=[[0.25,'0.25'],[0.5,'0.50'],[1/Math.sqrt(3),'0.58（最大）'],[1,'1.00'],[2,'2.00']];
+    var h='<div class="tablewrap"><table><thead><tr><th>r</th><th class="num">第 2 個月<br>1/(2+3r)</th><th class="num">第 5 個月<br>r/(1+2r)</th><th class="num">第 8 個月</th><th class="num">相乘 L(r)</th></tr></thead><tbody>';
+    rows.forEach(function(x){
+      var r=x[0],a=1/(2+3*r),b=r/(1+2*r),best=x[1].indexOf('最大')>=0;
+      h+='<tr'+(best?' style="font-weight:700"':'')+'><td>'+x[1]+'</td><td class="num">'+a.toFixed(3)+'</td><td class="num">'+b.toFixed(3)+'</td><td class="num">1</td><td class="num">'+(a*b).toFixed(4)+'</td></tr>';
+    });
+    return h+'</tbody></table></div>';
+  }
+  function figParSvg(){
+    var T=9;
+    var s=opn(268,'指數模型與風險形狀');
+    // left panel
+    var lx0=60,lx1=300;
+    function LX(t){return lx0+t/T*(lx1-lx0)}
+    function LY(v){return 170-v*110}
+    s+=TX(lx0,22,'① 存活曲線（同一份 5 人資料）',{a:'start',s:12.5});
+    s+='<line class="axis" x1="'+lx0+'" x2="'+lx1+'" y1="'+LY(0)+'" y2="'+LY(0)+'"/><line class="axis" x1="'+lx0+'" x2="'+lx0+'" y1="'+LY(1)+'" y2="'+LY(0)+'"/>';
+    [0,0.5,1].forEach(function(v){s+=TX(lx0-6,LY(v)+4,v,{a:'end',s:11.5})});
+    [0,3,6,9].forEach(function(t){s+=TX(LX(t),LY(0)+16,t,{s:11.5})});
+    var s5=0.8*2/3;
+    s+='<path d="M'+LX(0)+' '+LY(1)+' H'+LX(2)+' V'+LY(0.8)+' H'+LX(5)+' V'+LY(s5)+' H'+LX(8)+' V'+LY(0)+' H'+LX(9)+'" style="fill:none;stroke:var(--muted);stroke-width:2.5"/>';
+    var pe=[];for(var t=0;t<=9.001;t+=0.25){pe.push(LX(t).toFixed(1)+','+LY(Math.exp(-0.125*t)).toFixed(1))}
+    s+='<polyline points="'+pe.join(' ')+'" style="fill:none;stroke:var(--seg-a);stroke-width:3.5"/>';
+    s+='<line x1="'+lx0+'" x2="'+(lx0+22)+'" y1="214" y2="214" style="stroke:var(--muted);stroke-width:2.5"/>'+TX(lx0+28,218,'KM（階梯）',{a:'start',s:12});
+    s+='<line x1="'+lx0+'" x2="'+(lx0+22)+'" y1="232" y2="232" style="stroke:var(--seg-a);stroke-width:3.5"/>'+TX(lx0+28,236,'指數模型（平滑）',{a:'start',s:12});
+    // right panel
+    var rx0=370,rx1=610;
+    function RX(t){return rx0+t/T*(rx1-rx0)}
+    function RY(v){return 170-v*110}
+    s+=TX(rx0,22,'② 風險 h(t) 的形狀（示意）',{a:'start',s:12.5});
+    s+='<line class="axis" x1="'+rx0+'" x2="'+rx1+'" y1="'+RY(0)+'" y2="'+RY(0)+'"/><line class="axis" x1="'+rx0+'" x2="'+rx0+'" y1="'+RY(1)+'" y2="'+RY(0)+'"/>';
+    s+=TX(rx1,RY(0)+16,'時間',{a:'end',s:11.5});
+    function curve(f,st){var q=[];for(var t=0;t<=9.001;t+=0.25){q.push(RX(t).toFixed(1)+','+RY(f(t)).toFixed(1))}return '<polyline points="'+q.join(' ')+'" style="fill:none;'+st+'"/>';}
+    s+=curve(function(){return 0.4},'stroke:var(--seg-a);stroke-width:3');
+    s+=curve(function(t){return 0.1+0.8*Math.pow(t/9,1.5)},'stroke:var(--seg-b);stroke-width:3');
+    s+=curve(function(t){return 0.08+0.8*Math.exp(-t/2.5)},'stroke:var(--ink);stroke-width:2.5;stroke-dasharray:6 4');
+    s+=curve(function(t){return 0.55+0.22*Math.sin(t*1.1)+0.08*Math.cos(t*2.3)},'stroke:var(--muted);stroke-width:2;stroke-dasharray:2 3');
+    var lg=[['stroke:var(--seg-a);stroke-width:3','指數：風險不變'],['stroke:var(--seg-b);stroke-width:3','Weibull：風險上升'],['stroke:var(--ink);stroke-width:2.5;stroke-dasharray:6 4','Weibull：風險下降'],['stroke:var(--muted);stroke-width:2;stroke-dasharray:2 3','Cox 的 h₀(t)：不指定，可任意']];
+    lg.forEach(function(l,i){var y=204+i*17;s+='<line x1="'+rx0+'" x2="'+(rx0+22)+'" y1="'+y+'" y2="'+y+'" style="'+l[0]+'"/>'+TX(rx0+28,y+4,l[1],{a:'start',s:12})});
+    return wrapS(s);
+  }
+  function figCovSvg(){
+    var s=opn(262,'兩個人只差共變項：風險曲線只是平移');
+    var lx0=60,lx1=290;
+    function LX(t){return lx0+t/10*(lx1-lx0)}
+    function LY(h){return 170-h/0.25*120}
+    s+=TX(lx0,22,'① 常數風險（指數）：線性刻度',{a:'start',s:12.5});
+    s+='<line class="axis" x1="'+lx0+'" x2="'+lx1+'" y1="170" y2="170"/><line class="axis" x1="'+lx0+'" x2="'+lx0+'" y1="'+LY(0.25)+'" y2="170"/>';
+    [0,0.1,0.2].forEach(function(v){s+=TX(lx0-6,LY(v)+4,v.toFixed(1),{a:'end',s:11.5})});
+    [0,5,10].forEach(function(t){s+=TX(LX(t),186,t,{s:11.5})});
+    s+=TX(lx1,202,'時間（月）',{a:'end',s:11.5});
+    s+='<line x1="'+LX(0)+'" x2="'+LX(10)+'" y1="'+LY(0.1)+'" y2="'+LY(0.1)+'" style="stroke:var(--seg-b);stroke-width:3.5"/>';
+    s+='<line x1="'+LX(0)+'" x2="'+LX(10)+'" y1="'+LY(0.2)+'" y2="'+LY(0.2)+'" style="stroke:var(--seg-a);stroke-width:3.5"/>';
+    s+='<line x1="'+LX(7.5)+'" x2="'+LX(7.5)+'" y1="'+(LY(0.1)-4)+'" y2="'+(LY(0.2)+4)+'" marker-start="url(#ah)" marker-end="url(#ah)" style="stroke:var(--ink);stroke-width:1.5"/>';
+    s+=TX(LX(7.5)+8,(LY(0.1)+LY(0.2))/2+4,'× 2',{a:'start',s:12.5,st:INK});
+    s+=TX(LX(0.3),LY(0.2)-8,'x = 1：h = 0.20',{a:'start',s:12});
+    s+=TX(LX(0.3),LY(0.1)-8,'x = 0：h = 0.10',{a:'start',s:12});
+    var rx0=380,rx1=610,l0=Math.log10(0.03),l1=Math.log10(1.2);
+    function RX(t){return rx0+(t-0.5)/9.5*(rx1-rx0)}
+    function RY(h){return 170-(Math.log10(h)-l0)/(l1-l0)*120}
+    s+=TX(rx0-12,22,'② Weibull：縱軸為對數刻度',{a:'start',s:12.5});
+    s+='<line class="axis" x1="'+rx0+'" x2="'+rx1+'" y1="170" y2="170"/><line class="axis" x1="'+rx0+'" x2="'+rx0+'" y1="'+RY(1.2)+'" y2="170"/>';
+    [0.03,0.1,0.3,1].forEach(function(v){s+=TX(rx0-6,RY(v)+4,String(v),{a:'end',s:11.5})});
+    [1,5,10].forEach(function(t){s+=TX(RX(t),186,t,{s:11.5})});
+    s+=TX(rx1,202,'時間（月）',{a:'end',s:11.5});
+    function wb(k,st){var q=[];for(var t=0.5;t<=10.001;t+=0.25){q.push(RX(t).toFixed(1)+','+RY(k*0.06*t).toFixed(1))}return '<polyline points="'+q.join(' ')+'" style="fill:none;'+st+'"/>';}
+    s+=wb(1,'stroke:var(--seg-b);stroke-width:3.5');
+    s+=wb(2,'stroke:var(--seg-a);stroke-width:3.5');
+    s+='<line x1="'+RX(7)+'" x2="'+RX(7)+'" y1="'+(RY(0.06*7)-4)+'" y2="'+(RY(0.12*7)+4)+'" marker-start="url(#ah)" marker-end="url(#ah)" style="stroke:var(--ink);stroke-width:1.5"/>';
+    s+=TX(RX(7)+8,(RY(0.06*7)+RY(0.12*7))/2+4,'平移 β = ln 2',{a:'start',s:12.5,st:INK});
+    s+='<line x1="'+lx0+'" x2="'+(lx0+22)+'" y1="226" y2="226" style="stroke:var(--seg-b);stroke-width:3.5"/>'+TX(lx0+28,230,'x = 0（對照）',{a:'start',s:12});
+    s+='<line x1="'+(lx0+150)+'" x2="'+(lx0+172)+'" y1="226" y2="226" style="stroke:var(--seg-a);stroke-width:3.5"/>'+TX(lx0+178,230,'x = 1（治療）',{a:'start',s:12});
+    return wrapS(s);
+  }
+  el('figData').innerHTML=figDataSvg();
+  el('figKM').innerHTML=figKMSvg();
+  el('coxTbl').innerHTML=coxTable();
+  el('figCoxL').innerHTML=figCoxSvg();
+  el('figPar').innerHTML=figParSvg();
+  el('figCov').innerHTML=figCovSvg();
+
+  /* ---------- 從 Cox 推廣：逐步 ---------- */
+  function wrapSvg(x){return '<div style="margin:12px 0">'+x+'</svg></div>';}
+  function p1fig(step){
+    var ev=[4,6,9,12,15,28],T=60,x0=40,x1=600,sc=(x1-x0)/T;
+    function X(t){return x0+t*sc}
+    var b=[0].concat(ev), e=ev.concat([T]), s='', i;
+    function ln(y,a,c,st){return '<line x1="'+X(a)+'" x2="'+X(c)+'" y1="'+y+'" y2="'+y+'" style="'+st+'"/>'}
+    if(step===0){
+      s=opn(130,'Cox 只用第一次事件');
+      s+=TX(x0,16,'病人 1',{a:'start',s:12.5});
+      s+=ln(46,0,4,'stroke:var(--seg-a);stroke-width:7');
+      s+=ln(46,4,T,'stroke:var(--muted);stroke-width:3;stroke-dasharray:5 4;opacity:.55');
+      ev.forEach(function(t,j){s+= j===0 ? sq(X(t),46) : '<rect x="'+(X(t)-5)+'" y="41" width="10" height="10" style="fill:none;stroke:var(--muted);opacity:.7"/>'});
+      s+=oc(X(T),46);
+      s+=TX(x0,88,'✔ 只用到 (0, 4] 這一列：事件發生在第 4 個月',{a:'start',s:12.5,st:INK});
+      s+=TX(x0,110,'✘ 其餘 5 次事件，以及之後的追蹤時間，全部丟掉',{a:'start',s:12.5});
+    }else if(step===1){
+      s=opn(150,'AG：切成 7 段');
+      s+=TX(x0,16,'病人 1：切成 7 段，全部使用',{a:'start',s:12.5});
+      for(i=0;i<7;i++){s+=ln(44,b[i],e[i],'stroke:'+(i%2?'var(--seg-b)':'var(--seg-a)')+';stroke-width:7')}
+      ev.forEach(function(t){s+=sq(X(t),44)}); s+=oc(X(T),44);
+      s+=TX(x0,76,'每段開始時，前面已發生的事件數 N(t−)',{a:'start',s:12.5});
+      for(i=0;i<7;i++){s+=TX((X(b[i])+X(e[i]))/2,98,String(i),{s:13,st:INK})}
+      s+='<rect x="'+x0+'" y="110" width="'+(x1-x0)+'" height="30" rx="8" style="fill:var(--accent-soft);stroke:var(--accent)"/>'+TX((x0+x1)/2,130,'全部共用同一個 h₀(t)',{st:INK});
+    }else if(step===2){
+      s=opn(210,'PWP：分層');
+      s+=TX(x0,14,'病人 1：每一段屬於不同的層',{a:'start',s:12.5});
+      for(i=0;i<7;i++){
+        var y=30+i*24;
+        s+=TX(x0-8,y+4,'k='+(i+1),{a:'end',s:12});
+        s+='<rect x="'+X(b[i])+'" y="'+(y-6)+'" width="'+Math.max(3,X(e[i])-X(b[i]))+'" height="12" rx="3" style="fill:var(--seg-a);opacity:'+(i===6?.45:.9)+'"/>';
+        s+= i===6 ? oc(X(e[i]),y) : sq(X(e[i]),y);
+      }
+      s+=TX(X(22),72,'每一層用自己的基線風險 h₀ₖ，',{a:'start',s:12.5})+TX(X(22),90,'只和「同一層」的人比較',{a:'start',s:12.5});
+    }else if(step===3){
+      var y0=142,u=17;
+      function Y(n){return y0-n*u}
+      s=opn(180,'邊際模型：累積事件數');
+      s+=TX(x0,16,'病人 1 的累積事件數 N₁(t)：整條階梯視為一個單位',{a:'start',s:12.5});
+      s+='<line x1="'+x0+'" x2="'+x1+'" y1="'+y0+'" y2="'+y0+'" class="axis"/>';
+      [0,12,24,36,48,60].forEach(function(t){s+=TX(X(t),y0+17,t,{s:12})});
+      var d='M'+X(0)+' '+Y(0);
+      ev.forEach(function(t,j){d+=' H'+X(t)+' V'+Y(j+1)});
+      d+=' H'+X(T);
+      s+='<path d="'+d+'" style="fill:none;stroke:var(--seg-a);stroke-width:3.5"/>';
+      ev.forEach(function(t,j){s+=sq(X(t),Y(j+1))});
+      s+=TX(x1,96,'不假設事件之間怎麼相關，',{a:'end',s:12.5})+TX(x1,114,'用「以人為單位」的穩健標準誤',{a:'end',s:12.5});
+    }else if(step===4){
+      s=opn(150,'脆弱模型：個人倍數');
+      s+='<rect x="190" y="8" width="260" height="30" rx="15" style="fill:var(--accent-soft);stroke:var(--accent)"/>'+TX(320,28,'隱藏的個人倍數 z₁ 偏大？',{st:INK});
+      s+='<line x1="320" y1="40" x2="320" y2="70" marker-end="url(#ah)" style="stroke:var(--ink);stroke-width:1.5"/>';
+      s+=ln(86,0,T,'stroke:var(--seg-a);stroke-width:7');
+      ev.forEach(function(t){s+=sq(X(t),86)}); s+=oc(X(T),86);
+      s+=TX(320,126,'事件特別多，不靠共變項解釋，而是由 z₁ 吸收',{s:12.5});
+    }else{
+      s=opn(150,'多狀態模型：病人 1 的路徑');
+      var gaps=['4','2','3','3','3','13'];
+      for(i=0;i<7;i++){
+        var bx=24+i*88;
+        s+='<rect x="'+bx+'" y="38" width="62" height="34" rx="8" style="fill:var(--surface);stroke:var(--seg-a);stroke-width:2"/>'+TX(bx+31,60,'狀態 '+i,{st:INK,s:12.5});
+        if(i<6){
+          s+='<line x1="'+(bx+64)+'" y1="55" x2="'+(bx+86)+'" y2="55" marker-end="url(#ah)" style="stroke:var(--ink);stroke-width:1.6"/>';
+          s+=TX(bx+75,48,gaps[i],{s:12,st:INK});
+        }
+      }
+      s+=TX(x0-16,22,'箭頭上的數字＝在上一個狀態停留的月數',{a:'start',s:12.5});
+      s+=TX(24,100,'最後停在狀態 6 共 32 個月後被設限（對應空心圓）',{a:'start',s:12.5});
+      s+=TX(24,122,'每個箭頭 α₀₁、α₁₂、… 各自是一個 Cox 型的模型',{a:'start',s:12.5});
+    }
+    return wrapSvg(s);
+  }
+  var CALCS=[
+    {blocks:[{head:'第 4 個月：病人 1 的第 1 次事件（Cox 只用得到這一項）',
+      rows:[['病人 1',1,0,true,'2','發生事件者（第 1 次事件）'],['病人 2',0,0,true,'1','還沒發生過事件'],['病人 3',0,1,false,'—','第 3 個月已發生第 1 次事件，Cox 之後不再用他'],['病人 4',0,0,true,'1','還沒發生過事件'],['病人 5',1,1,false,'—','第 2 個月已發生第 1 次事件'],['病人 6',0,1,false,'—','第 2 個月已發生第 1 次事件']],
+      res:'病人 1 這一項 ＝ 2 ÷ (2 + 1 + 1) ＝ <b>0.50</b>'}],
+     note:'病人 1 在第 6、9、12、15、28 個月的事件，Cox 完全沒有用到，所以他的 6 次事件只貢獻這 1 項。'},
+    {blocks:[{head:'第 9 個月：病人 1 的第 3 次事件',
+      rows:[['病人 1',1,2,true,'2','發生事件者；已發生 2 次（第 4、6 個月）'],['病人 2',0,1,true,'1','仍在被觀察，發生過 1 次也照樣在風險集'],['病人 3',0,2,true,'1','第 10 個月才設限，所以第 9 個月還在'],['病人 4',0,0,true,'1','還沒發生過事件，也在風險集'],['病人 5',1,1,false,'—','第 7 個月已設限，離開'],['病人 6',0,2,true,'1','仍在被觀察']],
+      res:'病人 1 這一項 ＝ 2 ÷ (2 + 1 + 1 + 1 + 1) ＝ 2/6 ≈ <b>0.33</b>',
+      extra:'<p><b>加入事件史（設 exp(γ) = 1.5）：</b>每人的權重再乘上 1.5<sup>已發生次數</sup>。病人 1：2×1.5² = 4.5；病人 2：1.5；病人 3：2.25；病人 4：1；病人 6：2.25。這一項變成 4.5 ÷ 11.5 ≈ <b>0.39</b>。</p><div class="box"><b class="t">γ 是什麼、怎麼解讀</b><p><b>γ 和 β 一樣是由資料估計出來的</b>，同樣用偏概似去找讓乘積最大的 γ；這裡的 1.5 只是示範用的假設值。</p><p><b>exp(γ)</b> 是「前面每多發生過 1 次事件，之後的風險變成幾倍」（其他條件相同）：</p><ul><li>exp(γ) = 1.5：每多發生過 1 次，風險高 50%；發生過 3 次就是 1.5³ ≈ 3.4 倍。</li><li>exp(γ) &gt; 1：發生過事件會讓之後更容易再發生（事件容易群聚）。</li><li>exp(γ) &lt; 1：發生過事件之後反而風險降低（例如產生免疫）。</li><li>exp(γ) = 1（γ = 0）：過去事件和之後的風險無關。</li></ul></div>'}],
+     note:'注意風險集的差別：AG 裡「已經發生過事件的人」仍在風險集中，所以病人 1 的第 3 次事件是和所有還在被觀察的人比較。'},
+    {blocks:[{head:'PWP-TT（總時間）：第 9 個月，病人 1 的第 3 次事件',
+      rows:[['病人 1',1,2,true,'2','第 3 層（已發生 2 次），發生事件者'],['病人 2',0,1,false,'—','只發生過 1 次，屬第 2 層'],['病人 3',0,2,true,'1','已發生 2 次，第 10 個月才設限，屬第 3 層'],['病人 4',0,0,false,'—','還沒發生過，屬第 1 層'],['病人 5',1,1,false,'—','第 7 個月已設限'],['病人 6',0,2,true,'1','已發生 2 次，屬第 3 層']],
+      res:'病人 1 這一項 ＝ 2 ÷ (2 + 1 + 1) ＝ <b>0.50</b>'},
+     {head:'PWP-GT（間隔時間）：病人 1 距離上次事件 3 個月（第 9 − 第 6）',
+      rows:[['病人 1',1,2,true,'2','上次事件在第 6 個月，間隔 3 個月時發生事件'],['病人 2',0,1,false,'—','屬第 2 層'],['病人 3',0,2,false,'—','上次事件在第 8 個月，之後只被觀察到第 10 個月（2 個月），沒撐到 3 個月的間隔'],['病人 4',0,0,false,'—','屬第 1 層'],['病人 5',1,1,false,'—','已設限'],['病人 6',0,2,true,'1','上次事件在第 5 個月，之後觀察很久，間隔 3 個月時仍在風險集']],
+      res:'病人 1 這一項 ＝ 2 ÷ (2 + 1) ＝ 2/3 ≈ <b>0.67</b>'}],
+     note:'同樣是第 3 層，TT 比的是「日曆上的同一刻」，GT 比的是「距離上次事件的同一段間隔」，所以病人 3 在 TT 裡在風險集，在 GT 裡不在。'},
+    {blocks:[{head:'第 9 個月：病人 1 的第 3 次事件（和 AG 不含事件史時相同的算法）',
+      rows:[['病人 1',1,2,true,'2','發生事件者'],['病人 2',0,1,true,'1','仍在被觀察'],['病人 3',0,2,true,'1','仍在被觀察'],['病人 4',0,0,true,'1','仍在被觀察'],['病人 5',1,1,false,'—','第 7 個月已設限'],['病人 6',0,2,true,'1','仍在被觀察']],
+      res:'病人 1 這一項 ＝ 2 ÷ (2 + 1 + 1 + 1 + 1) ＝ 2/6 ≈ <b>0.33</b>'}],
+     note:'點估計的算法和 AG（不含事件史）相同；差別在標準誤。病人 1 的 6 個事件項彼此相關，所以邊際模型以「整個人」為單位計算不確定性，信賴區間會和 AG 不同。'},
+    {blocks:[{head:'第 9 個月：病人 1 的第 3 次事件（假設估出 z₁ = 3，其他人 z = 1）',
+      rows:[['病人 1',1,2,true,'3 × 2 ＝ 6','發生事件者；個人倍數 z₁ = 3（假設值）'],['病人 2',0,1,true,'1 × 1 ＝ 1','z = 1'],['病人 3',0,2,true,'1 × 1 ＝ 1','z = 1'],['病人 4',0,0,true,'1 × 1 ＝ 1','z = 1'],['病人 5',1,1,false,'—','第 7 個月已設限'],['病人 6',0,2,true,'1 × 1 ＝ 1','z = 1']],
+      res:'病人 1 這一項 ＝ 6 ÷ (6 + 1 + 1 + 1 + 1) ＝ 6/10 ＝ <b>0.60</b>'}],
+     note:'z₁ = 3 只是示意。病人 1 事件很多，模型會把他的 z₁ 估得偏大，「他就是特別容易發生」由 z₁ 吸收，不需要由 β 去解釋；實際軟體會反覆估計 z 與 β。'},
+    {blocks:[{head:'轉換 狀態 2 → 狀態 3：第 9 個月，病人 1 的第 3 次事件',
+      rows:[['病人 1',1,2,true,'2','目前在狀態 2，發生轉換者'],['病人 2',0,1,false,'—','目前在狀態 1'],['病人 3',0,2,true,'1','目前在狀態 2'],['病人 4',0,0,false,'—','目前在狀態 0'],['病人 5',1,1,false,'—','第 7 個月已設限'],['病人 6',0,2,true,'1','目前在狀態 2']],
+      res:'病人 1 這一項 ＝ 2 ÷ (2 + 1 + 1) ＝ <b>0.50</b>'}],
+     note:'算法與 PWP-TT 相同，因為每條轉換用 PWP 的方式建模。差別在報告方式：狀態 0→1、1→2、2→3… 每條箭頭各有自己的基線與 β；事件可逆時，還要另外估「回到原狀態」的轉換。'}
+  ];
+  function calcHtml(i){
+    var c=CALCS[i], h='<div class="calcT">實際計算：用這 6 人算病人 1 的那一項</div>';
+    c.blocks.forEach(function(b){
+      h+='<p><b>'+b.head+'</b></p>';
+      h+='<div class="tablewrap calc"><table><thead><tr><th>病人</th><th class="num">x</th><th class="num">此刻已發生</th><th>風險集</th><th class="num">權重</th><th>原因</th></tr></thead><tbody>';
+      b.rows.forEach(function(r){
+        h+='<tr'+(r[3]?'':' class="no"')+'><td>'+r[0]+'</td><td class="num">'+r[1]+'</td><td class="num">'+r[2]+'</td><td>'+(r[3]?'✔ 在':'✘ 不在')+'</td><td class="num">'+r[4]+'</td><td>'+r[5]+'</td></tr>';
+      });
+      h+='</tbody></table></div><div class="formula" style="font-size:17px">'+b.res+'</div>';
+      if(b.extra)h+=(b.extra.indexOf('<p>')===0?b.extra:'<p>'+b.extra+'</p>');
+    });
+    if(c.note)h+='<div class="box"><p>'+c.note+'</p></div>';
+    return h;
+  }
+  var STEPS=[
+    {n:'Cox',title:'起點：Cox 模型',
+     diff:'公式本身沒有限制「一個人只能有一個事件」。限制來自資料是「一人一列、只記一個事件」，以及假設各列彼此獨立。',
+     lines:['<i>h</i>(<i>t</i> | <i>x</i>) = <i>h</i><sub>0</sub>(<i>t</i>) · exp(<i>β′x</i>)'],
+     leg:[['h(t | x)','共變項為 x 的人，在時間 t 的風險'],['h₀(t)','基線風險（不指定形狀）'],['exp(β′x)','共變項帶來的倍數；exp(β) 就是 HR']],
+     p1:'病人 1 有 6 次事件，但 Cox 只用第 1 次（第 4 個月）；其餘 5 次事件和之後的追蹤時間全被丟掉。'},
+    {n:'① AG',title:'第一步（AG）：把一個人切成多列，其他幾乎不變',
+     diff:'<b>只改資料怎麼放</b>：每個人切成多段 (start, stop]，每段只要還在被觀察就算在風險中，事件發生後立刻回到風險中。公式和 Cox 幾乎一樣：所有段共用同一個 h₀、同一個 β。',
+     lines:['λ<sub><i>i</i></sub>(<i>t</i>) = <i>Y<sub>i</sub></i>(<i>t</i>) · <i>h</i><sub>0</sub>(<i>t</i>) · exp(<i>β′x<sub>i</sub></i>(<i>t</i>))','若要放入事件史：exp(<i>β′x<sub>i</sub></i> + <i>γ N<sub>i</sub></i>(<i>t</i>−))'],
+     leg:[['λᵢ(t)','強度：已知病人 i 的歷史下，此刻的風險（形式上就是 Cox 的 h）'],['Yᵢ(t)','1＝此刻還在被觀察、可以發生事件；0＝已離開'],['Nᵢ(t−)','到 t 之前，病人 i 已發生的事件數'],['γ','前次事件數的效應：γ ≠ 0 表示「發生過」會改變之後的風險']],
+     p1:'病人 1 被切成 7 段，全部使用，共用同一個 h₀(t)。例如第 9 到 12 個月這段，他已發生 3 次事件，風險就是 h₀(t)·exp(β′x + 3γ)。'},
+    {n:'② PWP',title:'第二步（PWP）：不再共用 h₀，改成「第幾次事件」各一個',
+     diff:'AG 假設每次事件的基線風險都一樣。PWP 依「正在等第幾次事件」<b>分層</b>，每層有自己的基線風險 h₀ₖ，效應 β 也可以每層不同（β<sub>k</sub>）。',
+     lines:['λ<sub><i>i</i></sub>(<i>t</i>) = <i>Y<sub>i</sub></i>(<i>t</i>) · <i>h</i><sub>0<i>k</i></sub>(<i>t</i>) · exp(<i>β′x<sub>i</sub></i>)，　<i>k</i> = <i>N<sub>i</sub></i>(<i>t</i>−) + 1','TT：<i>t</i> ＝自進入研究起算　｜　GT：<i>t</i> ＝自上次事件起算（每次歸零）'],
+     leg:[['k','正在等第幾次事件（前面已發生 k−1 次）'],['h₀ₖ(t)','第 k 層自己的基線風險'],['風險集','第 k 層只包含已發生 k−1 次事件的人']],
+     p1:'病人 1 的 7 段被分到 7 層。例如第 6 到 9 個月這段屬於第 3 層，只和其他「已發生 2 次事件、正在等第 3 次」的人比較。'},
+    {n:'③ 邊際',title:'第三步（邊際模型）：不看瞬間風險，直接看「期望次數」',
+     diff:'改了描述的對象：從「瞬間風險」變成「累積事件數的平均」。同一個人的所有事件看成一條計數線 N(t)，<b>不假設事件之間怎麼相關</b>，相關性留給穩健標準誤處理。',
+     lines:['E[ <i>N<sub>i</sub></i>(<i>t</i>) | <i>x<sub>i</sub></i> ] = <i>μ</i><sub>0</sub>(<i>t</i>) · exp(<i>β′x<sub>i</sub></i>)'],
+     leg:[['Nᵢ(t)','到時間 t 為止，病人 i 累積的事件數'],['μ₀(t)','基線均值函數：基線族群（共變項都為 0 的人）在時間 t 的平均累積事件數；沒有共變項時，就是所有人的平均'],['exp(β)','共變項使期望次數（或事件率）變成幾倍，即 RR'],['白話','到時間 t 為止，一個人「平均會累積幾次事件」，等於基線族群的平均累積次數 μ₀(t)，再乘上共變項帶來的倍數。例如 exp(β) = 2，就是這種人平均發生的事件數是基線的 2 倍。它描述的是「次數的平均」，不是某一瞬間的風險。']],
+     p1:'病人 1 的 6 次事件是一條階梯 N₁(t)。模型只問「平均而言累積次數長得多快」；標準誤以「整個人」為單位計算，所以信賴區間與 AG 不同。沒有事件史共變項時，點估計與 AG 相同。'},
+    {n:'④ 脆弱',title:'第四步（脆弱模型）：用一個隱藏的個人倍數吸收相關',
+     diff:'在 Cox 公式上<b>多乘一個個人專屬的隨機數 zᵢ</b>。同一個人的所有事件共用同一個 zᵢ，所以事件彼此相關；給定 zᵢ 與共變項後，事件才被視為獨立。',
+     lines:['λ<sub><i>i</i></sub>(<i>t</i>) = <i>z<sub>i</sub></i> · <i>h</i><sub>0</sub>(<i>t</i>) · exp(<i>β′x<sub>i</sub></i>)','<i>z<sub>i</sub></i> ~ Gamma（平均 1，變異數 <i>θ</i>）'],
+     leg:[['zᵢ','病人 i 的隱藏易感性倍數（看不到，只能估）'],['θ','倍數的變異數：越大，個人間差異與事件相關越強（Kendall τ = θ/(θ+2)）']],
+     p1:'病人 1 在 60 個月內發生 6 次事件，遠多於同條件的人，模型會推測他的 z₁ 偏大。「他就是特別容易發生」不需要被任何共變項解釋。'},
+    {n:'⑤ 多狀態',title:'第五步（多狀態模型）：每一次「換狀態」各自一個 Cox',
+     diff:'換了觀點：把病程看成在不同狀態之間移動。每種轉換 l → k 有自己的轉換強度，各用一個 Cox（或 AG／PWP）建模；事件可逆時還能估轉換機率。',
+     lines:['<i>α<sub>lk</sub></i>(<i>t</i> | <i>x</i>) = <i>α</i><sub>0,<i>lk</i></sub>(<i>t</i>) · exp(<i>β<sub>lk</sub>′x</i>)'],
+     leg:[['αₗₖ(t)','在狀態 l 的人，此刻轉到狀態 k 的風險（轉換強度）'],['α₀,ₗₖ(t)','這條轉換自己的基線'],['βₗₖ','共變項對這條轉換的效應，每條轉換可不同']],
+     p1:'病人 1 走過 狀態 0 → 1 → 2 → … → 6，共 6 次轉換，分別貢獻給 α₀₁、α₁₂、…；最後停在狀態 6 的 32 個月被設限。'}
+  ];
+  var stBtns=el('stBtns'), stPanel=el('stPanel'), stCur=0;
+  function renderStep(){
+    var t=STEPS[stCur];
+    var h='<div class="stT">'+t.title+'</div><p>'+t.diff+'</p>';
+    h+='<div class="formula">'+t.lines.join('<br>')+'</div>';
+    h+='<ul class="stL">'+t.leg.map(function(l){return '<li><b>'+l[0]+'</b><span>'+l[1]+'</span></li>'}).join('')+'</ul>';
+    h+=p1fig(stCur);
+    h+='<p><b>病人 1 怎麼被使用：</b>'+t.p1+'</p>';
+    h+=calcHtml(stCur);
+    h+='<div class="navbtns"><button type="button" id="stPrev"'+(stCur===0?' disabled':'')+'>上一步</button><button type="button" id="stNext"'+(stCur===STEPS.length-1?' disabled':'')+'>下一步</button></div>';
+    stPanel.innerHTML=h;
+    Array.prototype.forEach.call(stBtns.children,function(b,i){b.setAttribute('aria-pressed',i===stCur?'true':'false')});
+    var pv=el('stPrev'),nx=el('stNext');
+    pv.addEventListener('click',function(){if(stCur>0){stCur--;renderStep()}});
+    nx.addEventListener('click',function(){if(stCur<STEPS.length-1){stCur++;renderStep()}});
+  }
+  STEPS.forEach(function(t,i){
+    var b=document.createElement('button');b.type='button';b.textContent=t.n;
+    b.addEventListener('click',function(){stCur=i;renderStep()});
+    stBtns.appendChild(b);
+  });
+  renderStep();
+
+  var tabs=el('mTabs'), panel=el('mPanel'), cur=0;
+  function renderModel(){
+    var m=M[cur];
+    var h='<p class="tagline">'+m.tag+'</p>'+(FIGS[m.k]||'')+'<dl>';
+    m.rows.forEach(function(r){h+='<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>'});
+    h+='</dl>';
+    panel.innerHTML=h;
+    Array.prototype.forEach.call(tabs.children,function(b,i){b.setAttribute('aria-selected',i===cur?'true':'false')});
+  }
+  M.forEach(function(m,i){
+    var b=document.createElement('button');
+    b.type='button';b.setAttribute('role','tab');b.textContent=m.k==='MM'?'邊際均值':(m.k==='FR'?'脆弱模型':m.k);
+    b.addEventListener('click',function(){cur=i;renderModel()});
+    tabs.appendChild(b);
+  });
+  renderModel();
+
+  /* ---------- 森林圖 ---------- */
+  var MODELS=['AG','邊際均值','PWP-TT','PWP-GT','脆弱模型'];
+  var D={
+    bladder:{label:'膀胱癌（85 人）',covs:{
+      treatment:{name:'治療 thiotepa（對照：安慰劑）',v:[[.63,.40,.99],[.63,.38,1.04],[.72,.48,1.05],[.76,.51,1.15],[.54,.28,1.03]]},
+      number:{name:'基線腫瘤數（每多一顆）',v:[[1.19,1.05,1.35],[1.19,1.05,1.34],[1.12,1.02,1.24],[1.17,1.06,1.29],[1.26,1.05,1.51]]},
+      size:{name:'最大腫瘤大小（公分）',v:[[.96,.83,1.11],[.96,.83,1.11],[.99,.88,1.12],[1.01,.89,1.14],[.97,.78,1.22]]}}},
+    alri:{label:'兒童 ALRI（1207 人）',covs:{
+      treatment:{name:'維生素 A（對照：安慰劑）',v:[[.94,.73,1.20],[.94,.70,1.26],[.93,.73,1.19],[.91,.72,1.16],[.95,.69,1.31]]},
+      gender:{name:'性別（男孩 vs 女孩）',v:[[1.10,.86,1.41],[1.10,.82,1.48],[1.10,.86,1.41],[1.09,.86,1.38],[1.13,.82,1.57]]},
+      age:{name:'年齡 ≤12 個月（對照：>12 個月）',v:[[5.17,4.00,6.67],[5.17,3.82,7.00],[3.62,2.76,4.74],[3.76,2.90,4.88],[6.50,4.57,9.23]]},
+      toilet:{name:'家中有廁所（對照：無）',v:[[.54,.42,.70],[.54,.40,.74],[.60,.47,.77],[.60,.47,.76],[.52,.37,.73]]}}}
+  };
+  var dsSel=el('dsSel'), cvSel=el('cvSel');
+  Object.keys(D).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=D[k].label;dsSel.appendChild(o)});
+  function fillCov(){
+    cvSel.innerHTML='';
+    var cs=D[dsSel.value].covs;
+    Object.keys(cs).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=cs[k].name;cvSel.appendChild(o)});
+  }
+  function fmt(n){return n.toFixed(2)}
+  function renderForest(){
+    var c=D[dsSel.value].covs[cvSel.value], v=c.v;
+    var lo=Math.min.apply(null,v.map(function(r){return r[1]})), hi=Math.max.apply(null,v.map(function(r){return r[2]}));
+    lo=Math.min(lo,1); hi=Math.max(hi,1);
+    var d0=Math.log(lo*0.85), d1=Math.log(hi*1.15);
+    var L=104,R=500,W=520,top=16,rh=36,H=top+v.length*rh+34;
+    function x(val){return L+(Math.log(val)-d0)/(d1-d0)*(R-L)}
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+c.name+'的五個模型效應估計">';
+    var cand=[0.25,0.5,0.75,1,1.5,2,3,4,6,8], ticks=cand.filter(function(t){return Math.log(t)>=d0&&Math.log(t)<=d1});
+    var axisY=top+v.length*rh+4;
+    ticks.forEach(function(t){
+      s+='<line class="axis" x1="'+x(t)+'" x2="'+x(t)+'" y1="'+(top-6)+'" y2="'+axisY+'" '+(t===1?'stroke="var(--ink)" stroke-dasharray="4 3"':'')+'/>';
+      s+='<text x="'+x(t)+'" y="'+(axisY+18)+'" font-size="13" text-anchor="middle">'+t+'</text>';
+    });
+    v.forEach(function(r,i){
+      var y=top+i*rh+rh/2, sig=(r[1]>1||r[2]<1);
+      s+='<text x="'+(L-10)+'" y="'+(y+4)+'" font-size="13.5" text-anchor="end">'+MODELS[i]+'</text>';
+      s+='<line x1="'+x(r[1])+'" x2="'+x(r[2])+'" y1="'+y+'" y2="'+y+'" stroke="var(--sig)" stroke-width="2.5"/>';
+      s+='<circle cx="'+x(r[0])+'" cy="'+y+'" r="6" fill="'+(sig?'var(--sig)':'var(--surface)')+'" stroke="var(--sig)" stroke-width="2.5"/>';
+    });
+    s+='</svg>';
+    el('forest').innerHTML=s;
+    var t='<thead><tr><th>模型</th><th class="num">HR / RR</th><th class="num">95% CI</th><th>是否不含 1</th></tr></thead><tbody>';
+    v.forEach(function(r,i){
+      var sig=(r[1]>1||r[2]<1);
+      t+='<tr><td>'+MODELS[i]+'</td><td class="num">'+fmt(r[0])+'</td><td class="num">'+fmt(r[1])+' – '+fmt(r[2])+'</td><td>'+(sig?'是':'否')+'</td></tr>';
+    });
+    el('forestTbl').innerHTML=t+'</tbody>';
+  }
+  dsSel.addEventListener('change',function(){fillCov();renderForest()});
+  cvSel.addEventListener('change',renderForest);
+  fillCov();renderForest();
+
+  /* ---------- 選模型小幫手 ---------- */
+  var W=[
+    {q:'我想知道平均每人會發生幾次事件，或事件發生的速率',
+     t:'邊際均值／比率模型',
+     p:['它把同一人的所有事件視為單一計數過程，不需指定相依結構，比 AG 更簡潔彈性。','注意：用穩健變異數校正相關性；若再把事件史放進模型，效應可能被稀釋。']},
+    {q:'我想知道每一次事件（第 1、2、3 次…）的效應是否不同',
+     t:'PWP（分層）模型',
+     p:['PWP 可同時估整體效應與各次事件各自的效應。時間從進入研究起算選 TT；想看「從上次事件起算」或預測下一次事件，選 GT。','注意：後面層的風險集會很小，通常要截斷在前幾次事件。']},
+    {q:'事件很頻繁，而且我認為風險不因發生過幾次而改變',
+     t:'Andersen–Gill（AG）模型',
+     p:['在風險不隨先前事件數改變時，建議用 AG，它也能處理時變共變項與不連續的風險區間。','注意：若可能遺漏重要共變項，請加入前次事件數的時變共變項，或使用穩健變異數，避免低估標準誤。']},
+    {q:'我覺得有些人本來就比較容易發生，但原因我沒有量到',
+     t:'脆弱模型（frailty）',
+     p:['用個人專屬的隨機效應吸收未測量的異質性，結果是個人特定的條件解讀。','注意：需要足夠的事件數與個體數才穩定；隨機效應大時較少事件也可。']},
+    {q:'事件可逆、有多種狀態（如健康↔生病、住院與死亡），想估轉換機率',
+     t:'多狀態模型（MSM）',
+     p:['MSM 可分別估各轉換的效應與轉換機率，例如同時看「健康→生病」與「生病→康復」。','注意：2014 年前後軟體支援有限；「生病→康復」這種轉換只針對已生病的人估計，需留意選擇偏誤。']},
+    {q:'我只在意第一次事件',
+     t:'一般 Cox 模型即可',
+     p:['若研究問題確實只涉及第一次事件，Cox 是合適的。','注意：它無法回答「次數隨時間如何累積」，並會丟掉後續事件。']}
+  ];
+  var wiz=el('wiz'), out=el('wizOut');
+  W.forEach(function(w,i){var o=document.createElement('option');o.value=i;o.textContent=w.q;wiz.appendChild(o)});
+  function renderWiz(){
+    var w=W[wiz.value];
+    out.innerHTML='<h4>'+w.t+'</h4>'+w.p.map(function(x){return '<p>'+x+'</p>'}).join('');
+  }
+  wiz.addEventListener('change',renderWiz);renderWiz();
+
+  /* ---------- 目錄高亮 ---------- */
+  var links=document.querySelectorAll('nav.toc a');
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){
+          Array.prototype.forEach.call(links,function(a){a.classList.toggle('on',(a.getAttribute('href')==='#'+e.target.id)||(e.target.id==='choose'&&a.getAttribute('href')==='#compare'))});
+        }
+      });
+    },{rootMargin:'-20% 0px -70% 0px'});
+    document.querySelectorAll('main section').forEach(function(s){io.observe(s)});
+  }
+})();
+</script>
+</body>
+</html>
