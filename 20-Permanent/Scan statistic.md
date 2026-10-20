@@ -12,41 +12,41 @@ tags: [change-point-detection, hypothesis-testing]
 
 ## 假設檢定
 
-> **H₀**：沒有異常群聚，窗內窗外一樣，共用一個 global Poisson($\lambda_0$) 分布
+> **H₀**：沒有異常群聚，窗內窗外一樣，共用一個 global Binomial ($p_0,n_0$) 分布
 >
-> **H₁**：有異常群聚，窗內窗外不同，各自一個 [[Poisson 分布是連續單位下事件發生次數的機率分布|Poisson]]($\lambda_1, \lambda_2$) 分布
+> **H₁**：有異常群聚，窗內窗外不同，各自一個Binomial ($p_1,n_1$)($p_2,n_2$)  分布
 
 ## 實例
 
-- **全局情況**：100 cases / 1000 exposure
-- **窗內**：10 cases / 200 exposure
-- **窗外**：90 cases / 800 exposure
+- **全局情況**：100 cases / 1000 exposure (p=0.1)
+- **窗內**：30 cases / 100 exposure (p=0.3)
+- **窗外**：70 cases / 900 exposure (p=0.07)
 
 ## 似然比計算
-
+![[telegram-cloud-photo-size-5-6241997356102520864-w.jpg|617]]
 ### L(H₀)：共用一個 global 分布
 
 ==用 global ratio 計算：窗內資料出現機率 × 窗外資料出現機率==
 
-1. 窗內期望次數：$200 \times \frac{100}{1000} = 20$
-2. 窗外期望次數：$800 \times \frac{100}{1000} = 80$
-3. 窗內資料出現機率：$P(\text{win}_內) = P(K_{in} = 10 \mid \mu_{in} = 20)$
-   - Poisson 分布在平均 = 20 下，出現 K = 10 的機率
-4. 窗外資料出現機率：$P(\text{win}_外) = P(K_{out} = 90 \mid \mu_{out} = 80)$
-   - Poisson 分布在平均 = 80 下，出現 K = 90 的機率
-5. $L(\text{H}_0) = P(\text{win}_內) \times P(\text{win}_外)$
+1. 窗內期望次數：$100 \times \frac{100}{1000} = 10$
+2. 窗外期望次數：$900 \times \frac{100}{1000} = 90$
+3. 真實窗內資料出現機率 $P(\text{win}_內)$：
+   - Binomial 分布下 (p=0.1, n=100)，出現 30 的機率
+4. 真實窗外資料出現機率$P(\text{win}_外)$：
+   - Binomial 分布下 (p=0.1, n=900)，出現 70 的機率
+ 
+ $L(\text{H}_0) = P(\text{win}_內) \times P(\text{win}_外)$
 
-### L(H₁)：窗內窗外各自一個 Poisson 分布
+### L(H₁)：窗內窗外各自一個 Binomial 分布
 
 ==窗內資料出現機率 × 窗外資料出現機率==
 
-1. 窗內 Poisson 參數：$\lambda_1 = 10$（期望次數：ratio × exposure）
-2. 窗外 Poisson 參數：$\lambda_2 = 90$（期望次數：ratio × exposure）
-3. 窗內資料出現機率：$P(\text{win}_內) = P(K_{in} = 10 \mid \mu_{in} = 10)$
-   - Poisson 分布在平均 = 10 下，出現 K = 10 的機率
-4. 窗外資料出現機率：$P(\text{win}_外) = P(K_{out} = 90 \mid \mu_{out} = 90)$
-   - Poisson 分布在平均 = 90 下，出現 K = 90 的機率
-5. $L(\text{H}_1) = P(\text{win}_內) \times P(\text{win}_外)$
+1. 真實窗內資料出現機率 $P(\text{win}_內)$：
+   - Binomial 分布下 (p=0.3, n=100)，出現 30 的機率
+2. 真實窗外資料出現機率$P(\text{win}_外)$：
+   - Binomial 分布下 (p=0.07, n=900)，出現 70 的機率
+
+$L(\text{H}_1) = P(\text{win}_內) \times P(\text{win}_外)$
 
 ## 似然比統計量
 
@@ -63,6 +63,4 @@ $$LR = \frac{L(H_1)}{L(H_0)}$$
    - 說明這個群聚是真實存在的，不是巧合
 
 ## 相關概念
-- [[Poisson 分布是連續單位下事件發生次數的機率分布]] — Scan statistic 的基礎分布假設
 - [[LR Test]] — 似然比檢定的通用方法
-- [[Activity Monitor Operator Characteristic（AMOC）]] — 變化點偵測的效能評估工具
