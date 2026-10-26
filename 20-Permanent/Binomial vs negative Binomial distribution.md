@@ -36,4 +36,4 @@ tags:
     > - 隨機變數是：失敗的次數（可能0次、1次、2次……無限往下）。 [[1](https://zh.wikipedia.org/zh-tw/%E8%B4%9F%E4%BA%8C%E9%A1%B9%E5%88%86%E5%B8%83), [2](https://www.stat.nuk.edu.tw/prost/Web/pdf4.htm)]
 
 ## 相關概念
-- [[Bernoulli 2 binomial 2 Poisson distribution]]— Other Discrete data distribution
+- [[Bernoulli -> binomial -> Poisson distribution]]— Other Discrete data distribution

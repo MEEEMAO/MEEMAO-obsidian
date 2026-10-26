@@ -1,21 +1,35 @@
 {
-  "collapse-filter": true,
-  "search": "",
+  "collapse-filter": false,
+  "search": "path:20-Permanent  ",
   "showTags": false,
   "showAttachments": false,
   "hideUnresolved": false,
   "showOrphans": true,
-  "collapse-color-groups": true,
+  "collapse-color-groups": false,
   "colorGroups": [
     {
-      "query": "",
+      "query": "tag:#llm  ",
       "color": {
         "a": 1,
-        "rgb": 14048348
+        "rgb": 5683541
+      }
+    },
+    {
+      "query": "tag:#hypothesis-testing  ",
+      "color": {
+        "a": 1,
+        "rgb": 14069084
+      }
+    },
+    {
+      "query": "tag:#discrete-distribution  ",
+      "color": {
+        "a": 1,
+        "rgb": 6056662
       }
     }
   ],
-  "collapse-display": true,
+  "collapse-display": false,
   "showArrow": false,
   "textFadeMultiplier": 0,
   "nodeSizeMultiplier": 1,
