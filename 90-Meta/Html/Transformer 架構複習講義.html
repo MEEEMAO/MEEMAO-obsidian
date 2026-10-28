@@ -1,0 +1,1283 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transformer 架構複習講義</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3F6FA; --panel:#FFFFFF; --ink:#18202E; --muted:#596476;
+  --line:#DCE3EC; --line-strong:#98A4B6;
+  --blue:#2D5BD0; --blue-bg:#E5ECFC;
+  --teal:#0F7E68; --teal-bg:#DFF2EC;
+  --amber:#B8760A; --amber-bg:#FBEFD6;
+  --rose:#B9375F; --rose-bg:#F9E2EA;
+  --gray-bg:#EDF0F5; --grid:rgba(45,91,208,.055);
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU","Source Han Serif TC",serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#10141B; --panel:#171D27; --ink:#E3E8F0; --muted:#9BA6B7;
+    --line:#29323F; --line-strong:#58647A;
+    --blue:#82A5FF; --blue-bg:#1C2846;
+    --teal:#52CCAF; --teal-bg:#133229;
+    --amber:#F2B64C; --amber-bg:#382A10;
+    --rose:#F283A5; --rose-bg:#3C1B28;
+    --gray-bg:#202734; --grid:rgba(130,165,255,.045);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10141B; --panel:#171D27; --ink:#E3E8F0; --muted:#9BA6B7;
+  --line:#29323F; --line-strong:#58647A;
+  --blue:#82A5FF; --blue-bg:#1C2846;
+  --teal:#52CCAF; --teal-bg:#133229;
+  --amber:#F2B64C; --amber-bg:#382A10;
+  --rose:#F283A5; --rose-bg:#3C1B28;
+  --gray-bg:#202734; --grid:rgba(130,165,255,.045);
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background-color:var(--paper); color:var(--ink);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  font-family:var(--sans); font-size:17px; line-height:1.85;
+  -webkit-text-size-adjust:100%;
+}
+main{max-width:860px; margin:0 auto; padding:48px 20px 96px}
+a{color:var(--blue)}
+a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--amber); outline-offset:3px; border-radius:4px}
+
+/* hero */
+.hero{padding:8px 0 12px}
+.hero h1{font-family:var(--serif); font-weight:900; font-size:clamp(2rem,5.4vw,3.3rem); line-height:1.22; letter-spacing:.01em; margin:0 0 .35em}
+.hero h1 span{display:block; font-size:.48em; font-weight:700; color:var(--muted); letter-spacing:.04em; margin-top:.35em}
+.lede{font-size:1.08rem; color:var(--muted); max-width:36em; margin:0 0 20px}
+.hero-fig{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 14px 8px; margin:8px 0 0}
+
+/* toc */
+nav.toc{margin:36px 0 8px; padding:18px 22px; background:var(--panel); border:1px solid var(--line); border-radius:10px}
+nav.toc h2{font-family:var(--serif); font-size:1.1rem; margin:0 0 6px}
+nav.toc .toc-cols{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:4px 28px}
+nav.toc ol{margin:0; padding:0; list-style:none; font-size:.95rem; line-height:1.95}
+nav.toc .tno{display:inline-block; min-width:2.6em; font-family:var(--mono); font-size:.82em; color:var(--muted)}
+nav.toc .grp{font-weight:700; color:var(--muted); font-size:.85rem; margin:4px 0 2px}
+
+
+/* parts & sections */
+.part{margin:80px 0 4px; padding-top:16px; border-top:4px solid var(--blue)}
+.part.b{border-top-color:var(--amber)}
+.part h2{font-family:var(--serif); font-weight:900; font-size:clamp(1.65rem,3.8vw,2.3rem); line-height:1.3; margin:0}
+.part h2 .letter{color:var(--blue); margin-right:.4em}
+.part.b h2 .letter{color:var(--amber)}
+.part p{color:var(--muted); margin:.4em 0 0}
+section{margin-top:52px}
+h3{font-family:var(--serif); font-weight:700; font-size:1.42rem; line-height:1.45; margin:0 0 .4em}
+h3 .no{font-family:var(--mono); font-weight:500; font-size:.8em; color:var(--blue); margin-right:.55em}
+.b-sec h3 .no{color:var(--amber)}
+h4{font-size:1.04rem; margin:1.6em 0 .2em}
+p{margin:.75em 0}
+strong{font-weight:700}
+.eq{font-family:var(--mono); font-size:.95rem; background:var(--gray-bg); border-radius:6px; padding:12px 16px; overflow-x:auto; white-space:nowrap; margin:14px 0; line-height:1.9}
+.eq .cm{color:var(--muted); font-family:var(--sans); font-size:.88rem}
+code{font-family:var(--mono); font-size:.9em; background:var(--gray-bg); padding:1px 5px; border-radius:4px}
+.note{border-left:4px solid var(--blue); background:var(--blue-bg); padding:12px 16px; border-radius:0 6px 6px 0; margin:18px 0}
+.note.amber{border-left-color:var(--amber); background:var(--amber-bg)}
+.note.rose{border-left-color:var(--rose); background:var(--rose-bg)}
+.note p{margin:.3em 0}
+ul.plain{padding-left:1.2em}
+ul.plain li{margin:.35em 0}
+
+/* figures */
+figure.fig{margin:26px 0; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px 16px 12px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+figcaption{font-size:.88rem; color:var(--muted); margin-top:10px; line-height:1.65}
+figcaption b{color:var(--ink); margin-right:.4em}
+.schem{display:inline-block; font-size:.74rem; line-height:1.6; padding:0 8px; border-radius:999px; border:1px solid var(--amber); color:var(--amber); margin-left:6px; vertical-align:1px}
+
+/* svg diagram vocabulary */
+svg.dia{display:block; width:100%; height:auto}
+.scroll svg.dia{min-width:600px}
+svg.dia text{font-family:var(--sans); font-size:14px; fill:var(--ink)}
+svg.dia .sm{font-size:12px; fill:var(--muted)}
+svg.dia .s13{font-size:13px}
+svg.dia .lg{font-size:15px; font-weight:700}
+svg.dia .xl{font-size:22px; font-weight:700}
+svg.dia .huge{font-size:42px; fill:var(--muted)}
+svg.dia .mono{font-family:var(--mono)}
+svg.dia .pre{white-space:pre}
+svg.dia .c{text-anchor:middle}
+svg.dia .e{text-anchor:end}
+svg.dia .bd{font-weight:700}
+svg.dia .amber{fill:var(--amber)}
+svg.dia .blue{fill:var(--blue)}
+svg.dia .teal{fill:var(--teal)}
+svg.dia .rose{fill:var(--rose)}
+svg.dia .on-fill{fill:var(--panel)}
+.box{fill:var(--panel); stroke:var(--line-strong); stroke-width:1.5}
+.bx-blue{fill:var(--blue-bg); stroke:var(--blue); stroke-width:1.5}
+.bx-teal{fill:var(--teal-bg); stroke:var(--teal); stroke-width:1.5}
+.bx-amber{fill:var(--amber-bg); stroke:var(--amber); stroke-width:1.5}
+.bx-rose{fill:var(--rose-bg); stroke:var(--rose); stroke-width:1.5}
+.bx-gray{fill:var(--gray-bg); stroke:var(--line-strong); stroke-width:1.5}
+.frame{fill:none; stroke:var(--line-strong); stroke-width:1.2; stroke-dasharray:6 5}
+.ring{fill:none; stroke:var(--line); stroke-width:1.5}
+.stream{fill:var(--blue-bg); stroke:var(--blue); stroke-width:1.5}
+.ln{fill:none; stroke:var(--ink); stroke-width:1.6}
+.ln-mut{fill:none; stroke:var(--muted); stroke-width:1.3}
+.ln-blue{fill:none; stroke:var(--blue); stroke-width:2.2}
+.ln-teal{fill:none; stroke:var(--teal); stroke-width:2.2}
+.ln-amber{fill:none; stroke:var(--amber); stroke-width:2.2}
+.ln-rose{fill:none; stroke:var(--rose); stroke-width:2}
+.dash{stroke-dasharray:5 4}
+.thin{stroke-width:1}
+.ah{fill:var(--ink)} .ah-mut{fill:var(--muted)} .ah-blue{fill:var(--blue)} .ah-teal{fill:var(--teal)} .ah-amber{fill:var(--amber)} .ah-rose{fill:var(--rose)}
+.cell{fill:var(--blue)}
+.masked{fill:url(#hatch); stroke:var(--line)}
+.hatch{stroke:var(--rose); stroke-width:1.4; opacity:.6}
+.dot{fill:var(--panel); stroke:var(--ink); stroke-width:1.6}
+.stair{fill:none; stroke:var(--ink); stroke-width:1.6}
+.bar-blue{fill:var(--blue); opacity:.55}
+.bar-amber{fill:var(--amber)}
+.node{fill:var(--panel); stroke:var(--line-strong); stroke-width:1.5}
+.node-start{fill:var(--blue-bg); stroke:var(--blue); stroke-width:2}
+.node-mid{fill:var(--amber-bg); stroke:var(--amber); stroke-width:2}
+.node-ans{fill:var(--amber); stroke:var(--amber); stroke-width:2}
+.faded{opacity:.32}
+.loop-anim{stroke-dasharray:9 6; animation:dash 1.1s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-30}}
+@media (prefers-reduced-motion: reduce){.loop-anim{animation:none}}
+
+/* capability chips */
+.cap{display:grid; gap:12px}
+.cap-row{display:grid; grid-template-columns:110px 1fr; gap:12px; align-items:start}
+.cap-d{font-weight:700; font-size:.92rem; padding-top:4px}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{border-radius:999px; padding:3px 12px; font-size:.88rem; border:1.5px solid; line-height:1.6; white-space:nowrap}
+.chip.ok{border-color:var(--teal); background:var(--teal-bg)}
+.chip.mid{border-color:var(--amber); background:var(--amber-bg)}
+.chip.no{border-color:var(--rose); background:var(--rose-bg)}
+@media (max-width:520px){.cap-row{grid-template-columns:1fr; gap:4px}}
+
+/* table */
+.tbl{overflow-x:auto; margin:20px 0}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:.93rem; background:var(--panel)}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:left; vertical-align:top}
+th{background:var(--gray-bg); font-weight:700}
+td.num{font-family:var(--mono); white-space:nowrap}
+td.win{background:var(--teal-bg)}
+
+/* stepper */
+.stepper .modes{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px}
+.stepper button{font:inherit; font-size:.92rem; color:var(--ink); background:var(--panel); border:1.5px solid var(--line-strong); border-radius:999px; padding:5px 14px; cursor:pointer}
+.stepper button[aria-pressed="true"]{background:var(--ink); color:var(--panel); border-color:var(--ink)}
+.stepper .controls{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:10px}
+.stepper .controls button{border-radius:8px}
+.stepper input[type=range]{flex:1 1 180px; accent-color:var(--amber)}
+.stepper .msg{min-height:3.6em; margin:12px 0 0; padding:10px 14px; background:var(--gray-bg); border-radius:6px; font-size:.95rem}
+.st-off{fill:var(--gray-bg); stroke:var(--line-strong); stroke-width:1.5; transition:fill .25s,stroke .25s}
+.st-past{fill:var(--amber-bg); stroke:var(--amber); stroke-width:2; stroke-dasharray:5 3; transition:fill .25s}
+.st-now{fill:var(--amber); stroke:var(--amber); stroke-width:2; transition:fill .25s}
+.mode-untied .st-past{fill:var(--blue-bg); stroke:var(--blue)}
+.mode-untied .st-now{fill:var(--blue); stroke:var(--blue)}
+svg.dia .tx-off{fill:var(--muted)}
+svg.dia .tx-now{fill:var(--panel)}
+.seg-todo{fill:var(--panel); stroke:var(--line-strong); stroke-width:1.2}
+.seg-done{fill:var(--amber-bg); stroke:var(--amber); stroke-width:1.2}
+.seg-now{fill:var(--amber); stroke:var(--amber); stroke-width:1.2}
+.mode-untied .seg-done{fill:var(--blue-bg); stroke:var(--blue)}
+.mode-untied .seg-now{fill:var(--blue); stroke:var(--blue)}
+
+/* quiz */
+details.q{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px 16px; margin:10px 0}
+details.q summary{cursor:pointer; font-weight:700}
+details.q p{margin:.6em 0 .2em; color:var(--ink)}
+
+
+.part.e{border-top-color:var(--teal)}
+.part.e h2 .letter{color:var(--teal)}
+.e-sec h3 .no{color:var(--teal)}
+.qa{border:1px dashed var(--line-strong); background:var(--panel); border-radius:8px; padding:10px 18px 8px; margin:20px 0}
+.qa .qh{font-weight:700; font-size:.86rem; color:var(--teal); margin:0 0 2px}
+.qa ul{margin:.2em 0; padding-left:1.2em; font-size:.95rem}
+.qa li{margin:.35em 0}
+footer{margin-top:72px; padding-top:16px; border-top:1px solid var(--line); font-size:.88rem; color:var(--muted)}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+    <marker id="ah-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-mut"/></marker>
+    <marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-blue"/></marker>
+    <marker id="ah-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-teal"/></marker>
+    <marker id="ah-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-amber"/></marker>
+    <marker id="ah-rose" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-rose"/></marker>
+    <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="hatch"/></pattern>
+  </defs>
+</svg>
+
+<main>
+
+<header class="hero">
+  <h1>Transformer 架構複習講義<span>從零件拆解到 encoder-decoder 與 decoder-only</span></h1>
+  <p class="lede">A 部分把 decoder-only Transformer 的每個零件拆開複習；B 部分比較 encoder-decoder 與 decoder-only，用「今天天氣很好」走一遍訓練和推論。Looped Transformer 與論文〈Inside the Loop〉的導讀放在<a href="https://claude.ai/artifact/2bV9fURNbgg9gpwxkZ2AKL">另一份講義</a>。</p>
+  <div class="hero-fig scroll">
+    <svg class="dia" viewBox="0 0 760 290" role="img" aria-label="「今天 天氣 很」三個 token 往上經過 N 層 block，每層有注意力和 MLP，最後一個位置輸出下一個字「好」">
+      <rect x="400" y="10" width="60" height="34" rx="6" class="bx-amber"/><text x="430" y="32" class="c lg">好</text>
+      <path d="M430 76 L430 48" class="ln" marker-end="url(#ah)"/>
+      <rect x="200" y="78" width="150" height="28" rx="5" class="bx-blue"/><text x="275" y="97" class="c s13">注意力</text><rect x="354" y="78" width="106" height="28" rx="5" class="bx-teal"/><text x="407" y="97" class="c s13">MLP</text>
+      <rect x="200" y="112" width="150" height="28" rx="5" class="bx-blue"/><text x="275" y="131" class="c s13">注意力</text><rect x="354" y="112" width="106" height="28" rx="5" class="bx-teal"/><text x="407" y="131" class="c s13">MLP</text>
+      <rect x="200" y="146" width="150" height="28" rx="5" class="bx-blue"/><text x="275" y="165" class="c s13">注意力</text><rect x="354" y="146" width="106" height="28" rx="5" class="bx-teal"/><text x="407" y="165" class="c s13">MLP</text>
+      <rect x="200" y="180" width="150" height="28" rx="5" class="bx-blue"/><text x="275" y="199" class="c s13">注意力</text><rect x="354" y="180" width="106" height="28" rx="5" class="bx-teal"/><text x="407" y="199" class="c s13">MLP</text>
+      <text x="190" y="97" class="e sm">第 N 層</text><text x="190" y="131" class="e sm">…</text><text x="190" y="165" class="e sm">第 2 層</text><text x="190" y="199" class="e sm">第 1 層</text>
+      <path d="M230 244 L230 212" class="ln" marker-end="url(#ah)"/><path d="M330 244 L330 212" class="ln" marker-end="url(#ah)"/><path d="M430 244 L430 212" class="ln" marker-end="url(#ah)"/>
+      <rect x="190" y="246" width="80" height="34" rx="6" class="bx-gray"/><text x="230" y="268" class="c">今天</text>
+      <rect x="290" y="246" width="80" height="34" rx="6" class="bx-gray"/><text x="330" y="268" class="c">天氣</text>
+      <rect x="390" y="246" width="80" height="34" rx="6" class="bx-gray"/><text x="430" y="268" class="c">很</text>
+      <text x="510" y="112" class="s13"><tspan class="blue bd">注意力</tspan>：在位置之間搬資訊</text>
+      <text x="510" y="140" class="s13"><tspan class="teal bd">MLP</tspan>：在每個位置上各自加工</text>
+      <text x="510" y="168" class="s13">一層一層疊上去，</text>
+      <text x="510" y="190" class="s13">最後一個位置預測下一個字</text>
+    </svg>
+  </div>
+</header>
+
+<nav class="toc" aria-label="目錄">
+  <h2>目錄</h2>
+  <div class="toc-cols">
+    <div><p class="grp">A　複習 Transformer</p><ol>
+      <li><a href="#a1"><span class="tno">A1</span>全貌：從文字到下一個字</a></li>
+      <li><a href="#a2"><span class="tno">A2</span>Token 與 Embedding</a></li>
+      <li><a href="#a3"><span class="tno">A3</span>位置資訊：RoPE</a></li>
+      <li><a href="#a4"><span class="tno">A4</span>自注意力：Q、K、V</a></li>
+      <li><a href="#a5"><span class="tno">A5</span>多頭注意力</a></li>
+      <li><a href="#a6"><span class="tno">A6</span>MLP（SwiGLU）</a></li>
+      <li><a href="#a7"><span class="tno">A7</span>一個 Block 的完整結構</a></li>
+      <li><a href="#a8"><span class="tno">A8</span>殘差流</a></li>
+      <li><a href="#a9"><span class="tno">A9</span>輸出頭與訓練目標</a></li>
+      <li><a href="#a10"><span class="tno">A10</span>深度＝能依序算幾步</a></li>
+    </ol></div>
+    <div><p class="grp">B　兩種架構對照</p><ol>
+      <li><a href="#b1"><span class="tno">B1</span>兩種架構的全貌</a></li>
+      <li><a href="#b2"><span class="tno">B2</span>架構從 pre-training 就固定</a></li>
+      <li><a href="#b3"><span class="tno">B3</span>訓練：「今天天氣很好」</a></li>
+      <li><a href="#b4"><span class="tno">B4</span>推論：輸入「今天天氣很」</a></li>
+      <li><a href="#b5"><span class="tno">B5</span>Prefill 與 KV cache</a></li>
+      <li><a href="#b6"><span class="tno">B6</span>總結對照</a></li>
+    </ol></div>
+  </div>
+</nav>
+
+<!-- ===================== PART A ===================== -->
+<div class="part">
+  <h2><span class="letter">A</span>複習 Transformer 架構</h2>
+  <p>以下都以 decoder-only（GPT 類）的 Transformer 為準，這也是現在大型語言模型最常見的架構。</p>
+</div>
+
+<section id="a1">
+  <h3><span class="no">A1</span>全貌：從文字到下一個字</h3>
+  <p>大型語言模型做的事情只有一件：讀進一串字，預測下一個字。整條流水線可以拆成五段，中間那段「Transformer Block 疊 N 層」才是主角，前後只是進出的轉換。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 175" role="img" aria-label="文字經過 token 化、embedding、N 層 Transformer block、輸出頭，得到下一個字">
+      <rect x="6" y="40" width="100" height="70" rx="8" class="bx-gray"/>
+      <text x="56" y="69" class="c lg">輸入文字</text><text x="56" y="93" class="c sm">今天 天氣 很</text>
+      <path d="M106 75 L128 75" class="ln" marker-end="url(#ah)"/>
+      <rect x="130" y="40" width="104" height="70" rx="8" class="box"/>
+      <text x="182" y="69" class="c lg">Token 化</text><text x="182" y="93" class="c sm">切片、轉編號</text>
+      <path d="M234 75 L256 75" class="ln" marker-end="url(#ah)"/>
+      <rect x="258" y="40" width="112" height="70" rx="8" class="bx-blue"/>
+      <text x="314" y="69" class="c lg">Embedding</text><text x="314" y="93" class="c sm">編號 → 向量</text>
+      <path d="M370 75 L392 75" class="ln" marker-end="url(#ah)"/>
+      <rect x="404" y="30" width="130" height="70" rx="8" class="bx-teal" opacity=".35"/>
+      <rect x="399" y="35" width="130" height="70" rx="8" class="bx-teal" opacity=".6"/>
+      <rect x="394" y="40" width="130" height="70" rx="8" class="bx-teal"/>
+      <text x="459" y="69" class="c lg">Transformer</text><text x="459" y="93" class="c sm">Block × N 層</text>
+      <path d="M536 75 L556 75" class="ln" marker-end="url(#ah)"/>
+      <rect x="558" y="40" width="96" height="70" rx="8" class="bx-blue"/>
+      <text x="606" y="69" class="c lg">輸出頭</text><text x="606" y="93" class="c sm">轉成機率</text>
+      <path d="M654 75 L674 75" class="ln" marker-end="url(#ah)"/>
+      <rect x="676" y="40" width="78" height="70" rx="8" class="bx-amber"/>
+      <text x="715" y="69" class="c lg">下一個字</text><text x="715" y="93" class="c">「好」</text>
+      <path d="M258 128 L258 136 L654 136 L654 128" class="ln-mut"/>
+      <text x="456" y="160" class="c sm">這一段裡，每個位置都是一個 d 維向量（論文的模型 d = 256）</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A1</b>Decoder-only Transformer 的整體流程。每個 token 位置都有自己的一條向量，一路往上被各層加工。</figcaption>
+  </figure>
+</section>
+
+<section id="a2">
+  <h3><span class="no">A2</span>Token 與 Embedding</h3>
+  <p>模型看不懂文字，只看得懂數字。Tokenizer 先把句子切成片段（token），每個片段對應一個整數編號。接著 <strong>embedding 表</strong>就是一張巨大的查詢表：第 k 列就是編號 k 的向量。這張表一開始是亂數，訓練過程中跟其他權重一起學。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 230" role="img" aria-label="三個 token 轉成編號，再到 embedding 表查出對應的向量">
+      <rect x="16" y="32" width="76" height="36" rx="6" class="bx-gray"/><text x="54" y="56" class="c">「今天」</text>
+      <rect x="16" y="92" width="76" height="36" rx="6" class="bx-gray"/><text x="54" y="116" class="c">「天氣」</text>
+      <rect x="16" y="152" width="76" height="36" rx="6" class="bx-gray"/><text x="54" y="176" class="c">「很」</text>
+      <path d="M92 50 L128 50" class="ln" marker-end="url(#ah)"/><path d="M92 110 L128 110" class="ln" marker-end="url(#ah)"/><path d="M92 170 L128 170" class="ln" marker-end="url(#ah)"/>
+      <rect x="130" y="32" width="78" height="36" rx="6" class="box"/><text x="169" y="56" class="c mono">#1523</text>
+      <rect x="130" y="92" width="78" height="36" rx="6" class="box"/><text x="169" y="116" class="c mono">#4087</text>
+      <rect x="130" y="152" width="78" height="36" rx="6" class="box"/><text x="169" y="176" class="c mono">#311</text>
+      <text x="355" y="18" class="c sm">Embedding 表（每列對應一個 token）</text>
+      <rect x="270" y="26" width="170" height="180" rx="4" class="box"/>
+      <rect x="270" y="41" width="170" height="15" class="bx-blue"/>
+      <rect x="270" y="101" width="170" height="15" class="bx-blue"/>
+      <rect x="270" y="161" width="170" height="15" class="bx-blue"/>
+      <path d="M270 41 H440 M270 56 H440 M270 71 H440 M270 86 H440 M270 101 H440 M270 116 H440 M270 131 H440 M270 146 H440 M270 161 H440 M270 176 H440 M270 191 H440" class="ln-mut thin" style="opacity:.5"/>
+      <path d="M208 50 L268 49" class="ln-blue" marker-end="url(#ah-blue)"/><path d="M208 110 L268 109" class="ln-blue" marker-end="url(#ah-blue)"/><path d="M208 170 L268 169" class="ln-blue" marker-end="url(#ah-blue)"/>
+      <path d="M440 49 L488 50" class="ln" marker-end="url(#ah)"/><path d="M440 109 L488 110" class="ln" marker-end="url(#ah)"/><path d="M440 169 L488 170" class="ln" marker-end="url(#ah)"/>
+      <text x="622" y="20" class="c sm">d 維向量（這裡只畫 10 格）</text>
+      <g class="vec" data-x="492" data-y="36" data-n="10" data-seed="11"></g>
+      <g class="vec" data-x="492" data-y="96" data-n="10" data-seed="23"></g>
+      <g class="vec" data-x="492" data-y="156" data-n="10" data-seed="37"></g>
+    </svg>
+    </div>
+    <figcaption><b>圖 A2</b>Token → 編號 → 查表得到向量。顏色深淺代表數值大小（示意）。</figcaption>
+  </figure>
+  <div class="qa"><p class="qh">補充問答</p><ul>
+    <li><strong>編號是事先定好的嗎？</strong>是。模型訓練前會先用語料另外訓練一個 tokenizer（BPE、SentencePiece 等），它決定詞彙表和每個片段的編號，之後固定不變。同一段字串永遠得到同樣的編號，但一個「詞」不一定剛好是一個 token。</li>
+    <li><strong>Embedding 矩陣怎麼來？</strong>大小是「詞彙表大小 × d」，一開始是亂數，在 pre-training 時跟其他權重一起用反向傳播學出來。有些模型讓它和輸出頭共用同一個矩陣（weight tying）。</li>
+  </ul></div>
+</section>
+
+<section id="a3">
+  <h3><span class="no">A3</span>位置資訊：RoPE</h3>
+  <p>注意力機制本身不知道字的先後順序，把句子打亂它算出來的東西一樣。所以要另外注入位置資訊。論文用的是現在主流的 <strong>RoPE（旋轉位置編碼）</strong>：把第 m 個位置的 Q、K 向量旋轉 m·θ 的角度。兩個向量做內積時，結果只取決於夾角，也就是兩者的<strong>相對距離</strong>。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 230" role="img" aria-label="位置 2 的向量轉 2θ，位置 5 的向量轉 5θ，兩者夾角 3θ 只跟相對距離有關">
+      <circle cx="120" cy="110" r="70" class="ring"/>
+      <path d="M120 110 L178 110" class="ln-mut dash" marker-end="url(#ah-mut)"/>
+      <path d="M120 110 L165 72" class="ln-blue" marker-end="url(#ah-blue)"/>
+      <path d="M142 110 A22 22 0 0 0 136.9 95.9" class="ln-mut"/>
+      <text x="156" y="101" class="sm">2θ</text>
+      <text x="120" y="208" class="c">位置 2：轉 2θ</text>
+
+      <circle cx="340" cy="110" r="70" class="ring"/>
+      <path d="M340 110 L398 110" class="ln-mut dash" marker-end="url(#ah-mut)"/>
+      <path d="M340 110 L330 52" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <path d="M362 110 A22 22 0 0 0 336.2 88.3" class="ln-mut"/>
+      <text x="366" y="86" class="sm">5θ</text>
+      <text x="340" y="208" class="c">位置 5：轉 5θ</text>
+
+      <circle cx="560" cy="110" r="70" class="ring"/>
+      <path d="M560 110 L605 72" class="ln-blue" marker-end="url(#ah-blue)"/>
+      <path d="M560 110 L550 52" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <path d="M583 90.7 A30 30 0 0 0 554.8 80.5" class="ln-amber"/>
+      <text x="575" y="70" class="c amber bd">3θ</text>
+      <text x="560" y="208" class="c">疊在一起：夾角 3θ</text>
+
+      <text x="700" y="96" class="c sm">不管兩個字</text>
+      <text x="700" y="116" class="c sm">在句子哪裡，</text>
+      <text x="700" y="136" class="c sm">差 3 格就是 3θ</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A3</b>RoPE 的直覺。實際上向量會被切成很多兩兩一組的小平面，每組用不同的 θ 旋轉；這裡只畫一組。</figcaption>
+  </figure>
+</section>
+
+<section id="a4">
+  <h3><span class="no">A4</span>自注意力：Q、K、V</h3>
+  <p>注意力是 Transformer 唯一讓「不同位置互相交換資訊」的地方。可以把它想成圖書館查資料：每個位置都會從自己的向量算出三個東西。</p>
+  <ul class="plain">
+    <li><strong>Q（query，查詢）</strong>：我現在想找什麼樣的資訊。</li>
+    <li><strong>K（key，鍵）</strong>：我身上貼著什麼標籤，讓別人來找我。</li>
+    <li><strong>V（value，值）</strong>：如果被選中，我實際交出去的內容。</li>
+  </ul>
+  <p>某個位置的 Q 跟所有位置的 K 做內積，得到「相關程度」，經過 softmax 變成加總為 1 的權重，再用這些權重把大家的 V 加權平均起來。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 225" role="img" aria-label="「很」這個位置把注意力分給今天、天氣和自己，線的粗細代表權重">
+      <path d="M455 150 Q275 30 95 150" class="ln-amber" style="stroke-width:7;opacity:.85"/>
+      <path d="M455 150 Q365 90 275 150" class="ln-amber" style="stroke-width:1.5"/>
+      <path d="M440 150 C425 98 485 98 470 150" class="ln-amber" style="stroke-width:3"/>
+      <text x="275" y="80" class="c amber bd">0.68</text>
+      <text x="365" y="112" class="c amber">0.11</text>
+      <text x="490" y="112" class="amber">0.21</text>
+      <rect x="40" y="150" width="110" height="40" rx="6" class="bx-gray"/><text x="95" y="176" class="c">「今天」</text>
+      <rect x="220" y="150" width="110" height="40" rx="6" class="bx-gray"/><text x="275" y="176" class="c">「天氣」</text>
+      <rect x="400" y="150" width="110" height="40" rx="6" class="bx-blue"/><text x="455" y="176" class="c bd">「很」</text>
+      <text x="275" y="214" class="c sm">線越粗 ＝ 注意力權重越大（數字為示意）</text>
+      <rect x="560" y="40" width="192" height="36" rx="6" class="bx-blue"/><text x="574" y="63" class="s13">Q（查詢）：我在找什麼</text>
+      <rect x="560" y="88" width="192" height="36" rx="6" class="box"/><text x="574" y="111" class="s13">K（鍵）：我身上的標籤</text>
+      <rect x="560" y="136" width="192" height="36" rx="6" class="bx-teal"/><text x="574" y="159" class="s13">V（值）：我交出去的內容</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A4</b>站在「很」這個位置看出去：它用自己的 Q 去比對每個位置的 K，決定要從誰那裡拿多少 V。</figcaption>
+  </figure>
+
+  <p>寫成公式就是：</p>
+  <div class="eq">Attention(Q, K, V) = softmax( QK<sup>T</sup> / √d<sub>k</sub> + M ) · V</div>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 130" role="img" aria-label="注意力的計算步驟：Q 乘 K 轉置、除以根號 d、加遮罩、softmax、乘上 V">
+      <rect x="6" y="14" width="56" height="34" rx="6" class="bx-blue"/><text x="34" y="36" class="c bd">Q</text>
+      <rect x="6" y="64" width="56" height="34" rx="6" class="box"/><text x="34" y="86" class="c bd">Kᵀ</text>
+      <path d="M62 31 L96 50" class="ln" marker-end="url(#ah)"/><path d="M62 81 L96 64" class="ln" marker-end="url(#ah)"/>
+      <rect x="98" y="40" width="96" height="34" rx="6" class="box"/><text x="146" y="62" class="c">相乘 QKᵀ</text>
+      <path d="M194 57 L214 57" class="ln" marker-end="url(#ah)"/>
+      <rect x="216" y="40" width="88" height="34" rx="6" class="box"/><text x="260" y="62" class="c">÷ √dₖ</text>
+      <path d="M304 57 L324 57" class="ln" marker-end="url(#ah)"/>
+      <rect x="326" y="40" width="100" height="34" rx="6" class="bx-rose"/><text x="376" y="62" class="c">＋ 遮罩 M</text>
+      <path d="M426 57 L446 57" class="ln" marker-end="url(#ah)"/>
+      <rect x="448" y="40" width="96" height="34" rx="6" class="box"/><text x="496" y="62" class="c">softmax</text>
+      <path d="M544 57 L564 57" class="ln" marker-end="url(#ah)"/>
+      <rect x="566" y="40" width="72" height="34" rx="6" class="box"/><text x="602" y="62" class="c">× V</text>
+      <rect x="578" y="96" width="48" height="28" rx="6" class="bx-teal"/><text x="602" y="115" class="c bd">V</text>
+      <path d="M602 96 L602 77" class="ln" marker-end="url(#ah)"/>
+      <path d="M638 57 L658 57" class="ln" marker-end="url(#ah)"/>
+      <rect x="660" y="40" width="94" height="34" rx="6" class="bx-amber"/><text x="707" y="62" class="c">輸出</text>
+      <text x="260" y="100" class="c sm">避免分數太大</text>
+      <text x="376" y="100" class="c sm">未來的字 → −∞</text>
+      <text x="496" y="100" class="c sm">變成加總為 1</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A5</b>注意力的計算順序。除以 √d<sub>k</sub> 是為了讓內積不要隨維度變大而爆掉，否則 softmax 會變得太尖銳、很難訓練。</figcaption>
+  </figure>
+
+  <h4>因果遮罩（causal mask）</h4>
+  <p>Decoder-only 模型訓練時一次餵進整句，但每個位置都只能看「自己和前面」的字，不然就等於偷看答案。做法是把未來位置的分數設成 −∞，softmax 之後就變成 0。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 270" role="img" aria-label="5 乘 5 的注意力矩陣，右上三角被遮罩">
+      <text x="225" y="22" class="c sm">被看的位置（key）</text>
+      <text x="0" y="0" class="sm c" transform="translate(28 155) rotate(-90)">正在看的位置（query）</text>
+      <g id="maskGrid"></g>
+      <rect x="360" y="76" width="16" height="16" class="cell" fill-opacity=".7"/>
+      <text x="386" y="90">每一列：這個位置把注意力分給誰（加總 = 1）</text>
+      <rect x="360" y="116" width="16" height="16" class="masked"/>
+      <text x="386" y="130">斜線格：未來的字，分數設成 −∞</text>
+      <text x="386" y="170">softmax 之後，斜線格的權重全部變成 0</text>
+      <text x="386" y="210">所以預測「好」之後的字時，</text>
+      <text x="386" y="232">只用得到「今天 天氣 很 好」</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A6</b>因果遮罩下的注意力矩陣（權重為示意）。只有下三角和對角線有值。</figcaption>
+  </figure>
+</section>
+
+<section id="a5">
+  <h3><span class="no">A5</span>多頭注意力</h3>
+  <p>只有一組 Q、K、V 的話，每個位置一次只能「找一種東西」。多頭注意力把向量切成好幾份，每一份各自做一次注意力，所以可以同時追蹤好幾種關係。論文的模型 d = 256、8 個頭，每個頭 32 維。最後把 8 個頭的結果串起來，再用一個矩陣 W<sub>O</sub> 混合回 d 維。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 240" role="img" aria-label="輸入向量分成 8 個頭各自做注意力，再串接並投影回 d 維">
+      <rect x="8" y="96" width="104" height="48" rx="6" class="bx-blue"/>
+      <text x="60" y="116" class="c">輸入向量</text><text x="60" y="135" class="c sm">d = 256</text>
+      <g id="heads"></g>
+      <rect x="470" y="90" width="110" height="60" rx="6" class="box"/>
+      <text x="525" y="115" class="c">串接</text><text x="525" y="136" class="c sm">8 × 32 = 256</text>
+      <path d="M580 120 L618 120" class="ln" marker-end="url(#ah)"/>
+      <rect x="620" y="95" width="130" height="50" rx="6" class="bx-amber"/>
+      <text x="685" y="117" class="c">W<tspan dy="4" style="font-size:10px">O</tspan><tspan dy="-4"> 混合</tspan></text><text x="685" y="136" class="c sm">回到 d 維</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A7</b>多頭注意力。每個頭可能學到不同的「找法」，圖中的分工只是舉例。</figcaption>
+  </figure>
+</section>
+
+<section id="a6">
+  <h3><span class="no">A6</span>MLP（SwiGLU）</h3>
+  <p>如果注意力負責「在位置之間搬資訊」，MLP 就負責「在每個位置上各自加工」。每個位置的向量獨立通過同一個小型前饋網路，不會看到其他位置。論文用的是 SwiGLU 版本：先展開到更寬的維度，其中一路經過 SiLU 當作「閘門」，決定另一路哪些特徵可以通過，最後壓回 d 維。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 180" role="img" aria-label="SwiGLU：x 分成閘門路與內容路，相乘後經 W_down 回到 d 維">
+      <text x="290" y="16" class="c sm">閘門：決定哪些特徵放行</text>
+      <rect x="10" y="70" width="80" height="40" rx="6" class="bx-blue"/><text x="50" y="96" class="c bd">x</text>
+      <path d="M90 90 L118 90 L118 45 L138 45" class="ln" marker-end="url(#ah)"/>
+      <path d="M118 90 L118 135 L138 135" class="ln" marker-end="url(#ah)"/>
+      <rect x="140" y="28" width="100" height="34" rx="6" class="box"/><text x="190" y="50" class="c">W_gate</text>
+      <path d="M240 45 L262 45" class="ln" marker-end="url(#ah)"/>
+      <rect x="264" y="28" width="80" height="34" rx="6" class="bx-amber"/><text x="304" y="50" class="c">SiLU</text>
+      <rect x="140" y="118" width="100" height="34" rx="6" class="box"/><text x="190" y="140" class="c">W_up</text>
+      <path d="M344 45 L410 45 L410 70" class="ln" marker-end="url(#ah)"/>
+      <path d="M240 135 L410 135 L410 110" class="ln" marker-end="url(#ah)"/>
+      <circle cx="410" cy="90" r="18" class="box"/><text x="410" y="96" class="c lg">⊙</text>
+      <path d="M428 90 L470 90" class="ln" marker-end="url(#ah)"/>
+      <rect x="472" y="73" width="104" height="34" rx="6" class="box"/><text x="524" y="95" class="c">W_down</text>
+      <text x="524" y="63" class="c sm">壓回 d 維</text>
+      <path d="M576 90 L606 90" class="ln" marker-end="url(#ah)"/>
+      <rect x="608" y="70" width="140" height="40" rx="6" class="bx-teal"/><text x="678" y="96" class="c">輸出（d 維）</text>
+      <text x="190" y="174" class="c sm">先展開到更寬的維度</text>
+      <text x="410" y="166" class="c sm">逐元素相乘</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A8</b>SwiGLU 形式的 MLP：輸出 = W<sub>down</sub>( SiLU(W<sub>gate</sub>x) ⊙ W<sub>up</sub>x )。</figcaption>
+  </figure>
+  <div class="qa"><p class="qh">補充問答</p><ul>
+    <li><strong>注意力做完，h 就記住前文了嗎？</strong>大致是，但只收集了一部分：注意力的結果是別人 V 的加權平均，本質是「搬運和混合」，通常要好幾層才累積完整。</li>
+    <li><strong>那 MLP 做什麼？</strong>負責「加工」：每個位置各自做非線性轉換，把收集來的零散特徵組合成新特徵（例如把「今天」和「天氣」組合成「在談今天的天氣」）。研究也發現很多事實性知識存在 MLP 裡，它約佔模型三分之二的參數。</li>
+    <li><strong>比喻：</strong>注意力＝開會時聽別人發言、抄筆記；MLP＝自己整理筆記、翻翻記憶，再寫回筆記。這是傾向，不是嚴格分工。</li>
+  </ul></div>
+</section>
+
+<section id="a7">
+  <h3><span class="no">A7</span>一個 Block 的完整結構</h3>
+  <p>把注意力和 MLP 組起來，加上正規化和殘差連接，就是一個 Transformer Block。現代模型（包括這篇論文）用的是 <strong>pre-norm</strong>：先正規化，再進子層，子層的輸出直接「加回」主幹上。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 480" role="img" aria-label="Pre-norm Transformer block：主幹往上，兩個分支分別是 RMSNorm 加注意力、RMSNorm 加 MLP，各自加回主幹">
+      <rect x="70" y="44" width="250" height="388" rx="10" class="frame"/>
+      <text x="312" y="424" class="e sm">一個 Block</text>
+      <path d="M120 472 L120 266" class="ln" marker-end="url(#ah)" style="stroke-width:2.6"/>
+      <circle cx="120" cy="250" r="14" class="box"/><text x="120" y="256" class="c lg">+</text>
+      <path d="M120 236 L120 86" class="ln" marker-end="url(#ah)" style="stroke-width:2.6"/>
+      <circle cx="120" cy="70" r="14" class="box"/><text x="120" y="76" class="c lg">+</text>
+      <path d="M120 56 L120 14" class="ln" marker-end="url(#ah)" style="stroke-width:2.6"/>
+      <text x="132" y="22">輸出（送往下一層）</text>
+      <text x="132" y="470" class="sm">輸入（上一層的輸出）</text>
+      <circle cx="120" cy="410" r="3.5" class="ah"/><circle cx="120" cy="216" r="3.5" class="ah"/>
+      <path d="M120 410 L240 410 L240 381" class="ln" marker-end="url(#ah)"/>
+      <rect x="180" y="345" width="120" height="34" rx="6" class="bx-gray"/><text x="240" y="367" class="c">RMSNorm</text>
+      <path d="M240 345 L240 322" class="ln" marker-end="url(#ah)"/>
+      <rect x="170" y="280" width="140" height="40" rx="6" class="bx-blue"/><text x="240" y="305" class="c">多頭自注意力</text>
+      <path d="M240 280 L240 250 L136 250" class="ln" marker-end="url(#ah)"/>
+      <path d="M120 216 L240 216 L240 201" class="ln" marker-end="url(#ah)"/>
+      <rect x="180" y="165" width="120" height="34" rx="6" class="bx-gray"/><text x="240" y="187" class="c">RMSNorm</text>
+      <path d="M240 165 L240 142" class="ln" marker-end="url(#ah)"/>
+      <rect x="170" y="100" width="140" height="40" rx="6" class="bx-teal"/><text x="240" y="125" class="c">MLP（SwiGLU）</text>
+      <path d="M240 100 L240 70 L136 70" class="ln" marker-end="url(#ah)"/>
+
+      <path d="M300 362 L350 362" class="ln-mut dash"/><text x="358" y="367" class="s13">RMSNorm：把向量的大小調到穩定的尺度</text>
+      <path d="M310 300 L350 300" class="ln-mut dash"/><text x="358" y="305" class="s13">注意力：從其他位置把資訊搬過來</text>
+      <path d="M138 242 L350 242" class="ln-mut dash"/><text x="358" y="247" class="s13">⊕ 殘差：輸出 ＝ 輸入 ＋ 子層算出的增量</text>
+      <path d="M300 182 L350 182" class="ln-mut dash"/><text x="358" y="187" class="s13">Pre-norm：先正規化，再進子層</text>
+      <path d="M310 120 L350 120" class="ln-mut dash"/><text x="358" y="125" class="s13">MLP：每個位置各自做非線性加工</text>
+      <path d="M124 448 L350 448" class="ln-mut dash"/><text x="358" y="453" class="s13">主幹一路往上，子層只負責「加東西」</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A9</b>Pre-norm Transformer Block。RMSNorm 的公式是 x / √(mean(x²) + ε) · g，只縮放、不減平均，比 LayerNorm 便宜。</figcaption>
+  </figure>
+</section>
+
+<section id="a8">
+  <h3><span class="no">A8</span>殘差流（residual stream）</h3>
+  <p>把很多層疊起來後，換個角度看會更清楚：整個模型有一條「主幹向量」從 embedding 一路流到輸出頭，這就是<strong>殘差流</strong>。每一層都只是從流裡讀一些資訊、算完之後再把結果加回流裡。</p>
+  <p>這個觀點對讀機制可解釋性（interpretability）的研究非常重要：因為每一層的輸出都在<strong>同一個向量空間</strong>裡，研究者可以在任何深度插一個簡單的分類器（探針），問「現在這條流裡裝著什麼資訊」。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 230" role="img" aria-label="殘差流是一條橫向的主幹，各層從中讀取再加回，探針可以在任意位置讀取">
+      <rect x="20" y="120" width="710" height="30" rx="15" class="stream"/>
+      <path d="M730 135 L752 135" class="ln-blue" marker-end="url(#ah-blue)"/>
+      <rect x="90" y="36" width="110" height="40" rx="6" class="bx-teal"/><text x="145" y="61" class="c">第 1 層</text>
+      <rect x="260" y="36" width="110" height="40" rx="6" class="bx-teal"/><text x="315" y="61" class="c">第 2 層</text>
+      <rect x="430" y="36" width="110" height="40" rx="6" class="bx-teal"/><text x="485" y="61" class="c">第 3 層</text>
+      <rect x="600" y="36" width="110" height="40" rx="6" class="bx-teal"/><text x="655" y="61" class="c">… 第 N 層</text>
+      <path d="M115 120 L115 79" class="ln-blue" marker-end="url(#ah-blue)"/><path d="M175 77 L175 118" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <path d="M285 120 L285 79" class="ln-blue" marker-end="url(#ah-blue)"/><path d="M345 77 L345 118" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <path d="M455 120 L455 79" class="ln-blue" marker-end="url(#ah-blue)"/><path d="M515 77 L515 118" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <path d="M625 120 L625 79" class="ln-blue" marker-end="url(#ah-blue)"/><path d="M685 77 L685 118" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <text x="109" y="104" class="e sm">讀</text><text x="182" y="104" class="sm">加回</text>
+            <circle cx="230" cy="135" r="7" class="bx-amber"/><path d="M230 150 L230 186" class="ln-amber dash"/>
+      <circle cx="400" cy="135" r="7" class="bx-amber"/><path d="M400 150 L400 186" class="ln-amber dash"/>
+      <circle cx="570" cy="135" r="7" class="bx-amber"/><path d="M570 150 L570 186" class="ln-amber dash"/>
+      <text x="230" y="206" class="c sm">探針</text>
+      <text x="400" y="206" class="c sm amber bd">探針：流裡現在裝著哪個節點？</text>
+      <text x="570" y="206" class="c sm">探針</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A10</b>殘差流的觀點。藍色箭頭是各層讀取，綠色箭頭是各層把算出來的增量加回去；黃點是研究者插探針的地方。</figcaption>
+  </figure>
+  <div class="qa"><p class="qh">補充問答</p><ul>
+    <li><strong>embedding 和每層的 h 維度一樣？</strong>對，都是 d，這是殘差「相加」的要求。所以 h<sup>(ℓ)</sup> − embedding 剛好等於前 ℓ 層所有增量的總和。</li>
+    <li><strong>那直接比較向量差就好？</strong>向量差只告訴你「變了多少」，看不出「多了什麼資訊」。所以研究者改問具體問題，用探針、logit lens、activation patching 去回答（見 <a href="https://claude.ai/artifact/2bV9fURNbgg9gpwxkZ2AKL">looped Transformer 講義</a> C6 節）。</li>
+    <li>「同一個空間」是近似說法：各層表示資訊的方式會慢慢漂移，所以 logit lens 通常越後面的層越準；探針因為每層各自訓練，比較不受影響。</li>
+  </ul></div>
+</section>
+
+<section id="a9">
+  <h3><span class="no">A9</span>輸出頭與訓練目標</h3>
+  <p>最後一層之後，模型再做一次 RMSNorm，然後用<strong>輸出頭（unembedding）</strong>把 d 維向量轉成「詞彙表裡每個字的分數」（logits），softmax 之後變成機率。訓練目標是讓正確的下一個字機率越高越好，也就是 next-token cross-entropy。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 200" role="img" aria-label="最後的向量經過輸出頭變成每個候選字的機率，「好」最高">
+      <text x="88" y="72" class="c sm">最後一個位置的向量</text>
+      <g class="vec" data-x="16" data-y="86" data-n="6" data-w="22" data-seed="71"></g>
+      <path d="M162 100 L196 100" class="ln" marker-end="url(#ah)"/>
+      <rect x="198" y="70" width="190" height="60" rx="6" class="bx-blue"/>
+      <text x="293" y="95" class="c">RMSNorm ＋ 輸出頭</text><text x="293" y="117" class="c sm">d → 詞彙表大小</text>
+      <path d="M388 100 L420 100" class="ln" marker-end="url(#ah)"/>
+      <text x="590" y="14" class="c sm">softmax 後：每個候選字的機率</text>
+      <text x="450" y="38" class="e">好</text><rect x="460" y="23" width="250" height="22" rx="3" class="bar-amber"/><text x="716" y="39" class="s13 mono">0.52</text>
+      <text x="450" y="72" class="e">熱</text><rect x="460" y="57" width="86" height="22" rx="3" class="bar-blue"/><text x="552" y="73" class="s13 mono">0.18</text>
+      <text x="450" y="106" class="e">冷</text><rect x="460" y="91" width="58" height="22" rx="3" class="bar-blue"/><text x="524" y="107" class="s13 mono">0.12</text>
+      <text x="450" y="140" class="e">棒</text><rect x="460" y="125" width="48" height="22" rx="3" class="bar-blue"/><text x="514" y="141" class="s13 mono">0.10</text>
+      <text x="450" y="174" class="e">差</text><rect x="460" y="159" width="38" height="22" rx="3" class="bar-blue"/><text x="504" y="175" class="s13 mono">0.08</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A11</b>輸出頭把向量變成機率分布（數字為示意）。研究上有個技巧叫 logit lens：在中途就把輸出頭套上去，看模型「如果現在就停下來會寫什麼」。</figcaption>
+  </figure>
+</section>
+
+<section id="a10">
+  <h3><span class="no">A10</span>深度＝能依序算幾步</h3>
+  <p>有些問題天生是「一步接一步」的：第二步要用到第一步的結果，第三步又要用到第二步。例如「從 A 出發，沿著箭頭走 4 步會到哪」。因為一層只能根據目前流裡已有的東西往下做，直覺上這種題目需要的<strong>層數</strong>至少跟步數成正比。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 200" role="img" aria-label="走 4 步的問題，每一層找到下一個節點">
+      <circle cx="70" cy="50" r="24" class="node-start"/><text x="70" y="56" class="c lg">A</text>
+      <circle cx="230" cy="50" r="24" class="node"/><text x="230" y="56" class="c lg">B</text>
+      <circle cx="390" cy="50" r="24" class="node"/><text x="390" y="56" class="c lg">C</text>
+      <circle cx="550" cy="50" r="24" class="node"/><text x="550" y="56" class="c lg">D</text>
+      <circle cx="710" cy="50" r="24" class="node-ans"/><text x="710" y="56" class="c lg on-fill">E</text>
+      <path d="M94 50 L204 50" class="ln" marker-end="url(#ah)"/><path d="M254 50 L364 50" class="ln" marker-end="url(#ah)"/><path d="M414 50 L524 50" class="ln" marker-end="url(#ah)"/><path d="M574 50 L684 50" class="ln" marker-end="url(#ah)"/>
+      <path d="M150 108 L150 56" class="ln-mut dash"/><path d="M310 108 L310 56" class="ln-mut dash"/><path d="M470 108 L470 56" class="ln-mut dash"/><path d="M630 108 L630 56" class="ln-mut dash"/>
+      <rect x="90" y="110" width="120" height="36" rx="6" class="bx-teal"/><text x="150" y="134" class="c">第 1 層</text>
+      <rect x="250" y="110" width="120" height="36" rx="6" class="bx-teal"/><text x="310" y="134" class="c">第 2 層</text>
+      <rect x="410" y="110" width="120" height="36" rx="6" class="bx-teal"/><text x="470" y="134" class="c">第 3 層</text>
+      <rect x="570" y="110" width="120" height="36" rx="6" class="bx-teal"/><text x="630" y="134" class="c">第 4 層</text>
+      <text x="150" y="166" class="c sm">找到 B</text><text x="310" y="166" class="c sm">找到 C</text><text x="470" y="166" class="c sm">找到 D</text><text x="630" y="166" class="c sm">找到 E</text>
+      <text x="380" y="192" class="c sm">每一步都要用到上一步的結果，所以至少要「依序」算 4 次（直覺示意，實際上一層也可能做好幾步）</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A12</b>多步推理的直覺：步數一多，就需要更多「依序」的計算。</figcaption>
+  </figure>
+  <p>要讓模型能做更多步，傳統上有兩條路，各有代價；looped Transformer 是第三條路。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 240" role="img" aria-label="三種增加計算步數的方法：疊更多層、寫出思考過程、迴圈">
+      <text x="125" y="24" class="c lg">疊更多層</text>
+      <text x="385" y="24" class="c lg">寫出思考過程（CoT）</text>
+      <text x="640" y="24" class="c lg">迴圈（Looped）</text>
+      <g id="deepStack"></g>
+      <rect x="300" y="140" width="80" height="13" rx="2" class="bx-gray"/><rect x="300" y="156" width="80" height="13" rx="2" class="bx-gray"/><rect x="300" y="172" width="80" height="13" rx="2" class="bx-gray"/>
+      <rect x="272" y="48" width="44" height="28" rx="5" class="bx-blue"/><text x="294" y="67" class="c s13">先找</text>
+      <rect x="322" y="48" width="44" height="28" rx="5" class="bx-blue"/><text x="344" y="67" class="c s13">再找</text>
+      <rect x="372" y="48" width="44" height="28" rx="5" class="bx-blue"/><text x="394" y="67" class="c s13">所以</text>
+      <rect x="422" y="48" width="44" height="28" rx="5" class="bx-blue"/><text x="444" y="67" class="c s13">答案</text>
+      <path d="M444 78 C444 120 420 150 384 156" class="ln-blue" marker-end="url(#ah-blue)"/>
+      <path d="M340 138 L340 80" class="ln-blue" marker-end="url(#ah-blue)"/>
+      <text x="460" y="122" class="sm">寫出來再讀回去</text>
+      <g id="loopStack3"></g>
+      <path d="M674 133 C720 133 720 95 676 95" class="ln-amber" style="stroke-width:2.6" marker-end="url(#ah-amber)"/>
+      <text x="722" y="119" class="lg amber">×T</text>
+      <path d="M630 176 L630 146" class="ln" marker-end="url(#ah)"/><path d="M630 86 L630 56" class="ln" marker-end="url(#ah)"/>
+      <text x="125" y="222" class="c sm">參數變多</text>
+      <text x="385" y="222" class="c sm">輸出的 token 變多、推論變慢</text>
+      <text x="640" y="222" class="c sm">參數和 token 都不變，只多算幾輪</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 A13</b>增加「依序計算步數」的三種做法。<a href="https://claude.ai/artifact/2bV9fURNbgg9gpwxkZ2AKL">looped Transformer 講義</a>會接著談第三種。</figcaption>
+  </figure>
+</section>
+
+<!-- ===================== PART B ===================== -->
+<div class="part e">
+  <h2><span class="letter">B</span>Encoder-decoder vs Decoder-only</h2>
+  <p>以「今天天氣很好」為例，從結構、訓練到推論比較兩種架構。</p>
+</div>
+
+<section id="b1" class="e-sec">
+  <h3><span class="no">B1</span>兩種架構的全貌</h3>
+  <p>Token 化和 embedding 兩者都一樣（很多 encoder-decoder 模型兩邊還共用同一張 embedding 表）。差別在後面：encoder-decoder 不是「多一層」，而是多了<strong>一整疊</strong>和 decoder 一樣深的 encoder，兩疊之間再用 cross-attention 連起來。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 460" role="img" aria-label="左邊 encoder-decoder：原文進 encoder 得到 H，decoder 透過 cross-attention 查 H；右邊 decoder-only：原文和已生成的字接成同一串進 decoder">
+      <text x="195" y="24" class="c lg">Encoder-decoder（T5、BART）</text>
+      <text x="580" y="24" class="c lg">Decoder-only（GPT、Llama）</text>
+      <path d="M398 40 L398 450" class="ln-mut dash thin"/>
+      <rect x="20" y="56" width="110" height="52" rx="6" class="bx-gray"/><text x="75" y="78" class="c">原文</text><text x="75" y="98" class="c sm">今天 天氣 很</text>
+      <path d="M75 108 L75 138" class="ln" marker-end="url(#ah)"/>
+      <rect x="20" y="140" width="110" height="70" rx="8" class="bx-teal"/><text x="75" y="168" class="c lg">Encoder × N</text><text x="75" y="190" class="c sm">雙向注意力</text>
+      <path d="M75 210 L75 248" class="ln" marker-end="url(#ah)"/><text x="68" y="234" class="e sm">只算一次</text>
+      <rect x="10" y="250" width="130" height="58" rx="6" class="bx-teal"/><text x="75" y="274" class="c">H = [h₁, h₂, h₃]</text><text x="75" y="295" class="c sm">每個位置一個向量</text>
+      <path d="M140 280 L196 280 L196 208 L218 208" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <text x="148" y="298" class="sm teal bd">cross-attn</text>
+      <rect x="220" y="56" width="150" height="52" rx="6" class="bx-gray"/><text x="295" y="78" class="c">已生成的字</text><text x="295" y="98" class="c sm">&lt;s&gt;、好、…</text>
+      <path d="M295 108 L295 138" class="ln" marker-end="url(#ah)"/>
+      <rect x="220" y="140" width="150" height="110" rx="8" class="bx-blue"/>
+      <text x="295" y="164" class="c lg">Decoder × N</text><text x="295" y="188" class="c sm">① 遮罩自注意力</text><text x="295" y="212" class="c sm teal bd">② cross-attention</text><text x="295" y="236" class="c sm">③ MLP</text>
+      <path d="M295 250 L295 283" class="ln" marker-end="url(#ah)"/>
+      <rect x="230" y="285" width="130" height="36" rx="6" class="box"/><text x="295" y="308" class="c s13">最後的 h（1×d）</text>
+      <path d="M295 321 L295 343" class="ln" marker-end="url(#ah)"/>
+      <rect x="230" y="345" width="130" height="36" rx="6" class="box"/><text x="295" y="368" class="c s13">輸出頭（1×V）</text>
+      <path d="M295 381 L295 403" class="ln" marker-end="url(#ah)"/>
+      <rect x="230" y="405" width="130" height="36" rx="6" class="bx-amber"/><text x="295" y="428" class="c s13">softmax → 下一字</text>
+      <path d="M360 423 L384 423 L384 82 L374 82" class="ln-amber dash" marker-end="url(#ah-amber)"/>
+
+      <rect x="465" y="56" width="230" height="52" rx="6" class="bx-gray"/><text x="580" y="78" class="c">原文＋已生成（同一串）</text><text x="580" y="98" class="c sm">&lt;s&gt; 今天 天氣 很 好 …</text>
+      <path d="M580 108 L580 138" class="ln" marker-end="url(#ah)"/>
+      <rect x="505" y="140" width="150" height="110" rx="8" class="bx-blue"/>
+      <text x="580" y="164" class="c lg">Decoder × N</text><text x="580" y="188" class="c sm">① 遮罩自注意力</text><text x="580" y="212" class="c sm">② MLP</text><text x="580" y="236" class="c sm">沒有 cross-attention</text>
+      <path d="M580 250 L580 283" class="ln" marker-end="url(#ah)"/>
+      <rect x="515" y="285" width="130" height="36" rx="6" class="box"/><text x="580" y="308" class="c s13">最後的 h（1×d）</text>
+      <path d="M580 321 L580 343" class="ln" marker-end="url(#ah)"/>
+      <rect x="515" y="345" width="130" height="36" rx="6" class="box"/><text x="580" y="368" class="c s13">輸出頭（1×V）</text>
+      <path d="M580 381 L580 403" class="ln" marker-end="url(#ah)"/>
+      <rect x="515" y="405" width="130" height="36" rx="6" class="bx-amber"/><text x="580" y="428" class="c s13">softmax → 下一字</text>
+      <path d="M645 423 L722 423 L722 82 L699 82" class="ln-amber dash" marker-end="url(#ah-amber)"/>
+      <text x="728" y="256" class="sm amber">接回</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 B1</b>兩種架構的資料流。黃色虛線表示生成的字會接回輸入，再跑下一步。d 是隱藏維度（例如 4096），V 是詞彙表大小（例如 GPT-2 的 50,257）。</figcaption>
+  </figure>
+  <p>差別可以歸納成三點：</p>
+  <ul class="plain">
+    <li><strong>輸入拆成兩路。</strong>Encoder-decoder 把「原文」交給 encoder、「已生成的字」交給 decoder；decoder-only 把兩者接成同一串。</li>
+    <li><strong>Encoder 用雙向注意力。</strong>原文是一次給齊的，不需要預測，所以沒有因果遮罩，「今天」也看得到後面的「很」。</li>
+    <li><strong>Decoder 每一層多一個 cross-attention 子層。</strong>插在遮罩自注意力和 MLP 之間：Q 來自 decoder 自己，K、V 來自 encoder 的輸出 H。</li>
+  </ul>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 280" role="img" aria-label="Encoder-decoder 中 decoder 的一層：遮罩自注意力、cross-attention、MLP 三個子層依序加回殘差流">
+      <rect x="290" y="14" width="200" height="56" rx="6" class="bx-teal"/><text x="390" y="38" class="c">Encoder 輸出 H（固定）</text><text x="390" y="58" class="c sm">h今天、h天氣、h很</text>
+      <path d="M390 70 L390 108" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <rect x="20" y="220" width="712" height="20" rx="10" class="stream"/>
+      <path d="M732 230 L752 230" class="ln-blue" marker-end="url(#ah-blue)"/>
+      <rect x="60" y="110" width="170" height="60" rx="6" class="box"/><text x="145" y="135" class="c">① 遮罩自注意力</text><text x="145" y="156" class="c sm">只看已生成的字</text>
+      <rect x="290" y="110" width="200" height="60" rx="6" class="bx-teal"/><text x="390" y="135" class="c">② Cross-attention</text><text x="390" y="156" class="c sm">Q：decoder　K、V：H</text>
+      <rect x="550" y="110" width="150" height="60" rx="6" class="box"/><text x="625" y="135" class="c">③ MLP</text><text x="625" y="156" class="c sm">各位置自己加工</text>
+      <path d="M80 220 L80 174" class="ln-blue" marker-end="url(#ah-blue)"/><path d="M210 170 L210 217" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <path d="M310 220 L310 174" class="ln-blue" marker-end="url(#ah-blue)"/><path d="M470 170 L470 217" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <path d="M570 220 L570 174" class="ln-blue" marker-end="url(#ah-blue)"/><path d="M680 170 L680 217" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <circle cx="210" cy="230" r="11" class="box"/><text x="210" y="235" class="c bd">+</text>
+      <circle cx="470" cy="230" r="11" class="box"/><text x="470" y="235" class="c bd">+</text>
+      <circle cx="680" cy="230" r="11" class="box"/><text x="680" y="235" class="c bd">+</text>
+      <text x="20" y="264" class="sm">輸入：上一層的 h</text><text x="732" y="264" class="e sm">輸出：這一層的 h</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 B2</b>Encoder-decoder 裡 decoder 的一層（省略每個子層前的 RMSNorm）。順序是「先跟已生成的字做自注意力，再跟原文 H 做 cross-attention」，H 在所有層、所有生成步驟都是同一份。</figcaption>
+  </figure>
+  <div class="note amber">
+    <p><strong>容易誤會的兩點</strong></p>
+    <p>1. Encoder 交給 decoder 的不是「last hidden」一個向量，而是 H 裡<strong>每個位置</strong>的向量。只交最後一個向量是早期 RNN seq2seq 的做法；Transformer 保留整串，讓 decoder 自己決定要查哪個字。</p>
+    <p>2. H 不是從 decoder 下方「輸入」的，而是在每一層的 cross-attention 被查詢，而且從生成第一個字就開始用。Decoder 下方的輸入只有 &lt;s&gt; 和已經生成的字。</p>
+  </div>
+  <p><strong>為什麼現在的大型 LLM 幾乎都是 decoder-only？</strong>主要是簡單、好擴展：只有一種 block、一個訓練目標（預測下一個字），任何文字都能直接拿來訓練，不用先切成「輸入／輸出」兩半；問答、翻譯、摘要也都能改寫成「前面是題目、後面接答案」的同一串文字。Encoder-decoder 現在主要出現在翻譯、語音辨識（例如 Whisper）這類輸入和輸出明確分開的任務。</p>
+</section>
+
+<section id="b2" class="e-sec">
+  <h3><span class="no">B2</span>架構從 pre-training 就固定</h3>
+  <p>架構不是推論時才決定的。權重是在那個結構上學出來的，例如 cross-attention 的權重只存在於 encoder-decoder 裡，所以訓練和推論一定用同一個架構。兩者不同的是「怎麼跑」：</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>訓練</th><th>推論</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Decoder-only</strong></td><td>整段一次餵入，所有位置平行預測下一個字（teacher forcing：每個位置拿到的前文都是正確答案）</td><td>一個字一個字生成，用 KV cache 避免重算</td></tr>
+        <tr><td><strong>Encoder-decoder</strong></td><td>Encoder 讀題目，decoder 平行預測答案；pre-training 多用「去噪」目標</td><td>Encoder 跑一次，decoder 逐字生成、每步都查 H</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>因果遮罩的意義就在這裡：它讓「訓練時平行算」和「推論時逐字生」的條件完全一致，訓練時每個位置看得到的東西，就是推論時那個位置真的看得到的東西。</p>
+</section>
+
+<section id="b3" class="e-sec">
+  <h3><span class="no">B3</span>訓練：用「今天天氣很好」走一遍</h3>
+  <p>假設 tokenizer 把句子切成「今天／天氣／很／好」（實際切法依 tokenizer 而定），&lt;s&gt; 是開頭、&lt;/s&gt; 是結尾。</p>
+  <h4>Decoder-only</h4>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 350" role="img" aria-label="Decoder-only 訓練：五個位置同時預測各自的下一個字，loss 加總">
+      <path d="M60 26 L60 20 L700 20 L700 26" class="ln-rose"/><text x="380" y="14" class="c sm rose bd">loss 加總（每個位置都要預測）</text>
+      <text x="8" y="66" class="sm">目標</text><text x="8" y="133" class="sm">輸出</text><text x="8" y="302" class="sm">輸入</text>
+      <rect x="50" y="180" width="660" height="60" rx="8" class="bx-blue"/><text x="380" y="206" class="c">Decoder × N（因果遮罩：每個位置只看自己和前面）</text><text x="380" y="227" class="c sm">五個位置同時往上算</text>
+      <text x="116" y="101" class="sm">輸出頭＋softmax</text>
+      <rect x="60" y="44" width="100" height="36" rx="6" class="bx-amber"/><text x="110" y="67" class="c">今天</text>
+      <path d="M110 110 L110 84" class="ln" marker-end="url(#ah)"/>
+      <rect x="80" y="112" width="60" height="32" rx="6" class="box"/><text x="110" y="133" class="c">h₁</text>
+      <path d="M110 180 L110 148" class="ln" marker-end="url(#ah)"/>
+      <path d="M110 280 L110 244" class="ln" marker-end="url(#ah)"/>
+      <rect x="65" y="280" width="90" height="36" rx="6" class="bx-gray"/><text x="110" y="303" class="c">&lt;s&gt;</text>
+      <text x="110" y="338" class="c sm">看得到 1 個字</text>
+      <rect x="195" y="44" width="100" height="36" rx="6" class="bx-amber"/><text x="245" y="67" class="c">天氣</text>
+      <path d="M245 110 L245 84" class="ln" marker-end="url(#ah)"/>
+      <rect x="215" y="112" width="60" height="32" rx="6" class="box"/><text x="245" y="133" class="c">h₂</text>
+      <path d="M245 180 L245 148" class="ln" marker-end="url(#ah)"/>
+      <path d="M245 280 L245 244" class="ln" marker-end="url(#ah)"/>
+      <rect x="200" y="280" width="90" height="36" rx="6" class="bx-gray"/><text x="245" y="303" class="c">今天</text>
+      <text x="245" y="338" class="c sm">看得到 2 個字</text>
+      <rect x="330" y="44" width="100" height="36" rx="6" class="bx-amber"/><text x="380" y="67" class="c">很</text>
+      <path d="M380 110 L380 84" class="ln" marker-end="url(#ah)"/>
+      <rect x="350" y="112" width="60" height="32" rx="6" class="box"/><text x="380" y="133" class="c">h₃</text>
+      <path d="M380 180 L380 148" class="ln" marker-end="url(#ah)"/>
+      <path d="M380 280 L380 244" class="ln" marker-end="url(#ah)"/>
+      <rect x="335" y="280" width="90" height="36" rx="6" class="bx-gray"/><text x="380" y="303" class="c">天氣</text>
+      <text x="380" y="338" class="c sm">看得到 3 個字</text>
+      <rect x="465" y="44" width="100" height="36" rx="6" class="bx-amber"/><text x="515" y="67" class="c">好</text>
+      <path d="M515 110 L515 84" class="ln" marker-end="url(#ah)"/>
+      <rect x="485" y="112" width="60" height="32" rx="6" class="box"/><text x="515" y="133" class="c">h₄</text>
+      <path d="M515 180 L515 148" class="ln" marker-end="url(#ah)"/>
+      <path d="M515 280 L515 244" class="ln" marker-end="url(#ah)"/>
+      <rect x="470" y="280" width="90" height="36" rx="6" class="bx-gray"/><text x="515" y="303" class="c">很</text>
+      <text x="515" y="338" class="c sm">看得到 4 個字</text>
+      <rect x="600" y="44" width="100" height="36" rx="6" class="bx-amber"/><text x="650" y="67" class="c">&lt;/s&gt;</text>
+      <path d="M650 110 L650 84" class="ln" marker-end="url(#ah)"/>
+      <rect x="620" y="112" width="60" height="32" rx="6" class="box"/><text x="650" y="133" class="c">h₅</text>
+      <path d="M650 180 L650 148" class="ln" marker-end="url(#ah)"/>
+      <path d="M650 280 L650 244" class="ln" marker-end="url(#ah)"/>
+      <rect x="605" y="280" width="90" height="36" rx="6" class="bx-gray"/><text x="650" y="303" class="c">好</text>
+      <text x="650" y="338" class="c sm">看得到 5 個字</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 B3</b>Decoder-only 的訓練。整句一次進去，每個位置預測「下一個字」，五個預測平行算完。「今天、天氣、很」本身也是被預測的對象。</figcaption>
+  </figure>
+  <div class="note"><p><strong>Loss 是怎麼算的：</strong>不是拿 h 跟下一個字的 embedding 比較，而是 h 經過輸出頭變成「詞彙表大小」的機率分布，再跟正確 token 的<strong>編號</strong>算 cross-entropy，也就是看模型給正確答案多少機率。</p></div>
+
+  <h4>Encoder-decoder</h4>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 300" role="img" aria-label="Encoder-decoder 訓練：encoder 讀今天天氣很，decoder 讀 s 和好，預測好和結尾">
+      <rect x="30" y="150" width="300" height="56" rx="8" class="bx-teal"/><text x="180" y="174" class="c">Encoder（雙向）</text><text x="180" y="194" class="c sm">三個字互相看得到，沒有 loss</text>
+      <rect x="40" y="240" width="80" height="34" rx="6" class="bx-gray"/><text x="80" y="262" class="c">今天</text><path d="M80 240 L80 210" class="ln" marker-end="url(#ah)"/>
+      <path d="M80 150 L80 130" class="ln" marker-end="url(#ah)"/><rect x="40" y="94" width="80" height="34" rx="6" class="bx-teal"/><text x="80" y="116" class="c s13">h今天</text>
+      <rect x="140" y="240" width="80" height="34" rx="6" class="bx-gray"/><text x="180" y="262" class="c">天氣</text><path d="M180 240 L180 210" class="ln" marker-end="url(#ah)"/>
+      <path d="M180 150 L180 130" class="ln" marker-end="url(#ah)"/><rect x="140" y="94" width="80" height="34" rx="6" class="bx-teal"/><text x="180" y="116" class="c s13">h天氣</text>
+      <rect x="240" y="240" width="80" height="34" rx="6" class="bx-gray"/><text x="280" y="262" class="c">很</text><path d="M280 240 L280 210" class="ln" marker-end="url(#ah)"/>
+      <path d="M280 150 L280 130" class="ln" marker-end="url(#ah)"/><rect x="240" y="94" width="80" height="34" rx="6" class="bx-teal"/><text x="280" y="116" class="c s13">h很</text>
+      <rect x="500" y="240" width="80" height="34" rx="6" class="bx-gray"/><text x="540" y="262" class="c">&lt;s&gt;</text><path d="M540 240 L540 210" class="ln" marker-end="url(#ah)"/>
+      <path d="M540 150 L540 100" class="ln" marker-end="url(#ah)"/><rect x="500" y="64" width="80" height="34" rx="6" class="bx-amber"/><text x="540" y="86" class="c">好</text>
+      <rect x="610" y="240" width="80" height="34" rx="6" class="bx-gray"/><text x="650" y="262" class="c">好</text><path d="M650 240 L650 210" class="ln" marker-end="url(#ah)"/>
+      <path d="M650 150 L650 100" class="ln" marker-end="url(#ah)"/><rect x="610" y="64" width="80" height="34" rx="6" class="bx-amber"/><text x="650" y="86" class="c">&lt;/s&gt;</text>
+      <path d="M320 111 L400 111 L400 178 L468 178" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <text x="360" y="103" class="c sm teal bd">cross-attn</text>
+      <rect x="470" y="150" width="260" height="56" rx="8" class="bx-blue"/><text x="600" y="174" class="c">Decoder（因果遮罩）</text><text x="600" y="194" class="c sm">兩個位置平行預測</text>
+      <path d="M500 54 L500 48 L690 48 L690 54" class="ln-rose"/><text x="595" y="40" class="c sm rose bd">loss 只算這裡</text>
+      <text x="180" y="294" class="c sm">Encoder 輸入：題目</text>
+      <text x="595" y="294" class="c sm">Decoder 輸入：答案往右移一格</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 B4</b>以「讀前半句、寫出後半句」的任務為例。Loss 只算在 decoder 產生的部分，「今天天氣很」不用被預測。</figcaption>
+  </figure>
+  <p>上面這種切法通常是 fine-tuning 時的用法。T5 實際的 pre-training 是「挖空填空」：</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 162" role="img" aria-label="T5 的挖空填空：encoder 讀挖掉天氣的句子，decoder 寫出被挖掉的天氣">
+      <text x="250" y="36" class="e sm">原句</text>
+      <rect x="260" y="14" width="70" height="34" rx="6" class="bx-gray"/><text x="295" y="36" class="c">今天</text>
+      <rect x="340" y="14" width="70" height="34" rx="6" class="bx-amber"/><text x="375" y="36" class="c">天氣</text>
+      <rect x="420" y="14" width="70" height="34" rx="6" class="bx-gray"/><text x="455" y="36" class="c">很</text>
+      <rect x="500" y="14" width="70" height="34" rx="6" class="bx-gray"/><text x="535" y="36" class="c">好</text>
+      <path d="M330 52 L220 90" class="ln-mut" marker-end="url(#ah-mut)"/><path d="M470 52 L580 90" class="ln-mut" marker-end="url(#ah-mut)"/>
+      <rect x="40" y="96" width="70" height="34" rx="6" class="bx-gray"/><text x="75" y="118" class="c">今天</text>
+      <rect x="120" y="96" width="70" height="34" rx="6" class="bx-rose"/><text x="155" y="118" class="c">&lt;X&gt;</text>
+      <rect x="200" y="96" width="70" height="34" rx="6" class="bx-gray"/><text x="235" y="118" class="c">很</text>
+      <rect x="280" y="96" width="70" height="34" rx="6" class="bx-gray"/><text x="315" y="118" class="c">好</text>
+      <rect x="480" y="96" width="70" height="34" rx="6" class="bx-rose"/><text x="515" y="118" class="c">&lt;X&gt;</text>
+      <rect x="560" y="96" width="70" height="34" rx="6" class="bx-amber"/><text x="595" y="118" class="c">天氣</text>
+      <rect x="640" y="96" width="70" height="34" rx="6" class="box"/><text x="675" y="118" class="c">&lt;/s&gt;</text>
+      <text x="195" y="154" class="c sm">Encoder 讀：挖掉一段的句子</text>
+      <text x="595" y="154" class="c sm">Decoder 寫：被挖掉的內容</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 B5</b>T5 的 span corruption。Encoder 看得到挖空處的前後文，decoder 負責把挖掉的片段補回來；BART 則是把句子打亂或遮掉，讓 decoder 還原整句。</figcaption>
+  </figure>
+</section>
+
+<section id="b4" class="e-sec">
+  <h3><span class="no">B4</span>推論：輸入「今天天氣很」</h3>
+  <h4>Decoder-only</h4>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 360" role="img" aria-label="Decoder-only 推論：先 prefill 整串輸入並存 KV cache，再只算新加入的字">
+      <text x="16" y="24" class="lg">第 1 步：prefill，整串輸入一次算完</text>
+      <rect x="60" y="70" width="460" height="40" rx="8" class="bx-blue"/><text x="290" y="95" class="c">Decoder × N（因果遮罩）</text>
+      <rect x="65" y="128" width="90" height="32" rx="6" class="bx-gray"/><text x="110" y="149" class="c">&lt;s&gt;</text><path d="M110 128 L110 112" class="ln" marker-end="url(#ah)"/>
+      <rect x="185" y="128" width="90" height="32" rx="6" class="bx-gray"/><text x="230" y="149" class="c">今天</text><path d="M230 128 L230 112" class="ln" marker-end="url(#ah)"/>
+      <rect x="305" y="128" width="90" height="32" rx="6" class="bx-gray"/><text x="350" y="149" class="c">天氣</text><path d="M350 128 L350 112" class="ln" marker-end="url(#ah)"/>
+      <rect x="425" y="128" width="90" height="32" rx="6" class="bx-gray"/><text x="470" y="149" class="c">很</text><path d="M470 128 L470 112" class="ln" marker-end="url(#ah)"/>
+      <text x="230" y="60" class="c sm">前 3 個位置的最上層輸出用不到</text>
+      <path d="M470 70 L470 46 L548 46" class="ln" marker-end="url(#ah)"/>
+      <rect x="550" y="30" width="80" height="32" rx="6" class="bx-amber"/><text x="590" y="51" class="c bd">好</text>
+      <path d="M520 100 L558 100" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <rect x="560" y="78" width="180" height="48" rx="6" class="bx-teal"/><text x="650" y="98" class="c">KV cache</text><text x="650" y="117" class="c sm">4 個位置 × 每一層的 K、V</text>
+
+      <text x="16" y="214" class="lg">第 2 步：decode，只算新加入的「好」</text>
+      <g class="faded">
+        <rect x="65" y="318" width="90" height="32" rx="6" class="bx-gray"/><text x="110" y="339" class="c">&lt;s&gt;</text>
+        <rect x="185" y="318" width="90" height="32" rx="6" class="bx-gray"/><text x="230" y="339" class="c">今天</text>
+        <rect x="305" y="318" width="90" height="32" rx="6" class="bx-gray"/><text x="350" y="339" class="c">天氣</text>
+        <rect x="425" y="318" width="90" height="32" rx="6" class="bx-gray"/><text x="470" y="339" class="c">很</text>
+      </g>
+      <rect x="60" y="262" width="460" height="40" rx="8" class="bx-teal"/><text x="290" y="287" class="c">從 KV cache 讀前 4 個位置的 K、V（不重算）</text>
+      <path d="M520 282 L543 282" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <rect x="545" y="262" width="90" height="40" rx="8" class="bx-blue"/><text x="590" y="287" class="c">Decoder</text>
+      <rect x="545" y="318" width="90" height="32" rx="6" class="bx-amber"/><text x="590" y="339" class="c">好</text>
+      <path d="M590 318 L590 306" class="ln" marker-end="url(#ah)"/>
+      <path d="M590 262 L590 238 L658 238" class="ln" marker-end="url(#ah)"/>
+      <rect x="660" y="222" width="80" height="32" rx="6" class="bx-amber"/><text x="700" y="243" class="c">&lt;/s&gt;</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 B6</b>Decoder-only 的推論。Prefill 時只有最後一個位置的輸出決定下一個字；decode 時只有新的字往上跑，它自己的 K、V 也會存進 cache 給下一個字用。「今天天氣很」依然套著因果遮罩，跟訓練時一致。</figcaption>
+  </figure>
+  <h4>Encoder-decoder</h4>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 245" role="img" aria-label="Encoder-decoder 推論：encoder 跑一次得到 H，decoder 每生成一個字都查同一份 H">
+      <rect x="30" y="140" width="260" height="40" rx="8" class="bx-teal"/><text x="160" y="165" class="c">Encoder（只跑一次）</text>
+      <rect x="30" y="200" width="80" height="32" rx="6" class="bx-gray"/><text x="70" y="221" class="c">今天</text><path d="M70 200 L70 184" class="ln" marker-end="url(#ah)"/>
+      <path d="M70 140 L70 120" class="ln" marker-end="url(#ah)"/><rect x="30" y="84" width="80" height="32" rx="6" class="bx-teal"/><text x="70" y="105" class="c s13">h今天</text>
+      <rect x="120" y="200" width="80" height="32" rx="6" class="bx-gray"/><text x="160" y="221" class="c">天氣</text><path d="M160 200 L160 184" class="ln" marker-end="url(#ah)"/>
+      <path d="M160 140 L160 120" class="ln" marker-end="url(#ah)"/><rect x="120" y="84" width="80" height="32" rx="6" class="bx-teal"/><text x="160" y="105" class="c s13">h天氣</text>
+      <rect x="210" y="200" width="80" height="32" rx="6" class="bx-gray"/><text x="250" y="221" class="c">很</text><path d="M250 200 L250 184" class="ln" marker-end="url(#ah)"/>
+      <path d="M250 140 L250 120" class="ln" marker-end="url(#ah)"/><rect x="210" y="84" width="80" height="32" rx="6" class="bx-teal"/><text x="250" y="105" class="c s13">h很</text>
+      <path d="M290 100 L360 100 L360 152 L418 152" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <path d="M360 100 L560 100 L560 152 L598 152" class="ln-teal" marker-end="url(#ah-teal)"/>
+      <text x="330" y="90" class="c sm teal bd">查同一份 H</text>
+      <text x="470" y="24" class="c sm">生成第 1 個字</text>
+      <rect x="430" y="44" width="80" height="34" rx="6" class="bx-amber"/><text x="470" y="66" class="c">好</text>
+      <path d="M470 130 L470 82" class="ln" marker-end="url(#ah)"/>
+      <rect x="420" y="130" width="100" height="44" rx="8" class="bx-blue"/><text x="470" y="157" class="c">Decoder</text>
+      <rect x="440" y="200" width="60" height="32" rx="6" class="bx-gray"/><text x="470" y="221" class="c">&lt;s&gt;</text>
+      <path d="M470 200 L470 178" class="ln" marker-end="url(#ah)"/>
+      <text x="650" y="24" class="c sm">生成第 2 個字</text>
+      <rect x="610" y="44" width="80" height="34" rx="6" class="bx-amber"/><text x="650" y="66" class="c">&lt;/s&gt;</text>
+      <path d="M650 130 L650 82" class="ln" marker-end="url(#ah)"/>
+      <rect x="600" y="130" width="100" height="44" rx="8" class="bx-blue"/><text x="650" y="157" class="c">Decoder</text>
+      <rect x="598" y="200" width="48" height="32" rx="6" class="bx-gray"/><text x="622" y="221" class="c">&lt;s&gt;</text>
+      <rect x="652" y="200" width="48" height="32" rx="6" class="bx-gray"/><text x="676" y="221" class="c">好</text>
+      <path d="M649 200 L649 178" class="ln" marker-end="url(#ah)"/>
+    </svg>
+    </div>
+    <figcaption><b>圖 B7</b>Encoder-decoder 的推論。Encoder 不會重跑；decoder 每一步看到的是「&lt;s&gt; 加上到目前為止生成的所有字」，並在每一層用 cross-attention 查同一份 H。</figcaption>
+  </figure>
+</section>
+
+<section id="b5" class="e-sec">
+  <h3><span class="no">B5</span>Prefill 為什麼要算前面的位置？KV cache 為什麼可行？</h3>
+  <p>Prefill 時只有「很」的最上層輸出會決定下一個字，那前面的位置為什麼還要一層一層算上去？關鍵是：<strong>每一層的 Q、K、V 都是用「這一層的輸入」重新算的</strong>，而第 ℓ 層的輸入就是第 ℓ−1 層各位置的 h；只有第 1 層的輸入是 embedding。</p>
+  <div class="eq">
+    第 ℓ 層：Q<sup>(ℓ)</sup> = RMSNorm(H<sup>(ℓ−1)</sup>) · W<sub>Q</sub><sup>(ℓ)</sup>　K<sup>(ℓ)</sup>、V<sup>(ℓ)</sup> 同理　<span class="cm">每一層的 W<sub>Q</sub>、W<sub>K</sub>、W<sub>V</sub> 各自獨立</span><br>
+    H<sup>(0)</sup> = embedding　<span class="cm">只有第 1 層直接吃 embedding</span>
+  </div>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 420" role="img" aria-label="Prefill 時各位置逐層往上算，「很」在第 3 層要讀前面三個位置在第 2 層的輸出所算出的 K、V">
+      <text x="40" y="85" class="s13">第 3 層輸出</text>
+      <text x="40" y="175" class="s13">第 2 層輸出</text>
+      <text x="40" y="265" class="s13">第 1 層輸出</text>
+      <text x="40" y="355" class="s13">Embedding</text>
+      <path d="M260 148 L582 103" class="ln-amber" style="opacity:.9"/>
+      <path d="M260 238 L582 193" class="ln-mut" style="opacity:.6"/>
+      <path d="M370 148 L585 103" class="ln-amber" style="opacity:.9"/>
+      <path d="M370 238 L585 193" class="ln-mut" style="opacity:.6"/>
+      <path d="M480 148 L588 103" class="ln-amber" style="opacity:.9"/>
+      <path d="M480 238 L588 193" class="ln-mut" style="opacity:.6"/>
+      <rect x="217" y="60" width="86" height="40" rx="5" class="frame"/><text x="260" y="85" class="c sm">用不到</text>
+      <rect x="217" y="150" width="86" height="40" rx="5" class="bx-gray"/><text x="260" y="175" class="c">h</text>
+      <rect x="217" y="240" width="86" height="40" rx="5" class="bx-gray"/><text x="260" y="265" class="c">h</text>
+      <rect x="217" y="330" width="86" height="40" rx="5" class="bx-gray"/><text x="260" y="355" class="c">emb</text>
+      <path d="M260 330 L260 284" class="ln" marker-end="url(#ah)"/><path d="M260 240 L260 194" class="ln" marker-end="url(#ah)"/>
+      <rect x="327" y="60" width="86" height="40" rx="5" class="frame"/><text x="370" y="85" class="c sm">用不到</text>
+      <rect x="327" y="150" width="86" height="40" rx="5" class="bx-gray"/><text x="370" y="175" class="c">h</text>
+      <rect x="327" y="240" width="86" height="40" rx="5" class="bx-gray"/><text x="370" y="265" class="c">h</text>
+      <rect x="327" y="330" width="86" height="40" rx="5" class="bx-gray"/><text x="370" y="355" class="c">emb</text>
+      <path d="M370 330 L370 284" class="ln" marker-end="url(#ah)"/><path d="M370 240 L370 194" class="ln" marker-end="url(#ah)"/>
+      <rect x="437" y="60" width="86" height="40" rx="5" class="frame"/><text x="480" y="85" class="c sm">用不到</text>
+      <rect x="437" y="150" width="86" height="40" rx="5" class="bx-gray"/><text x="480" y="175" class="c">h</text>
+      <rect x="437" y="240" width="86" height="40" rx="5" class="bx-gray"/><text x="480" y="265" class="c">h</text>
+      <rect x="437" y="330" width="86" height="40" rx="5" class="bx-gray"/><text x="480" y="355" class="c">emb</text>
+      <path d="M480 330 L480 284" class="ln" marker-end="url(#ah)"/><path d="M480 240 L480 194" class="ln" marker-end="url(#ah)"/>
+      <rect x="547" y="60" width="86" height="40" rx="5" class="bx-amber"/><text x="590" y="85" class="c bd">h</text>
+      <rect x="547" y="150" width="86" height="40" rx="5" class="bx-amber"/><text x="590" y="175" class="c">h</text>
+      <rect x="547" y="240" width="86" height="40" rx="5" class="bx-amber"/><text x="590" y="265" class="c">h</text>
+      <rect x="547" y="330" width="86" height="40" rx="5" class="bx-amber"/><text x="590" y="355" class="c">emb</text>
+      <path d="M590 330 L590 284" class="ln" marker-end="url(#ah)"/><path d="M590 240 L590 194" class="ln" marker-end="url(#ah)"/>
+      <path d="M590 150 L590 104" class="ln" marker-end="url(#ah)"/>
+      <path d="M635 80 L668 80" class="ln" marker-end="url(#ah)"/><text x="680" y="86" class="lg">好</text>
+      <text x="260" y="400" class="c lg">&lt;s&gt;</text>
+      <text x="370" y="400" class="c lg">今天</text>
+      <text x="480" y="400" class="c lg">天氣</text>
+      <text x="590" y="400" class="c lg">很</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 B8</b>每一欄是一個位置，每一格是那個位置在某一層的 h。「很」在第 3 層做注意力時，要讀前面三個位置<strong>第 2 層輸出</strong>算出來的 K、V（黃線）；第 2 層時則讀它們第 1 層的輸出（灰線）。所以前面的位置必須一層一層跟著算，真正用不到的只有它們最上層的輸出（虛線框）。</figcaption>
+  </figure>
+  <p>打個比方：像一場開三輪的會議，每一輪大家聽完別人發言後更新自己的筆記。最後只有「很」要上台報告，但它在第三輪要參考的是其他人<strong>第二輪更新過的筆記</strong>，所以其他人雖然不用上台，前兩輪的會還是得一起開。</p>
+  <p><strong>KV cache 為什麼可行：</strong>因為因果遮罩，「今天」在每一層都看不到後面的字，後面接了「好」之後，「今天」每一層的 h、K、V 都跟原本一模一樣。既然不會變，算一次存起來就好。新加入的字只要用自己的 Q 去查 cache 裡的 K、V，再把自己的 K、V 存進去。反過來，encoder 是雙向注意力，輸入一變長，前面每個位置的 h 都會變，就沒辦法這樣沿用；這也是為什麼 encoder 只對固定的原文跑一次。</p>
+  <div class="note">
+    <p><strong>補充：一個位置在一層裡的完整流程</strong></p>
+    <p>注意力的加權總和 A<sub>1</sub>V<sub>1</sub> + A<sub>2</sub>V<sub>2</sub> + … 會<strong>包含這個位置自己的 V</strong>（因果遮罩只擋未來，不擋自己）。加權總和還不是這一層的 h：它要再經過 W<sub>O</sub> 投影、加回殘差流、再過 MLP 加回殘差流，最後的結果才是這一層的輸出 h，交給下一層算新的 Q、K、V。</p>
+  </div>
+</section>
+
+<section id="b6" class="e-sec">
+  <h3><span class="no">B6</span>總結對照</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>Decoder-only</th><th>Encoder-decoder</th></tr></thead>
+      <tbody>
+        <tr><td>「今天天氣很」放在哪</td><td>跟答案接成同一串</td><td>單獨交給 encoder</td></tr>
+        <tr><td>「今天天氣很」內部看得到彼此嗎</td><td>只能看前面</td><td>前後都看得到</td></tr>
+        <tr><td>「今天天氣很」有沒有 loss</td><td>有，每個字都要預測</td><td>沒有，只負責被讀</td></tr>
+        <tr><td>Decoder 每層的子層</td><td>遮罩自注意力 → MLP</td><td>遮罩自注意力 → cross-attention → MLP</td></tr>
+        <tr><td>推論時「好」怎麼來</td><td>Prefill 後最後一個位置的輸出</td><td>Decoder 第一步的輸出，同時查 H</td></tr>
+        <tr><td>重複利用的東西</td><td>KV cache（每層、每個位置的 K、V）</td><td>H（encoder 輸出）＋ decoder 自己的 KV cache</td></tr>
+        <tr><td>代表模型</td><td>GPT、Llama</td><td>T5、BART、Whisper</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <p>圖中標示的權重、機率等數字多為示意，用來說明概念。Looped Transformer 與論文〈Inside the Loop〉的導讀請見<a href="https://claude.ai/artifact/2bV9fURNbgg9gpwxkZ2AKL">另一份講義</a>。</p>
+</footer>
+
+</main>
+
+<script>
+(function(){
+  var NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs, parent, text){
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function rng(seed){
+    var s = (seed >>> 0) || 1;
+    return function(){ s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+  }
+  function towerColor(i){ return 'hsl(' + (200 + i*4) + ',52%,' + (i % 2 ? 62 : 51) + '%)'; }
+  var loopColors = ['hsl(36,80%,52%)','hsl(22,72%,60%)','hsl(46,85%,55%)','hsl(12,64%,54%)'];
+  var SUB = ['₀','₁','₂','₃','₄','₅','₆','₇','₈'];
+
+  /* hero */
+  var ht = document.getElementById('heroTower');
+  if (ht) for (var i = 0; i < 32; i++) el('rect', {x:110, y:20 + (31 - i) * 7.5, width:150, height:6, rx:1.5, fill:towerColor(i)}, ht);
+  var hb = document.getElementById('heroBlock');
+  if (hb) for (var k = 0; k < 4; k++) el('rect', {x:500, y:88 + (3 - k) * 26, width:150, height:22, rx:3, fill:loopColors[k]}, hb);
+
+  /* A13 stacks */
+  var ds = document.getElementById('deepStack');
+  if (ds) for (var i2 = 0; i2 < 12; i2++) el('rect', {x:75, y:44 + (11 - i2) * 12.5, width:100, height:10, rx:2, fill:towerColor(i2 * 2.6 | 0)}, ds);
+  var l3 = document.getElementById('loopStack3');
+  if (l3) for (var k2 = 0; k2 < 3; k2++) el('rect', {x:590, y:90 + (2 - k2) * 18, width:80, height:14, rx:2, fill:loopColors[k2]}, l3);
+
+  /* vectors */
+  document.querySelectorAll('g.vec').forEach(function(g){
+    var x = +g.dataset.x, y = +g.dataset.y, n = +g.dataset.n, w = +(g.dataset.w || 24), r = rng(+g.dataset.seed);
+    for (var j = 0; j < n; j++) el('rect', {x:x + j * (w + 2), y:y, width:w, height:28, rx:3, 'class':'cell', 'fill-opacity':(0.12 + 0.85 * r()).toFixed(2)}, g);
+  });
+
+  /* mask grid */
+  (function(){
+    var g = document.getElementById('maskGrid'), toks = ['今天','天氣','很','好','，'];
+    if (!g) return;
+    var x0 = 130, y0 = 60, c = 38, r = rng(5);
+    toks.forEach(function(t, j){
+      el('text', {x:x0 + j * c + c/2, y:52, 'class':'c s13'}, g, t);
+      el('text', {x:x0 - 8, y:y0 + j * c + c/2 + 5, 'class':'e s13'}, g, t);
+    });
+    for (var i = 0; i < 5; i++){
+      var ws = [], sum = 0;
+      for (var j = 0; j <= i; j++){ var v = 0.2 + r() * (j === i ? 1.2 : 1); ws.push(v); sum += v; }
+      for (var j2 = 0; j2 < 5; j2++){
+        var x = x0 + j2 * c, y = y0 + i * c;
+        if (j2 <= i){
+          var w = ws[j2] / sum;
+          el('rect', {x:x + 1, y:y + 1, width:c - 2, height:c - 2, rx:3, 'class':'cell', 'fill-opacity':(0.12 + 0.8 * w / Math.max.apply(null, ws.map(function(q){return q/sum;}))).toFixed(2)}, g);
+          var op = 0.12 + 0.8 * w / Math.max.apply(null, ws.map(function(q){return q/sum;}));
+          el('text', {x:x + c/2, y:y + c/2 + 4, 'class':'c mono', style:'font-size:10px', fill: op > 0.6 ? 'var(--panel)' : 'var(--ink)'}, g, w.toFixed(2).replace(/^0/, ''));
+        } else {
+          el('rect', {x:x + 1, y:y + 1, width:c - 2, height:c - 2, rx:3, 'class':'masked'}, g);
+        }
+      }
+    }
+  })();
+
+  /* heads */
+  (function(){
+    var g = document.getElementById('heads');
+    if (!g) return;
+    var notes = ['例：找前一個字','例：找同一個節點','例：找題目的起點','…','…','…','…','…'];
+    for (var k = 0; k < 8; k++){
+      var y = 10 + k * 28;
+      el('path', {d:'M112 120 L168 ' + (y + 11), 'class':'ln-mut thin'}, g);
+      el('rect', {x:170, y:y, width:240, height:22, rx:4, 'class': k < 3 ? 'bx-teal' : 'box'}, g);
+      el('text', {x:182, y:y + 16, 'class':'s13 bd'}, g, '頭 ' + (k + 1));
+      el('text', {x:228, y:y + 16, 'class':'sm'}, g, notes[k]);
+      el('path', {d:'M410 ' + (y + 11) + ' L468 120', 'class':'ln-mut thin'}, g);
+    }
+  })();
+
+  /* unrolled */
+  (function(){
+    var u = document.getElementById('unrollUntied'), lp = document.getElementById('unrollLoop'), br = document.getElementById('unrollBrackets');
+    if (!u) return;
+    for (var i = 0; i < 32; i++){
+      el('rect', {x:40 + i * 22, y:40, width:20, height:40, rx:3, fill:towerColor(i)}, u);
+      el('rect', {x:40 + i * 22, y:138, width:20, height:40, rx:3, fill:loopColors[i % 4]}, lp);
+    }
+    for (var k = 0; k < 8; k++){
+      var a = 40 + k * 88, b = a + 86;
+      el('path', {d:'M' + a + ' 186 L' + a + ' 192 L' + b + ' 192 L' + b + ' 186', 'class':'ln-mut'}, br);
+      el('text', {x:(a + b) / 2, y:212, 'class':'c sm'}, br, '第 ' + (k + 1) + ' 輪');
+    }
+  })();
+
+  /* heatmaps */
+  function heat(id, onsets, opt){
+    var svg = document.getElementById(id), x0 = 90, y0 = 50, cw = 20, ch = 20, r = rng(opt.seed);
+    if (!svg) return;
+    el('text', {x:16, y:22, 'class':'lg'}, svg, opt.title);
+    if (opt.iters){
+      for (var k = 0; k < 8; k++) el('text', {x:x0 + (k * 4 + 2) * cw, y:y0 - 8, 'class':'c sm'}, svg, '第' + (k + 1) + '輪');
+    }
+    for (var h = 1; h <= 8; h++){
+      var y = y0 + (h - 1) * ch, on = onsets[h - 1];
+      el('text', {x:x0 - 10, y:y + 15, 'class':'e sm'}, svg, '第 ' + h + ' 步');
+      for (var l = 1; l <= 32; l++){
+        var v;
+        if (l < on - 1) v = 0.03 + 0.09 * r();
+        else if (l === on - 1) v = 0.36;
+        else if (opt.fade){ var since = l - on; v = since > 6 ? Math.max(0.16, 0.93 - (since - 6) * 0.07) : 0.9 + 0.06 * r(); }
+        else v = 0.88 + 0.08 * r();
+        el('rect', {x:x0 + (l - 1) * cw, y:y, width:cw - 1, height:ch - 1, rx:2, 'class':'cell', 'fill-opacity':v.toFixed(2)}, svg);
+      }
+    }
+    if (opt.iters){
+      for (var k2 = 1; k2 < 8; k2++){ var x = x0 + k2 * 4 * cw - 0.5; el('path', {d:'M' + x + ' ' + (y0 - 2) + ' L' + x + ' ' + (y0 + 8 * ch + 2), 'class':'ln-mut thin', style:'opacity:.7'}, svg); }
+    }
+    var pts = onsets.map(function(on, i){ return [x0 + (on - 0.5) * cw, y0 + (i + 0.5) * ch]; });
+    el('polyline', {points:pts.map(function(p){return p.join(',');}).join(' '), 'class':'stair'}, svg);
+    pts.forEach(function(p){ el('circle', {cx:p[0], cy:p[1], r:4.5, 'class':'dot'}, svg); });
+    [4,8,12,16,20,24,28,32].forEach(function(l){ el('text', {x:x0 + (l - 0.5) * cw, y:y0 + 8 * ch + 18, 'class':'c sm mono'}, svg, l); });
+    el('text', {x:x0 + 16 * cw, y:y0 + 8 * ch + 38, 'class':'c sm'}, svg, '層');
+  }
+  heat('heatLoop', [8,12,16,18,20,24,28,31], {seed:3, title:'迴圈 4×8：一階一階往上爬', iters:true, fade:true});
+  heat('heatUntied', [26,26,27,27,28,28,29,30], {seed:9, title:'普通 32 層（學習率 3×10⁻⁴）：最後幾層一次冒出來', iters:false, fade:false});
+
+  /* budgets */
+  (function(){
+    var svg = document.getElementById('budget');
+    if (!svg) return;
+    var B = [
+      {T:16, on:[5,6,7,8,9,10,11,12], t:'2×16：輪數 > 步數'},
+      {T:8, on:[2,3,4,4.5,5,6,7,8], t:'4×8：輪數 = 步數'},
+      {T:4, on:[1,1.5,2,2.4,2.8,3.2,3.6,4], t:'8×4：輪數 < 步數'}
+    ];
+    B.forEach(function(b, i){
+      var px = 50 + i * 250, w = 190, yT = 50, yB = 210, sx = w / b.T;
+      function X(t){ return px + t * sx; } function Y(h){ return yB - h * 20; }
+      el('text', {x:px + w / 2, y:26, 'class':'c lg'}, svg, b.t);
+      for (var t = 1; t <= b.T; t++) el('path', {d:'M' + X(t) + ' ' + yT + ' L' + X(t) + ' ' + yB, 'class':'ln-mut thin', style:'opacity:.35'}, svg);
+      el('path', {d:'M' + px + ' ' + yT + ' L' + px + ' ' + yB + ' L' + (px + w) + ' ' + yB, 'class':'ln-mut'}, svg);
+      var m = Math.min(b.T, 8);
+      el('path', {d:'M' + X(0) + ' ' + Y(0) + ' L' + X(m) + ' ' + Y(m), 'class':'ln-mut dash'}, svg);
+      var pts = [[X(0), Y(0)]].concat(b.on.map(function(o, h){ return [X(o), Y(h + 1)]; }));
+      el('polyline', {points:pts.map(function(p){return p.join(',');}).join(' '), 'class':'ln-amber', style:'stroke-width:2.4'}, svg);
+      pts.slice(1).forEach(function(p){ el('circle', {cx:p[0], cy:p[1], r:4, 'class':'dot'}, svg); });
+      [0,4,8].forEach(function(h){ el('text', {x:px - 8, y:Y(h) + 4, 'class':'e sm mono'}, svg, h); });
+      el('text', {x:X(0), y:yB + 18, 'class':'c sm mono'}, svg, '0');
+      el('text', {x:X(b.T), y:yB + 18, 'class':'c sm mono'}, svg, b.T);
+      el('text', {x:px + w / 2, y:yB + 38, 'class':'c sm'}, svg, '第幾輪');
+    });
+    el('text', {x:16, y:130, 'class':'c sm', transform:'rotate(-90 16 130)'}, svg, '第幾步');
+  })();
+
+  /* probe vs head */
+  (function(){
+    var svg = document.getElementById('pvh');
+    if (!svg) return;
+    el('text', {x:16, y:48, 'class':'s13 bd'}, svg, '探針讀得到');
+    el('text', {x:16, y:66, 'class':'sm'}, svg, '（舊節點慢慢淡出）');
+    el('text', {x:16, y:124, 'class':'s13 bd'}, svg, '輸出頭寫出');
+    el('text', {x:16, y:142, 'class':'sm'}, svg, '（只寫目前這一步）');
+    for (var k = 0; k < 8; k++){
+      var x = 140 + k * 77, cx = x + 35.5, t = k + 1;
+      el('rect', {x:x, y:20, width:71, height:60, rx:6, 'class':'bx-blue'}, svg);
+      el('text', {x:cx, y:50, 'class':'c lg'}, svg, 'z' + SUB[t]);
+      var old = [];
+      if (t - 2 >= 1) old.push('z' + SUB[t - 2]);
+      if (t - 1 >= 1) old.push('z' + SUB[t - 1]);
+      el('text', {x:cx, y:70, 'class':'c sm', style:'opacity:.75'}, svg, old.length ? old.join(' ') : '—');
+      el('rect', {x:x, y:100, width:71, height:50, rx:6, 'class':'bx-amber'}, svg);
+      el('text', {x:cx, y:131, 'class':'c lg'}, svg, 'z' + SUB[t]);
+      el('text', {x:cx, y:174, 'class':'c sm'}, svg, '第 ' + t + ' 輪');
+    }
+  })();
+
+  /* stepper */
+  (function(){
+    var svg = document.getElementById('stepSvg'), segG = document.getElementById('segs'), nodeG = document.getElementById('stepNodes');
+    if (!svg) return;
+    var range = document.getElementById('stepRange'), msg = document.getElementById('stepMsg');
+    var modeBtns = document.querySelectorAll('#stepper [data-mode]');
+    var labels = ['3','11','6','2','9'], xs = [110,245,380,515,650];
+    var segs = [], segTx = [], circles = [], ctext = [];
+    for (var i = 0; i < 8; i++){
+      segs.push(el('rect', {x:40 + i * 86, y:16, width:80, height:34, rx:5, 'class':'seg-todo'}, segG));
+      segTx.push(el('text', {x:80 + i * 86, y:38, 'class':'c s13'}, segG, ''));
+    }
+    for (var j = 0; j < 5; j++){
+      circles.push(el('circle', {cx:xs[j], cy:125, r:30, 'class':'st-off'}, nodeG));
+      ctext.push(el('text', {x:xs[j], y:132, 'class':'c xl tx-off'}, nodeG, labels[j]));
+    }
+    var state = {mode:'loop', t:0};
+    var loopMsg = [
+      '還沒進迴圈：殘差流裡只讀得出起點 3。',
+      '第 1 輪（第 1–4 層）結束：探針開始讀得出第 1 步的節點 11。',
+      '第 2 輪：輪到 6。前面的 11 不會瞬間消失，而是慢慢淡出，探針大約還能多讀兩輪。',
+      '第 3 輪：走到 2。每一輪大約往前一步，畫出來就像爬樓梯。',
+      '第 4 輪（到第 16 層）：走到答案 9。論文圖 4a 的 4×8 模型正是在第 16 層左右抵達答案。',
+      '第 5 輪：答案已經在手，沒有新的節點冒出來，舊節點繼續淡出。',
+      '第 6 輪：一樣停在答案。多出來的輪數基本上是閒置的。',
+      '第 7 輪：仍然停在答案。論文在 2×16 模型上也看到，多餘的輪數不會再多跳。',
+      '第 8 輪：輸出頭在這裡讀出答案 9。'
+    ];
+    function untiedMsg(t){
+      if (t === 0) return '開始前：讀得出起點 3。';
+      if (t <= 6) return '第 ' + ((t - 1) * 4 + 1) + '–' + (t * 4) + ' 層：除了起點以外，什麼都還讀不出來。';
+      if (t === 7) return '第 25–28 層：從第 26 層開始，中間節點突然一起冒出來。';
+      return '第 29–32 層：到第 30 層前後，所有中間節點和答案都讀得出來了。它們幾乎同時出現，沒有一階一階的樓梯。';
+    }
+    function nodeState(i, t, mode){
+      if (mode === 'loop'){
+        var cur = Math.min(t, 4);
+        if (i === cur) return 'now';
+        if (i < cur && t - i <= 2) return 'past';
+        return 'off';
+      }
+      if (t <= 6) return i === 0 ? 'now' : 'off';
+      if (t === 7) return i === 0 ? 'past' : (i <= 2 ? 'now' : 'off');
+      return i === 0 ? 'past' : 'now';
+    }
+    function render(){
+      var t = state.t, m = state.mode;
+      svg.classList.toggle('mode-untied', m === 'untied');
+      for (var i = 0; i < 8; i++){
+        segs[i].setAttribute('class', i < t - 1 ? 'seg-done' : (i === t - 1 ? 'seg-now' : 'seg-todo'));
+        segTx[i].textContent = m === 'loop' ? '第 ' + (i + 1) + ' 輪' : (i * 4 + 1) + '–' + (i * 4 + 4) + ' 層';
+        segTx[i].setAttribute('class', 'c s13' + (i === t - 1 ? ' on-fill' : ''));
+      }
+      for (var j = 0; j < 5; j++){
+        var s = nodeState(j, t, m);
+        circles[j].setAttribute('class', 'st-' + s);
+        ctext[j].setAttribute('class', 'c xl ' + (s === 'now' ? 'tx-now' : (s === 'off' ? 'tx-off' : '')));
+      }
+      msg.textContent = m === 'loop' ? loopMsg[t] : untiedMsg(t);
+      range.value = t;
+    }
+    document.getElementById('prevBtn').addEventListener('click', function(){ state.t = Math.max(0, state.t - 1); render(); });
+    document.getElementById('nextBtn').addEventListener('click', function(){ state.t = Math.min(8, state.t + 1); render(); });
+    document.getElementById('resetBtn').addEventListener('click', function(){ state.t = 0; render(); });
+    range.addEventListener('input', function(){ state.t = +range.value; render(); });
+    modeBtns.forEach(function(b){
+      b.addEventListener('click', function(){
+        state.mode = b.dataset.mode; state.t = 0;
+        modeBtns.forEach(function(o){ o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+        render();
+      });
+    });
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
