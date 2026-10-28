@@ -233,7 +233,7 @@ footer{margin-top:72px; padding-top:16px; border-top:1px solid var(--line); font
 
 <header class="hero">
   <h1>Transformer 架構複習講義<span>從零件拆解到 encoder-decoder 與 decoder-only</span></h1>
-  <p class="lede">A 部分把 decoder-only Transformer 的每個零件拆開複習；B 部分比較 encoder-decoder 與 decoder-only，用「今天天氣很好」走一遍訓練和推論。Looped Transformer 與論文〈Inside the Loop〉的導讀放在<a href="https://claude.ai/artifact/2bV9fURNbgg9gpwxkZ2AKL">另一份講義</a>。</p>
+  <p class="lede">A 部分把 decoder-only Transformer 的每個零件拆開複習；B 部分比較 encoder-decoder 與 decoder-only，用「今天天氣很好」走一遍訓練和推論。Looped Transformer 與論文〈Inside the Loop〉的導讀放在<a href="Looped%20Transformer%20%E8%AC%9B%E7%BE%A9.html">另一份講義</a>。</p>
   <div class="hero-fig scroll">
     <svg class="dia" viewBox="0 0 760 290" role="img" aria-label="「今天 天氣 很」三個 token 往上經過 N 層 block，每層有注意力和 MLP，最後一個位置輸出下一個字「好」">
       <rect x="400" y="10" width="60" height="34" rx="6" class="bx-amber"/><text x="430" y="32" class="c lg">好</text>
@@ -595,7 +595,7 @@ footer{margin-top:72px; padding-top:16px; border-top:1px solid var(--line); font
   </figure>
   <div class="qa"><p class="qh">補充問答</p><ul>
     <li><strong>embedding 和每層的 h 維度一樣？</strong>對，都是 d，這是殘差「相加」的要求。所以 h<sup>(ℓ)</sup> − embedding 剛好等於前 ℓ 層所有增量的總和。</li>
-    <li><strong>那直接比較向量差就好？</strong>向量差只告訴你「變了多少」，看不出「多了什麼資訊」。所以研究者改問具體問題，用探針、logit lens、activation patching 去回答（見 <a href="https://claude.ai/artifact/2bV9fURNbgg9gpwxkZ2AKL">looped Transformer 講義</a> C6 節）。</li>
+    <li><strong>那直接比較向量差就好？</strong>向量差只告訴你「變了多少」，看不出「多了什麼資訊」。所以研究者改問具體問題，用探針、logit lens、activation patching 去回答（見 <a href="Looped%20Transformer%20%E8%AC%9B%E7%BE%A9.html#c6">looped Transformer 講義</a> C6 節）。</li>
     <li>「同一個空間」是近似說法：各層表示資訊的方式會慢慢漂移，所以 logit lens 通常越後面的層越準；探針因為每層各自訓練，比較不受影響。</li>
   </ul></div>
 </section>
@@ -672,7 +672,7 @@ footer{margin-top:72px; padding-top:16px; border-top:1px solid var(--line); font
       <text x="640" y="222" class="c sm">參數和 token 都不變，只多算幾輪</text>
     </svg>
     </div>
-    <figcaption><b>圖 A13</b>增加「依序計算步數」的三種做法。<a href="https://claude.ai/artifact/2bV9fURNbgg9gpwxkZ2AKL">looped Transformer 講義</a>會接著談第三種。</figcaption>
+    <figcaption><b>圖 A13</b>增加「依序計算步數」的三種做法。<a href="Looped%20Transformer%20%E8%AC%9B%E7%BE%A9.html">looped Transformer 講義</a>會接著談第三種。</figcaption>
   </figure>
 </section>
 
@@ -1024,7 +1024,7 @@ footer{margin-top:72px; padding-top:16px; border-top:1px solid var(--line); font
 </section>
 
 <footer>
-  <p>圖中標示的權重、機率等數字多為示意，用來說明概念。Looped Transformer 與論文〈Inside the Loop〉的導讀請見<a href="https://claude.ai/artifact/2bV9fURNbgg9gpwxkZ2AKL">另一份講義</a>。</p>
+  <p>圖中標示的權重、機率等數字多為示意，用來說明概念。Looped Transformer 與論文〈Inside the Loop〉的導讀請見<a href="Looped%20Transformer%20%E8%AC%9B%E7%BE%A9.html">另一份講義</a>。</p>
 </footer>
 
 </main>
