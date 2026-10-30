@@ -6,6 +6,7 @@
   "textFontFamily": "Georgia",
   "translucency": false,
   "enabledCssSnippets": [
-    "img_center"
+    "img_center",
+    "editor_width_slider"
   ]
 }

@@ -1,0 +1,6 @@
+/* Minimal 8.x reads --line-width / --max-width; Editor Width Slider only sets --file-line-width. Bridge them.
+   Minimal Settings writes these two as inline styles on <body>, so !important is required to override. */
+body {
+  --line-width: var(--file-line-width) !important;
+  --max-width: 100% !important;
+}
