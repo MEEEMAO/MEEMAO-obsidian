@@ -24,27 +24,25 @@ tags: [change-point-detection, hypothesis-testing]
 
 ## 似然比計算
 ![[telegram-cloud-photo-size-5-6241997356102520864-w.jpg|617]]
-### L(H₀)：共用一個 global 分布
+### L(H₀)： 窗內/外 共用 global ratio 來畫Binomial 分布
 
 ==用 global ratio 計算：窗內資料出現機率 × 窗外資料出現機率==
 
-1. 窗內期望次數：$100 \times \frac{100}{1000} = 10$
-2. 窗外期望次數：$900 \times \frac{100}{1000} = 90$
-3. 真實窗內資料出現機率 $P(\text{win}_內)$：
-   - Binomial 分布下 (p=0.1, n=100)，出現 30 的機率
-4. 真實窗外資料出現機率$P(\text{win}_外)$：
-   - Binomial 分布下 (p=0.1, n=900)，出現 70 的機率
+- 窗內資料出現機率 $P(\text{win}_內)$：
+   - Binomial (p=0.1, n=100) 分布下 ，出現 30 的機率
+- 窗外資料出現機率$P(\text{win}_外)$：
+   - Binomial (p=0.1, n=900) 分布下 ，出現 70 的機率
  
  $L(\text{H}_0) = P(\text{win}_內) \times P(\text{win}_外)$
 
-### L(H₁)：窗內窗外各自一個 Binomial 分布
+### L(H₁)：窗內/外 用各自的 ratio 來畫Binomial 分布
 
 ==窗內資料出現機率 × 窗外資料出現機率==
 
-1. 真實窗內資料出現機率 $P(\text{win}_內)$：
-   - Binomial 分布下 (p=0.3, n=100)，出現 30 的機率
-2. 真實窗外資料出現機率$P(\text{win}_外)$：
-   - Binomial 分布下 (p=0.07, n=900)，出現 70 的機率
+- 窗內資料出現機率 $P(\text{win}_內)$：
+   - Binomial (p=0.3, n=100) 分布下 ，出現 30 的機率
+-  窗外資料出現機率$P(\text{win}_外)$：
+   - Binomial (p=0.07, n=900) 分布下 ，出現 70 的機率
 
 $L(\text{H}_1) = P(\text{win}_內) \times P(\text{win}_外)$
 
