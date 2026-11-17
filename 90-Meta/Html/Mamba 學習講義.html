@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mamba 學習講義：從 RNN、Transformer 到選擇性狀態空間模型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --paper:#EEF2F4; --panel:#FFFFFF; --ink:#17222E; --muted:#56636E; --line:#C5CFD6; --faint:#E1E7EB;
+  --x:#A86400; --x-soft:#FBE9CC;
+  --h:#08776B; --h-soft:#CDEEE8;
+  --y:#6446A8; --y-soft:#E6DEF8;
+  --d:#B83246; --d-soft:#F8D9DE;
+  --noise:#9AA6AF; --noise-soft:#E4E9EC;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --paper:#11161B; --panel:#192129; --ink:#E2E8ED; --muted:#98A5B0; --line:#33404C; --faint:#222C35;
+    --x:#EDA845; --x-soft:#3D2E15;
+    --h:#43C6B2; --h-soft:#15342F;
+    --y:#AC93F2; --y-soft:#2B2442;
+    --d:#F27D8E; --d-soft:#3F1F26;
+    --noise:#6F7C87; --noise-soft:#26303A;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --paper:#11161B; --panel:#192129; --ink:#E2E8ED; --muted:#98A5B0; --line:#33404C; --faint:#222C35;
+  --x:#EDA845; --x-soft:#3D2E15;
+  --h:#43C6B2; --h-soft:#15342F;
+  --y:#AC93F2; --y-soft:#2B2442;
+  --d:#F27D8E; --d-soft:#3F1F26;
+  --noise:#6F7C87; --noise-soft:#26303A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 16px)}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.85;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:var(--h);text-underline-offset:3px}
+a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--x);outline-offset:2px;border-radius:3px}
+img,svg{max-width:100%}
+
+/* ---------- layout ---------- */
+.shell{display:grid;grid-template-columns:250px minmax(0,1fr);gap:56px;max-width:1240px;margin:0 auto;padding:0 32px}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 28px);align-self:start;max-height:calc(100vh - 56px);overflow:auto;padding:28px 0 40px;font-size:14px;line-height:1.6}
+.side h2{font-family:var(--serif);font-size:15px;margin:0 0 10px;font-weight:600}
+.toc{list-style:none;margin:0 0 28px;padding:0;counter-reset:none}
+.toc li{margin:0}
+.toc a{display:flex;gap:10px;padding:5px 8px;border-radius:6px;color:var(--muted);text-decoration:none}
+.toc a span.n{min-width:1.4em;color:var(--h);font-weight:700;font-variant-numeric:tabular-nums}
+.toc a:hover{background:var(--faint);color:var(--ink)}
+.toc a.on{background:var(--panel);color:var(--ink);box-shadow:inset 3px 0 0 var(--h)}
+.legend{border-top:1px solid var(--line);padding-top:16px}
+.legend p{margin:0 0 8px;color:var(--muted)}
+.key{display:flex;align-items:center;gap:10px;margin:6px 0}
+.sw{width:18px;height:18px;border-radius:4px;border:2px solid;flex:none}
+.sw.x{background:var(--x-soft);border-color:var(--x)}
+.sw.h{background:var(--h-soft);border-color:var(--h)}
+.sw.y{background:var(--y-soft);border-color:var(--y)}
+.sw.d{background:var(--d-soft);border-color:var(--d)}
+main{min-width:0;padding-bottom:120px}
+.prose{max-width:40em}
+.wide{max-width:880px}
+
+/* mobile toc */
+.mtoc{display:none}
+@media (max-width:980px){
+  .shell{grid-template-columns:1fr;gap:0;padding:0 20px}
+  .side{display:none}
+  .mtoc{display:block;margin:0 0 32px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 16px;font-size:15px}
+  .mtoc summary{cursor:pointer;padding:10px 0;font-weight:700}
+  .mtoc .toc{margin:0 0 12px}
+  .mtoc .legend{padding-bottom:12px}
+  body{font-size:16px}
+}
+
+/* ---------- hero ---------- */
+.hero{padding:72px 0 40px;border-bottom:1px solid var(--line);margin-bottom:56px}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:clamp(40px,7vw,76px);line-height:1.08;letter-spacing:-.01em;margin:0 0 18px}
+.hero .sub{font-size:clamp(17px,2.2vw,21px);color:var(--muted);max-width:34em;margin:0 0 28px;line-height:1.7}
+.hero .meta{font-size:14px;color:var(--muted);margin:0}
+.hero-fig{margin:36px 0 8px}
+.hero-fig{overflow-x:auto}
+.hero-fig svg{width:100%;min-width:640px;height:auto;display:block}
+
+/* ---------- sections ---------- */
+section{margin:0 0 88px}
+section>h2{font-family:var(--serif);font-weight:900;font-size:clamp(27px,3.6vw,36px);line-height:1.3;margin:0 0 8px;display:flex;gap:.5em;align-items:baseline}
+section>h2 .n{color:var(--h);font-variant-numeric:tabular-nums}
+.lede{color:var(--muted);font-size:1.05em;margin:0 0 28px;max-width:40em}
+h3{font-family:var(--serif);font-weight:600;font-size:22px;margin:44px 0 10px;line-height:1.4}
+h4{font-size:17px;margin:28px 0 6px}
+p{margin:0 0 1.05em}
+strong{font-weight:700}
+ul.plain,ol.plain{padding-left:1.4em;margin:0 0 1.1em}
+ul.plain li,ol.plain li{margin:.25em 0}
+
+/* callouts: three roles */
+.pre,.intu,.recap{margin:28px 0;padding:18px 22px;border-radius:0 10px 10px 0;max-width:40em}
+.pre{background:var(--panel);border-left:4px solid var(--muted)}
+.intu{background:var(--h-soft);border-left:4px solid var(--h)}
+.recap{background:transparent;border:1.5px dashed var(--line);border-radius:10px}
+.pre>.lab,.intu>.lab,.recap>.lab{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+.pre>.lab{color:var(--muted)}
+.intu>.lab{color:var(--h)}
+.recap>.lab{color:var(--ink)}
+.pre p:last-child,.intu p:last-child,.recap p:last-child,.recap ul:last-child{margin-bottom:0}
+
+/* math */
+.eq{font-family:var(--serif);font-size:1.12em;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 20px;margin:18px 0 22px;overflow-x:auto;white-space:nowrap;max-width:40em}
+.eq .row{display:block;line-height:2}
+.m{font-family:var(--serif);font-style:italic;white-space:nowrap}
+.m .up{font-style:normal}
+.bar{text-decoration:overline;text-decoration-thickness:1.5px;display:inline-block;margin:0 .04em}
+.cx{color:var(--x);font-weight:600}.ch{color:var(--h);font-weight:600}.cy{color:var(--y);font-weight:600}.cd{color:var(--d);font-weight:600}
+code{font-family:var(--mono);font-size:.88em;background:var(--faint);padding:.1em .35em;border-radius:4px}
+
+/* figures */
+figure{margin:30px 0 34px}
+.fig-scroll{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.fig-scroll svg{display:block;min-width:600px;width:100%;height:auto}
+figcaption{font-size:14px;color:var(--muted);margin-top:10px;line-height:1.65;max-width:46em}
+figcaption b{color:var(--ink)}
+
+/* svg roles */
+.s-ink{stroke:var(--ink);fill:none;stroke-width:1.6}
+.s-mute{stroke:var(--muted);fill:none;stroke-width:1.4}
+.s-line{stroke:var(--line);fill:none;stroke-width:1}
+.s-dash{stroke-dasharray:5 4}
+.b-panel{fill:var(--panel);stroke:var(--ink);stroke-width:1.6}
+.b-faint{fill:var(--faint);stroke:var(--line);stroke-width:1.2}
+.b-x{fill:var(--x-soft);stroke:var(--x);stroke-width:1.8}
+.b-h{fill:var(--h-soft);stroke:var(--h);stroke-width:1.8}
+.b-y{fill:var(--y-soft);stroke:var(--y);stroke-width:1.8}
+.b-d{fill:var(--d-soft);stroke:var(--d);stroke-width:1.8}
+.b-n{fill:var(--noise-soft);stroke:var(--noise);stroke-width:1.4}
+.a-x{stroke:var(--x);fill:none;stroke-width:2}
+.a-h{stroke:var(--h);fill:none;stroke-width:2}
+.a-y{stroke:var(--y);fill:none;stroke-width:2}
+.a-d{stroke:var(--d);fill:none;stroke-width:2}
+.f-h{fill:var(--h)}.f-x{fill:var(--x)}.f-y{fill:var(--y)}.f-d{fill:var(--d)}.f-ink{fill:var(--ink)}.f-mute{fill:var(--muted)}.f-n{fill:var(--noise)}
+svg text{font-family:var(--sans);fill:var(--ink);font-size:14px}
+svg text.sm{font-size:12.5px;fill:var(--muted)}
+svg text.lg{font-size:17px;font-weight:700}
+svg text.it{font-family:var(--serif);font-style:italic}
+svg text.mid{text-anchor:middle}
+svg text.end{text-anchor:end}
+svg text.tx{fill:var(--x);font-weight:700}
+svg text.th{fill:var(--h);font-weight:700}
+svg text.ty{fill:var(--y);font-weight:700}
+svg text.td{fill:var(--d);font-weight:700}
+svg text.tn{fill:var(--noise)}
+
+/* tables */
+.tbl{overflow-x:auto;margin:22px 0 28px;max-width:46em}
+table{border-collapse:collapse;width:100%;font-size:15px;line-height:1.55;background:var(--panel);border-radius:10px;overflow:hidden}
+th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:700;background:var(--faint)}
+tr:last-child td{border-bottom:none}
+td.c,th.c{text-align:center}
+.yes{color:var(--h);font-weight:700}.no{color:var(--d);font-weight:700}.mid{color:var(--x);font-weight:700}
+tr.hl td{background:var(--h-soft)}
+
+/* token strip (inline example) */
+.strip{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 18px}
+.tok{font-family:var(--sans);font-size:15px;padding:4px 10px;border-radius:6px;border:1.5px solid var(--noise);background:var(--noise-soft)}
+.tok.k{border-color:var(--x);background:var(--x-soft);font-weight:700}
+.tok.q{border-color:var(--y);background:var(--y-soft);font-weight:700}
+
+/* interactive */
+.lab-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;margin:30px 0}
+.lab-box h4{margin:0 0 4px}
+.lab-box .hint{font-size:14px;color:var(--muted);margin:0 0 14px}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:999px;padding:3px;gap:3px;flex-wrap:wrap}
+.seg button{font:inherit;font-size:14px;border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.ctrl{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center;margin:0 0 14px}
+.ctrl label{font-size:14px;display:flex;gap:10px;align-items:center}
+.ctrl input[type=range]{width:200px;accent-color:var(--d)}
+.readout{font-size:15px;margin:12px 0 0;min-height:1.6em}
+.readout b{font-family:var(--mono);font-weight:500}
+#demo svg{width:100%;min-width:600px;height:auto;display:block}
+#demo .tokbtn{cursor:pointer}
+#demo .tokbtn:focus-visible rect{stroke:var(--x);stroke-width:3}
+
+/* details / quiz */
+details.q{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0 18px;margin:12px 0;max-width:40em}
+details.q summary{cursor:pointer;padding:14px 0;font-weight:500;list-style-position:outside}
+details.q[open] summary{border-bottom:1px solid var(--line);margin-bottom:12px}
+details.q div{padding-bottom:14px}
+details.proof{margin:14px 0 22px;max-width:40em}
+details.proof summary{cursor:pointer;color:var(--h);font-weight:500}
+details.proof>div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 20px;margin-top:10px;font-size:15.5px}
+
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:24px 0;max-width:880px}
+.stat{background:var(--panel);padding:16px 18px}
+.stat .v{font-family:var(--serif);font-weight:900;font-size:28px;line-height:1.2}
+.stat .l{font-size:14px;color:var(--muted);line-height:1.5}
+
+footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:14px}
+
+/* hero animation: one orchestrated moment */
+@media (prefers-reduced-motion: no-preference){
+  .hero-fig .flow{opacity:0;animation:tokIn .5s ease-out forwards}
+  .hero-fig .stateFill{transform-origin:center bottom;transform-box:fill-box;transform:scaleY(.05);animation:fillUp 2.6s .4s ease-out forwards}
+  @keyframes tokIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+  @keyframes fillUp{to{transform:scaleY(1)}}
+}
+</style>
+</head>
+<body>
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-ink"/></marker>
+    <marker id="ar-mute" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-mute"/></marker>
+    <marker id="ar-x" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-x"/></marker>
+    <marker id="ar-h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-h"/></marker>
+    <marker id="ar-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-y"/></marker>
+    <marker id="ar-d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-d"/></marker>
+  </defs>
+</svg>
+
+<div class="shell">
+<aside class="side" aria-label="目錄">
+  <h2>學習路線</h2>
+  <ol class="toc" id="toc">
+    <li><a href="#big-picture"><span class="n">0</span>先看全貌</a></li>
+    <li><a href="#rnn"><span class="n">1</span>RNN 與 LSTM</a></li>
+    <li><a href="#transformer"><span class="n">2</span>Transformer 的代價</a></li>
+    <li><a href="#conv-gpu"><span class="n">3</span>捲積與 GPU 記憶體</a></li>
+    <li><a href="#compression"><span class="n">4</span>核心視角：壓縮</a></li>
+    <li><a href="#ssm"><span class="n">5</span>狀態空間模型 SSM</a></li>
+    <li><a href="#selection"><span class="n">6</span>選擇機制</a></li>
+    <li><a href="#scan"><span class="n">7</span>讓它跑得快</a></li>
+    <li><a href="#block"><span class="n">8</span>Mamba 架構</a></li>
+    <li><a href="#train-infer"><span class="n">9</span>訓練與推論</a></li>
+    <li><a href="#results"><span class="n">10</span>實驗結果</a></li>
+    <li><a href="#limits"><span class="n">11</span>限制與後續</a></li>
+    <li><a href="#recap"><span class="n">12</span>總整理與自我檢測</a></li>
+  </ol>
+  <div class="legend">
+    <p>全篇圖的顏色固定代表同一件事：</p>
+    <div class="key"><span class="sw x"></span>輸入 <span class="m">x</span></div>
+    <div class="key"><span class="sw h"></span>狀態（記憶）<span class="m">h</span></div>
+    <div class="key"><span class="sw y"></span>輸出 <span class="m">y</span></div>
+    <div class="key"><span class="sw d"></span>選擇/步長 <span class="m">Δ</span></div>
+  </div>
+</aside>
+
+<main>
+<header class="hero">
+  <h1>Mamba<br>學習講義</h1>
+  <p class="sub">從 RNN、Transformer 一路走到「選擇性狀態空間模型」。目標是看懂 Mamba 為什麼這樣設計，以及它實際怎麼運作。</p>
+  <p class="meta">論文：Albert Gu &amp; Tri Dao,<em>Mamba: Linear-Time Sequence Modeling with Selective State Spaces</em>(arXiv:2312.00752,2023)</p>
+  <div class="hero-fig">
+    <svg viewBox="0 0 880 210" role="img" aria-label="一串文字逐一經過選擇閘門,重要的字被寫入固定大小的狀態,語助詞被略過,最後用狀態預測下一個字">
+      <g class="flow" style="animation-delay:.00s"><rect x="24" y="22" width="58" height="40" rx="7" class="b-n"/><text x="53" y="48" class="mid">嗯</text><circle cx="53" cy="96" r="5" class="b-d"/><text x="53" y="128" class="sm mid">略過</text></g>
+      <g class="flow" style="animation-delay:.12s"><rect x="94" y="22" width="58" height="40" rx="7" class="b-x"/><text x="123" y="48" class="mid">會議</text><circle cx="123" cy="96" r="13" class="b-d"/><text x="123" y="101" class="mid td" style="font-size:13px">Δ</text><path d="M123,110 V144" class="a-h" marker-end="url(#ar-h)"/></g>
+      <g class="flow" style="animation-delay:.24s"><rect x="164" y="22" width="58" height="40" rx="7" class="b-n"/><text x="193" y="48" class="mid">那個</text><circle cx="193" cy="96" r="5" class="b-d"/><text x="193" y="128" class="sm mid">略過</text></g>
+      <g class="flow" style="animation-delay:.36s"><rect x="234" y="22" width="58" height="40" rx="7" class="b-x"/><text x="263" y="48" class="mid">決定</text><circle cx="263" cy="96" r="13" class="b-d"/><text x="263" y="101" class="mid td" style="font-size:13px">Δ</text><path d="M263,110 V144" class="a-h" marker-end="url(#ar-h)"/></g>
+      <g class="flow" style="animation-delay:.48s"><rect x="304" y="22" width="58" height="40" rx="7" class="b-n"/><text x="333" y="48" class="mid">呃</text><circle cx="333" cy="96" r="5" class="b-d"/><text x="333" y="128" class="sm mid">略過</text></g>
+      <g class="flow" style="animation-delay:.60s"><rect x="374" y="22" width="58" height="40" rx="7" class="b-x"/><text x="403" y="48" class="mid">預算</text><circle cx="403" cy="96" r="13" class="b-d"/><text x="403" y="101" class="mid td" style="font-size:13px">Δ</text><path d="M403,110 V144" class="a-h" marker-end="url(#ar-h)"/></g>
+      <g class="flow" style="animation-delay:.72s"><rect x="444" y="22" width="58" height="40" rx="7" class="b-n"/><text x="473" y="48" class="mid">就是</text><circle cx="473" cy="96" r="5" class="b-d"/><text x="473" y="128" class="sm mid">略過</text></g>
+      <g class="flow" style="animation-delay:.84s"><rect x="514" y="22" width="58" height="40" rx="7" class="b-x"/><text x="543" y="48" class="mid">減半</text><circle cx="543" cy="96" r="13" class="b-d"/><text x="543" y="101" class="mid td" style="font-size:13px">Δ</text><path d="M543,110 V144" class="a-h" marker-end="url(#ar-h)"/></g>
+      <rect x="24" y="148" width="548" height="44" rx="8" class="b-h"/>
+      <rect x="27" y="151" width="542" height="38" rx="6" class="stateFill f-h" opacity=".22"/>
+      <text x="298" y="175" class="mid th">狀態 h：固定大小，只寫入被選中的資訊</text>
+      <path d="M576,170 H636" class="a-y" marker-end="url(#ar-y)"/>
+      <rect x="640" y="146" width="216" height="48" rx="8" class="b-y"/>
+      <text x="748" y="175" class="mid ty">用狀態預測下一個字</text>
+      <text x="640" y="92" class="sm">每個字經過時，由它自己的內容</text>
+      <text x="640" y="110" class="sm">決定 Δ 的大小：大就寫入，小就略過</text>
+    </svg>
+  </div>
+</header>
+
+<details class="mtoc">
+  <summary>目錄與顏色圖例</summary>
+  <ol class="toc">
+    <li><a href="#big-picture"><span class="n">0</span>先看全貌</a></li>
+    <li><a href="#rnn"><span class="n">1</span>RNN 與 LSTM</a></li>
+    <li><a href="#transformer"><span class="n">2</span>Transformer 的代價</a></li>
+    <li><a href="#conv-gpu"><span class="n">3</span>捲積與 GPU 記憶體</a></li>
+    <li><a href="#compression"><span class="n">4</span>核心視角：壓縮</a></li>
+    <li><a href="#ssm"><span class="n">5</span>狀態空間模型 SSM</a></li>
+    <li><a href="#selection"><span class="n">6</span>選擇機制</a></li>
+    <li><a href="#scan"><span class="n">7</span>讓它跑得快</a></li>
+    <li><a href="#block"><span class="n">8</span>Mamba 架構</a></li>
+    <li><a href="#train-infer"><span class="n">9</span>訓練與推論</a></li>
+    <li><a href="#results"><span class="n">10</span>實驗結果</a></li>
+    <li><a href="#limits"><span class="n">11</span>限制與後續</a></li>
+    <li><a href="#recap"><span class="n">12</span>總整理與自我檢測</a></li>
+  </ol>
+  <div class="legend">
+    <div class="key"><span class="sw x"></span>輸入 <span class="m">x</span></div>
+    <div class="key"><span class="sw h"></span>狀態（記憶）<span class="m">h</span></div>
+    <div class="key"><span class="sw y"></span>輸出 <span class="m">y</span></div>
+    <div class="key"><span class="sw d"></span>選擇/步長 <span class="m">Δ</span></div>
+  </div>
+</details>
+
+<!-- ============ 0 ============ -->
+<section id="big-picture">
+  <h2><span class="n">0</span>先看全貌：Mamba 想解決什麼問題？</h2>
+  <p class="lede">一句話版本：Mamba 想要 Transformer 的效果，同時擁有 RNN 的速度。</p>
+  <div class="prose">
+    <p>語言模型（以及處理音訊、DNA、時間序列的模型）本質上都是<strong>序列模型</strong>：輸入是一長串依序排列的東西（文字切成的 token、聲音的取樣點、DNA 鹼基），模型要從「前面看過的內容」推斷「接下來是什麼」。</p>
+    <p>所以每個序列模型都要回答同一個問題：<strong>過去的內容要怎麼記？</strong>不同的答案，造就了不同的模型與不同的取捨。下面這張圖是整份講義的地圖，後面每一節都在拆解其中一部分。</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 760 300" role="img" aria-label="三種記憶策略比較:Transformer 保存所有 token;RNN 把所有 token 擠進固定大小狀態;Mamba 先經過選擇閘門,只把重要 token 寫入固定大小狀態">
+        <text x="16" y="56" class="lg">Transformer</text>
+        <g>
+          <rect x="150" y="40" width="22" height="22" rx="4" class="b-x"/><rect x="180" y="40" width="22" height="22" rx="4" class="b-x"/><rect x="210" y="40" width="22" height="22" rx="4" class="b-x"/><rect x="240" y="40" width="22" height="22" rx="4" class="b-x"/><rect x="270" y="40" width="22" height="22" rx="4" class="b-x"/><rect x="300" y="40" width="22" height="22" rx="4" class="b-x"/><rect x="330" y="40" width="22" height="22" rx="4" class="b-x"/><rect x="360" y="40" width="22" height="22" rx="4" class="b-x"/>
+        </g>
+        <path d="M392,51 H446" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="452" y="32" width="292" height="40" rx="6" class="b-faint s-dash"/>
+        <g><rect x="460" y="41" width="22" height="22" rx="4" class="b-x"/><rect x="488" y="41" width="22" height="22" rx="4" class="b-x"/><rect x="516" y="41" width="22" height="22" rx="4" class="b-x"/><rect x="544" y="41" width="22" height="22" rx="4" class="b-x"/><rect x="572" y="41" width="22" height="22" rx="4" class="b-x"/><rect x="600" y="41" width="22" height="22" rx="4" class="b-x"/><rect x="628" y="41" width="22" height="22" rx="4" class="b-x"/><rect x="656" y="41" width="22" height="22" rx="4" class="b-x"/></g>
+        <text x="700" y="57" class="f-mute">…</text>
+        <text x="452" y="92" class="sm">每個 token 都存起來（KV cache），序列越長存越多</text>
+
+        <text x="16" y="146" class="lg">RNN / LSTM</text>
+        <g>
+          <rect x="150" y="130" width="22" height="22" rx="4" class="b-x"/><rect x="180" y="130" width="22" height="22" rx="4" class="b-x"/><rect x="210" y="130" width="22" height="22" rx="4" class="b-x"/><rect x="240" y="130" width="22" height="22" rx="4" class="b-x"/><rect x="270" y="130" width="22" height="22" rx="4" class="b-x"/><rect x="300" y="130" width="22" height="22" rx="4" class="b-x"/><rect x="330" y="130" width="22" height="22" rx="4" class="b-x"/><rect x="360" y="130" width="22" height="22" rx="4" class="b-x"/>
+        </g>
+        <path d="M392,141 H446" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="452" y="118" width="64" height="46" rx="6" class="b-h"/><text x="484" y="146" class="mid th it">h</text>
+        <text x="530" y="136" class="sm">固定大小的狀態</text>
+        <text x="530" y="155" class="sm">什麼都往裡塞，難以挑重點</text>
+
+        <text x="16" y="236" class="lg">Mamba</text>
+        <g>
+          <rect x="150" y="220" width="22" height="22" rx="4" class="b-x"/><rect x="180" y="220" width="22" height="22" rx="4" class="b-n"/><rect x="210" y="220" width="22" height="22" rx="4" class="b-n"/><rect x="240" y="220" width="22" height="22" rx="4" class="b-x"/><rect x="270" y="220" width="22" height="22" rx="4" class="b-n"/><rect x="300" y="220" width="22" height="22" rx="4" class="b-x"/><rect x="330" y="220" width="22" height="22" rx="4" class="b-n"/><rect x="360" y="220" width="22" height="22" rx="4" class="b-n"/>
+        </g>
+        <path d="M392,231 H408" class="s-ink"/>
+        <rect x="410" y="206" width="14" height="50" rx="4" class="b-d"/>
+        <text x="417" y="200" class="mid td">Δ</text>
+        <path d="M426,231 H446" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="452" y="208" width="64" height="46" rx="6" class="b-h"/><text x="484" y="236" class="mid th it">h</text>
+        <text x="530" y="226" class="sm">一樣是固定大小的狀態</text>
+        <text x="530" y="245" class="sm">但先由內容決定「要不要寫入」</text>
+        <text x="150" y="272" class="sm">灰色 = 不重要的 token（雜訊、語助詞）</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 0.1 三種記憶策略。</b>Transformer 什麼都存，準確但越長越貴；RNN 只存固定大小的摘要，便宜但不會挑；Mamba 也只存固定大小的摘要，但會依內容挑選要寫入什麼。</figcaption>
+  </figure>
+
+  <div class="prose">
+    <p>我們希望一個序列模型同時做到三件事。下表是各家模型的成績單（看不懂沒關係，後面會一一解釋）：</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>模型</th><th class="c">訓練時能平行計算</th><th class="c">生成時每一步成本固定</th><th class="c">能依內容挑選資訊</th></tr></thead>
+      <tbody>
+        <tr><td>RNN</td><td class="c no">✗</td><td class="c yes">✓</td><td class="c no">✗</td></tr>
+        <tr><td>LSTM / GRU</td><td class="c no">✗</td><td class="c yes">✓</td><td class="c mid">△ 有閘門</td></tr>
+        <tr><td>Transformer</td><td class="c yes">✓</td><td class="c no">✗ 越長越慢</td><td class="c yes">✓</td></tr>
+        <tr><td>舊式 SSM（S4 等）</td><td class="c yes">✓ 用捲積</td><td class="c yes">✓</td><td class="c no">✗</td></tr>
+        <tr class="hl"><td><strong>Mamba</strong></td><td class="c yes">✓ 用平行 scan</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p>Mamba 的貢獻可以濃縮成三件事，也就是本講義的主線：</p>
+    <ol class="plain">
+      <li><strong>選擇機制</strong>（第 6 節）：讓 SSM 的參數隨輸入改變，模型才能「看內容」決定記住或忽略。</li>
+      <li><strong>硬體感知演算法</strong>（第 7 節）：上面那個改動會讓原本的加速技巧失效，所以作者重新設計了在 GPU 上跑得快的算法。</li>
+      <li><strong>簡化的架構</strong>（第 8 節）：把 SSM 和前饋層合成一種區塊，整個網路只重複堆這一種，完全不用 attention。</li>
+    </ol>
+    <p>第 1 到 3 節先補齊需要的前備知識，第 4、5 節建立 SSM 的概念，之後才進入 Mamba 本身。</p>
+  </div>
+</section>
+<!-- ============ 1 ============ -->
+<section id="rnn">
+  <h2><span class="n">1</span>前備知識：RNN 與 LSTM 怎麼「記住過去」</h2>
+  <p class="lede">RNN 用一個不斷更新的「隱藏狀態」當作記憶。這是 SSM 和 Mamba 的直系祖先。</p>
+  <div class="prose">
+    <p><strong>RNN（循環神經網路）</strong>一次讀一個 token。它手上隨時拿著一個向量 <span class="m ch">h</span>（hidden state，隱藏狀態），可以想成「到目前為止讀到的內容摘要」。每讀到新的輸入 <span class="m cx">x<sub>t</sub></span>，就把舊摘要和新輸入混在一起，得到新摘要：</p>
+  </div>
+  <div class="eq"><span class="row"><span class="ch">h<sub>t</sub></span> = tanh( <span class="up">W</span> · <span class="ch">h<sub>t−1</sub></span> + <span class="up">U</span> · <span class="cx">x<sub>t</sub></span> ) &nbsp;&nbsp;&nbsp; <span class="cy">y<sub>t</sub></span> = <span class="up">V</span> · <span class="ch">h<sub>t</sub></span></span></div>
+  <div class="prose"><p>這裡的 W、U、V 是要學的權重矩陣，而且每一步都用同一組。把時間軸攤開畫，就是下圖：</p></div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 720 230" role="img" aria-label="RNN 沿時間展開:每個時間步把前一步的狀態和當下輸入結合成新狀態,再輸出">
+        <text x="18" y="114" class="th it">h₀</text>
+        <path d="M40,110 H103" class="a-h" marker-end="url(#ar-h)"/>
+        <rect x="105" y="85" width="90" height="50" rx="8" class="b-h"/><text x="150" y="115" class="mid th it">h₁</text>
+        <rect x="255" y="85" width="90" height="50" rx="8" class="b-h"/><text x="300" y="115" class="mid th it">h₂</text>
+        <rect x="405" y="85" width="90" height="50" rx="8" class="b-h"/><text x="450" y="115" class="mid th it">h₃</text>
+        <rect x="555" y="85" width="90" height="50" rx="8" class="b-h"/><text x="600" y="115" class="mid th it">h₄</text>
+        <path d="M195,110 H253" class="a-h" marker-end="url(#ar-h)"/><path d="M345,110 H403" class="a-h" marker-end="url(#ar-h)"/><path d="M495,110 H553" class="a-h" marker-end="url(#ar-h)"/>
+        <path d="M645,110 H700" class="a-h s-dash" marker-end="url(#ar-h)"/>
+        <g>
+          <rect x="128" y="178" width="44" height="32" rx="6" class="b-x"/><text x="150" y="199" class="mid tx it">x₁</text><path d="M150,178 V138" class="a-x" marker-end="url(#ar-x)"/>
+          <rect x="278" y="178" width="44" height="32" rx="6" class="b-x"/><text x="300" y="199" class="mid tx it">x₂</text><path d="M300,178 V138" class="a-x" marker-end="url(#ar-x)"/>
+          <rect x="428" y="178" width="44" height="32" rx="6" class="b-x"/><text x="450" y="199" class="mid tx it">x₃</text><path d="M450,178 V138" class="a-x" marker-end="url(#ar-x)"/>
+          <rect x="578" y="178" width="44" height="32" rx="6" class="b-x"/><text x="600" y="199" class="mid tx it">x₄</text><path d="M600,178 V138" class="a-x" marker-end="url(#ar-x)"/>
+        </g>
+        <g>
+          <rect x="128" y="12" width="44" height="32" rx="6" class="b-y"/><text x="150" y="33" class="mid ty it">y₁</text><path d="M150,85 V47" class="a-y" marker-end="url(#ar-y)"/>
+          <rect x="278" y="12" width="44" height="32" rx="6" class="b-y"/><text x="300" y="33" class="mid ty it">y₂</text><path d="M300,85 V47" class="a-y" marker-end="url(#ar-y)"/>
+          <rect x="428" y="12" width="44" height="32" rx="6" class="b-y"/><text x="450" y="33" class="mid ty it">y₃</text><path d="M450,85 V47" class="a-y" marker-end="url(#ar-y)"/>
+          <rect x="578" y="12" width="44" height="32" rx="6" class="b-y"/><text x="600" y="33" class="mid ty it">y₄</text><path d="M600,85 V47" class="a-y" marker-end="url(#ar-y)"/>
+        </g>
+        <text x="225" y="76" class="sm mid">等 h₁ 算完</text><text x="375" y="76" class="sm mid">才能算 h₂…</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 1.1 RNN 沿時間攤開。</b>四個方塊其實是同一個網路、同一組權重，在不同時間點重複使用。記憶只有 <span class="m">h</span> 這一個向量，不管序列多長，大小都一樣。</figcaption>
+  </figure>
+  <div class="prose">
+    <p>RNN 的優點是<strong>生成時很省</strong>：每來一個新 token，只要拿手上的 <span class="m">h</span> 更新一次，成本固定，也不用回頭看舊資料。但它有兩個出名的缺點：</p>
+    <ul class="plain">
+      <li><strong>訓練無法沿時間平行。</strong>要算 <span class="m">h</span><sub>100</sub>，得先算完前 99 步。GPU 擅長「同時做很多一樣的事」，這種排隊式計算很浪費它。</li>
+      <li><strong>梯度消失，記不了太遠。</strong>訓練時誤差要沿時間一路往回傳，每經過一步就被權重乘一次，傳到很早之前常常已經小到接近 0，模型就學不到遠距離的關聯。</li>
+    </ul>
+    <h3>LSTM 與 GRU：加上「閘門」</h3>
+    <p>LSTM、GRU 是改良版 RNN，關鍵發明是<strong>閘門（gate）</strong>：一個介於 0 到 1 之間的數字，由當下輸入算出來，用來決定「舊記憶留多少、新資訊寫多少」。以簡化的 GRU 風格為例：</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 640 120" role="img" aria-label="閘門公式:新記憶等於舊記憶乘以一減 g,加上新輸入乘以 g">
+        <rect x="16" y="28" width="104" height="48" rx="8" class="b-h"/><text x="68" y="58" class="mid th it">hₜ₋₁</text><text x="68" y="100" class="sm mid">舊記憶</text>
+        <text x="128" y="58" class="lg">× (1 − <tspan class="td it">g</tspan>)</text>
+        <text x="236" y="60" class="lg">+</text>
+        <rect x="262" y="28" width="104" height="48" rx="8" class="b-x"/><text x="314" y="58" class="mid tx it">xₜ</text><text x="314" y="100" class="sm mid">新輸入</text>
+        <text x="376" y="58" class="lg">× <tspan class="td it">g</tspan></text>
+        <text x="436" y="60" class="lg">=</text>
+        <rect x="466" y="28" width="104" height="48" rx="8" class="b-h"/><text x="518" y="58" class="mid th it">hₜ</text><text x="518" y="100" class="sm mid">新記憶</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 1.2 閘門就是一個「混合比例」。</b>其中 <span class="m cd">g</span> = σ(W·<span class="cx">x<sub>t</sub></span>),σ 是 sigmoid 函數，會把任何數字壓到 0 到 1 之間。</figcaption>
+  </figure>
+  <div class="prose">
+    <ul class="plain">
+      <li><span class="m cd">g</span> ≈ 0：幾乎保留舊記憶，當下輸入被忽略。</li>
+      <li><span class="m cd">g</span> ≈ 1：舊記憶被清掉，換成當下輸入。</li>
+    </ul>
+    <p>重點在於 <span class="m cd">g</span> 是<strong>依當下輸入而定</strong>的，所以模型可以「看到重要的字就記，看到廢話就跳過」。請把這條公式記住，第 6 節會發現 Mamba 的選擇機制，在最簡單的情況下就退化成它。</p>
+  </div>
+  <div class="recap"><span class="lab">本節帶走</span>
+    <ul class="plain">
+      <li>RNN 用固定大小的狀態 <span class="m">h</span> 當記憶，生成很省，但訓練得一步步排隊。</li>
+      <li>閘門讓「記多少、忘多少」依輸入而變，這就是「選擇」概念的源頭。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="transformer">
+  <h2><span class="n">2</span>前備知識：Transformer 好在哪，貴在哪</h2>
+  <p class="lede">Attention 讓每個 token 直接回頭看所有之前的 token。效果極好，但代價隨長度快速上升。</p>
+  <div class="prose">
+    <p><strong>Attention（注意力）</strong>的做法是：每個 token 對之前<em>每一個</em> token 算一個相關分數，再依分數做加權平均，把相關的資訊拉過來。比如讀到「他」的時候，可以直接去前文找「他」指的是誰。</p>
+    <p>這有兩個好處：第一，任何兩個位置之間都是「一步直達」，不會像 RNN 那樣傳遞時逐漸遺忘；第二，訓練時所有位置可以同時算（就是一個大矩陣乘法），很適合 GPU。</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 740 280" role="img" aria-label="左:attention 分數矩陣,序列長度 8 時有 36 個要計算的格子;右:生成時 KV cache 隨步數變長">
+        <text x="40" y="22" class="lg">訓練：要算的分數</text>
+<rect x="40" y="36" width="22" height="22" rx="3" class="b-y" fill-opacity="0.35"/>
+<rect x="64" y="36" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="88" y="36" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="112" y="36" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="136" y="36" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="160" y="36" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="184" y="36" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="208" y="36" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="40" y="60" width="22" height="22" rx="3" class="b-y" fill-opacity="0.68"/>
+<rect x="64" y="60" width="22" height="22" rx="3" class="b-y" fill-opacity="0.46"/>
+<rect x="88" y="60" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="112" y="60" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="136" y="60" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="160" y="60" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="184" y="60" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="208" y="60" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="40" y="84" width="22" height="22" rx="3" class="b-y" fill-opacity="1.00"/>
+<rect x="64" y="84" width="22" height="22" rx="3" class="b-y" fill-opacity="0.78"/>
+<rect x="88" y="84" width="22" height="22" rx="3" class="b-y" fill-opacity="0.57"/>
+<rect x="112" y="84" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="136" y="84" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="160" y="84" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="184" y="84" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="208" y="84" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="40" y="108" width="22" height="22" rx="3" class="b-y" fill-opacity="0.57"/>
+<rect x="64" y="108" width="22" height="22" rx="3" class="b-y" fill-opacity="0.35"/>
+<rect x="88" y="108" width="22" height="22" rx="3" class="b-y" fill-opacity="0.89"/>
+<rect x="112" y="108" width="22" height="22" rx="3" class="b-y" fill-opacity="0.68"/>
+<rect x="136" y="108" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="160" y="108" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="184" y="108" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="208" y="108" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="40" y="132" width="22" height="22" rx="3" class="b-y" fill-opacity="0.89"/>
+<rect x="64" y="132" width="22" height="22" rx="3" class="b-y" fill-opacity="0.68"/>
+<rect x="88" y="132" width="22" height="22" rx="3" class="b-y" fill-opacity="0.46"/>
+<rect x="112" y="132" width="22" height="22" rx="3" class="b-y" fill-opacity="1.00"/>
+<rect x="136" y="132" width="22" height="22" rx="3" class="b-y" fill-opacity="0.78"/>
+<rect x="160" y="132" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="184" y="132" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="208" y="132" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="40" y="156" width="22" height="22" rx="3" class="b-y" fill-opacity="0.46"/>
+<rect x="64" y="156" width="22" height="22" rx="3" class="b-y" fill-opacity="1.00"/>
+<rect x="88" y="156" width="22" height="22" rx="3" class="b-y" fill-opacity="0.78"/>
+<rect x="112" y="156" width="22" height="22" rx="3" class="b-y" fill-opacity="0.57"/>
+<rect x="136" y="156" width="22" height="22" rx="3" class="b-y" fill-opacity="0.35"/>
+<rect x="160" y="156" width="22" height="22" rx="3" class="b-y" fill-opacity="0.89"/>
+<rect x="184" y="156" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="208" y="156" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="40" y="180" width="22" height="22" rx="3" class="b-y" fill-opacity="0.78"/>
+<rect x="64" y="180" width="22" height="22" rx="3" class="b-y" fill-opacity="0.57"/>
+<rect x="88" y="180" width="22" height="22" rx="3" class="b-y" fill-opacity="0.35"/>
+<rect x="112" y="180" width="22" height="22" rx="3" class="b-y" fill-opacity="0.89"/>
+<rect x="136" y="180" width="22" height="22" rx="3" class="b-y" fill-opacity="0.68"/>
+<rect x="160" y="180" width="22" height="22" rx="3" class="b-y" fill-opacity="0.46"/>
+<rect x="184" y="180" width="22" height="22" rx="3" class="b-y" fill-opacity="1.00"/>
+<rect x="208" y="180" width="22" height="22" rx="3" class="b-faint"/>
+<rect x="40" y="204" width="22" height="22" rx="3" class="b-y" fill-opacity="0.35"/>
+<rect x="64" y="204" width="22" height="22" rx="3" class="b-y" fill-opacity="0.89"/>
+<rect x="88" y="204" width="22" height="22" rx="3" class="b-y" fill-opacity="0.68"/>
+<rect x="112" y="204" width="22" height="22" rx="3" class="b-y" fill-opacity="0.46"/>
+<rect x="136" y="204" width="22" height="22" rx="3" class="b-y" fill-opacity="1.00"/>
+<rect x="160" y="204" width="22" height="22" rx="3" class="b-y" fill-opacity="0.78"/>
+<rect x="184" y="204" width="22" height="22" rx="3" class="b-y" fill-opacity="0.57"/>
+<rect x="208" y="204" width="22" height="22" rx="3" class="b-y" fill-opacity="0.35"/>
+        <text x="40" y="252" class="sm">第 i 列 = 第 i 個 token 對前面每個 token 的分數</text>
+        <text x="40" y="270" class="sm">長度 8 → 36 格；長度變 2 倍，格子約變 4 倍</text>
+        <text x="400" y="22" class="lg">生成：KV cache 越來越長</text>
+<text x="400" y="66" class="sm">生成第 3 個字</text>
+<rect x="490" y="48" width="22" height="22" rx="4" class="b-x"/>
+<rect x="516" y="48" width="22" height="22" rx="4" class="b-x"/>
+<rect x="542" y="48" width="22" height="22" rx="4" class="b-y s-dash"/>
+<text x="490" y="88" class="sm">要讀 2 個舊向量</text>
+<text x="400" y="124" class="sm">生成第 5 個字</text>
+<rect x="490" y="106" width="22" height="22" rx="4" class="b-x"/>
+<rect x="516" y="106" width="22" height="22" rx="4" class="b-x"/>
+<rect x="542" y="106" width="22" height="22" rx="4" class="b-x"/>
+<rect x="568" y="106" width="22" height="22" rx="4" class="b-x"/>
+<rect x="594" y="106" width="22" height="22" rx="4" class="b-y s-dash"/>
+<text x="490" y="146" class="sm">要讀 4 個舊向量</text>
+<text x="400" y="182" class="sm">生成第 7 個字</text>
+<rect x="490" y="164" width="22" height="22" rx="4" class="b-x"/>
+<rect x="516" y="164" width="22" height="22" rx="4" class="b-x"/>
+<rect x="542" y="164" width="22" height="22" rx="4" class="b-x"/>
+<rect x="568" y="164" width="22" height="22" rx="4" class="b-x"/>
+<rect x="594" y="164" width="22" height="22" rx="4" class="b-x"/>
+<rect x="620" y="164" width="22" height="22" rx="4" class="b-x"/>
+<rect x="646" y="164" width="22" height="22" rx="4" class="b-y s-dash"/>
+<text x="490" y="204" class="sm">要讀 6 個舊向量</text>
+<text x="400" y="230" class="sm">橘色 = 快取中的舊 token，紫色虛框 = 正在生成的字</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 2.1 Attention 的兩種代價。</b>左邊：計算量跟長度的平方成正比，寫成 O(L²)。右邊：生成文字時，為了不重算，要把每個舊 token 的 key、value 向量存起來（KV cache）；每生成一個新字，都得把整個快取讀一遍。</figcaption>
+  </figure>
+  <div class="prose">
+    <p>換個角度說：<strong>Attention 完全不壓縮記憶</strong>，它把整段歷史原封不動地留著，需要時再查。這就是它強的原因，也是它貴的原因。當序列長到數萬、數十萬（整本書、一小時的音訊、一條染色體），這個代價就很難承受。</p>
+  </div>
+  <div class="pre"><span class="lab">補充：什麼是 O(L²)?</span>
+    <p>這是描述「成本怎麼隨輸入長度 L 成長」的寫法。O(L) 叫線性：長度變 2 倍，成本變 2 倍。O(L²) 叫平方：長度變 2 倍，成本變 4 倍；變 10 倍，成本變 100 倍。論文標題裡的 <em>Linear-Time</em> 就是說 Mamba 是 O(L)。</p>
+  </div>
+  <div class="recap"><span class="lab">本節帶走</span>
+    <ul class="plain">
+      <li>Attention 能精準取用任何歷史資訊，訓練可平行。</li>
+      <li>代價是訓練 O(L²)、生成時 KV cache 隨長度一直變大。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="conv-gpu">
+  <h2><span class="n">3</span>前備知識：捲積與 GPU 記憶體</h2>
+  <p class="lede">兩個工具性的概念：捲積解釋了舊式 SSM 為何能快速訓練；GPU 記憶體階層解釋了 Mamba 的加速演算法。</p>
+  <h3>一維捲積</h3>
+  <div class="prose">
+    <p>你可能在影像的 CNN 裡看過捲積：一個小視窗（kernel，卷積核）在圖片上滑動。一維捲積是同一件事，只是在序列上滑：每個輸出，都是附近幾個輸入的加權總和，而<strong>權重在每個位置都一樣</strong>。</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 800 190" role="img" aria-label="一維捲積:長度 3 的卷積核在輸入序列上滑動,每個位置算出一個輸出">
+        <text x="16" y="56" class="sm">輸入</text>
+<rect x="70" y="34" width="46" height="34" rx="6" class="b-x"/><text x="93" y="56" class="mid tx it">x₁</text>
+<rect x="120" y="34" width="46" height="34" rx="6" class="b-x"/><text x="143" y="56" class="mid tx it">x₂</text>
+<rect x="170" y="34" width="46" height="34" rx="6" class="b-x"/><text x="193" y="56" class="mid tx it">x₃</text>
+<rect x="220" y="34" width="46" height="34" rx="6" class="b-x"/><text x="243" y="56" class="mid tx it">x₄</text>
+<rect x="270" y="34" width="46" height="34" rx="6" class="b-x"/><text x="293" y="56" class="mid tx it">x₅</text>
+<rect x="320" y="34" width="46" height="34" rx="6" class="b-x"/><text x="343" y="56" class="mid tx it">x₆</text>
+<rect x="370" y="34" width="46" height="34" rx="6" class="b-x"/><text x="393" y="56" class="mid tx it">x₇</text>
+<rect x="420" y="34" width="46" height="34" rx="6" class="b-x"/><text x="443" y="56" class="mid tx it">x₈</text>
+<rect x="470" y="34" width="46" height="34" rx="6" class="b-x"/><text x="493" y="56" class="mid tx it">x₉</text>
+<rect x="520" y="34" width="46" height="34" rx="6" class="b-x"/><text x="543" y="56" class="mid tx it">x₁₀</text>
+<rect x="166" y="29" width="154" height="44" rx="8" style="fill:none;stroke:var(--d);stroke-width:2.2;stroke-dasharray:6 4"/>
+<text x="243" y="22" class="mid td">卷積核 (w₁, w₂, w₃)</text>
+<path d="M193,73 L293,138" class="s-mute"/>
+<path d="M243,73 L293,138" class="s-mute"/>
+<path d="M293,73 V136" class="s-mute" marker-end="url(#ar-mute)"/>
+<rect x="170" y="140" width="46" height="34" rx="6" class="b-faint"/><text x="193" y="162" class="mid  it">y₃</text>
+<rect x="220" y="140" width="46" height="34" rx="6" class="b-faint"/><text x="243" y="162" class="mid  it">y₄</text>
+<rect x="270" y="140" width="46" height="34" rx="6" class="b-y"/><text x="293" y="162" class="mid ty it">y₅</text>
+<rect x="320" y="140" width="46" height="34" rx="6" class="b-faint"/><text x="343" y="162" class="mid  it">y₆</text>
+<rect x="370" y="140" width="46" height="34" rx="6" class="b-faint"/><text x="393" y="162" class="mid  it">y₇</text>
+<rect x="420" y="140" width="46" height="34" rx="6" class="b-faint"/><text x="443" y="162" class="mid  it">y₈</text>
+<rect x="470" y="140" width="46" height="34" rx="6" class="b-faint"/><text x="493" y="162" class="mid  it">y₉</text>
+<rect x="520" y="140" width="46" height="34" rx="6" class="b-faint"/><text x="543" y="162" class="mid  it">y₁₀</text>
+<text x="16" y="162" class="sm">輸出</text>
+<text x="590" y="110" class="sm">同一組權重滑過整條序列</text>
+<text x="590" y="128" class="sm">各位置互不相依 → 可同時算</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 3.1 一維捲積。</b>輸出 <span class="m">y</span><sub>5</sub> = w₁·x₃ + w₂·x₄ + w₃·x₅。卷積核很長的時候，還能用快速傅立葉轉換（FFT）加速。注意：<b>權重不會因為輸入內容不同而改變</b>，這點第 5、6 節會再出現。</figcaption>
+  </figure>
+  <h3>GPU 的兩層記憶體</h3>
+  <div class="prose">
+    <p>GPU 上的資料主要放在兩種地方。它們的差別，決定了很多演算法「理論上快」和「實際上快」之間的落差：</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 720 220" role="img" aria-label="GPU 記憶體階層:容量大但較慢的 HBM,與容量小但極快、緊鄰運算單元的 SRAM">
+        <rect x="20" y="30" width="270" height="160" rx="10" class="b-faint"/>
+        <text x="155" y="80" class="mid lg">HBM（顯示卡記憶體）</text>
+        <text x="155" y="110" class="mid sm">容量大：數十 GB</text>
+        <text x="155" y="130" class="mid sm">讀寫相對慢</text>
+        <text x="155" y="150" class="mid sm">模型參數、資料平常放這裡</text>
+        <rect x="420" y="20" width="280" height="180" rx="12" class="b-panel"/>
+        <text x="560" y="46" class="mid">GPU 晶片</text>
+        <rect x="440" y="62" width="110" height="118" rx="8" class="b-h"/>
+        <text x="495" y="102" class="mid th">SRAM</text><text x="495" y="126" class="mid sm">很小</text><text x="495" y="145" class="mid sm">極快</text>
+        <rect x="570" y="62" width="110" height="118" rx="8" class="b-faint"/>
+        <text x="625" y="112" class="mid">運算單元</text><text x="625" y="134" class="mid sm">算得很快</text>
+        <path d="M296,110 H414" class="s-ink" marker-end="url(#ar-ink)" marker-start="url(#ar-ink)" style="stroke-width:3"/>
+        <text x="355" y="98" class="mid td">瓶頸常在這裡</text>
+        <text x="355" y="134" class="mid sm">資料搬運</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 3.2 記憶體階層。</b>現代 GPU 算得太快，很多運算的時間其實花在「把資料在 HBM 和 SRAM 之間搬來搬去」，這叫 <b>memory-bound</b>（受記憶體頻寬限制）。所以加速的關鍵常是「少搬一點」，而不是「少算一點」。著名的 FlashAttention 就是靠這個原則加速 attention,Mamba 的作者之一 Tri Dao 正是 FlashAttention 的作者。</figcaption>
+  </figure>
+  <div class="recap"><span class="lab">本節帶走</span>
+    <ul class="plain">
+      <li>捲積：固定權重滑過序列，可平行。</li>
+      <li>GPU 上「搬資料」常比「算資料」更花時間；把工作留在 SRAM 裡做完，就能大幅加速。</li>
+    </ul>
+  </div>
+</section>
+<!-- ============ 4 ============ -->
+<section id="compression">
+  <h2><span class="n">4</span>核心視角：序列建模就是在「壓縮」</h2>
+  <p class="lede">這是理解 Mamba 設計理念最重要的一節。論文把所有序列模型放到同一條光譜上比較。</p>
+  <div class="prose">
+    <p>模型讀過的內容可能有一百萬個 token，但它手上能保留的記憶是有限的。所以每個序列模型都在做同一件事：<strong>把過去的脈絡壓縮成一個比較小的「狀態」</strong>。差別在於壓多少、怎麼壓。</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 720 190" role="img" aria-label="壓縮光譜:左端完全不壓縮的 Transformer,右端壓縮成固定大小狀態的 RNN 與 SSM,Mamba 的主張是有選擇地壓縮">
+        <path d="M70,80 H650" class="s-ink" marker-end="url(#ar-ink)" marker-start="url(#ar-ink)" style="stroke-width:2"/>
+        <circle cx="70" cy="80" r="7" class="b-x"/><circle cx="650" cy="80" r="7" class="b-h"/>
+        <text x="70" y="40" class="lg">不壓縮</text>
+        <text x="70" y="60" class="sm">Transformer：把整段歷史都留著</text>
+        <text x="650" y="40" class="lg end">壓縮成固定大小</text>
+        <text x="650" y="60" class="sm end">RNN、SSM：只留一個摘要狀態</text>
+        <text x="70" y="110" class="sm">✓ 效果好（要什麼都查得到）</text>
+        <text x="70" y="130" class="sm">✗ 越長越慢、越佔記憶體</text>
+        <text x="650" y="110" class="sm end">✓ 便宜，每步成本固定</text>
+        <text x="650" y="130" class="sm end">△ 效果取決於摘要做得好不好</text>
+        <rect x="190" y="150" width="340" height="34" rx="17" class="b-h"/>
+        <text x="360" y="172" class="mid th">Mamba 的主張：關鍵在「有選擇地」壓縮</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 4.1 效率與效果的取捨。</b>有效率的模型必須有小的狀態；有效果的模型，狀態裡必須留住所有需要的資訊。要兩者兼得，就得讓小狀態只裝真正重要的東西。</figcaption>
+  </figure>
+  <div class="intu"><span class="lab">直覺：開會做筆記</span>
+    <p>一場兩小時的會議，你不可能逐字抄下（那是 Transformer 的做法），但如果每句話都平均地記一點點（固定規則的 RNN），筆記會塞滿「嗯」「那個」。好的筆記是<strong>聽到決議就寫、聽到閒聊就跳過</strong>，而且要依「當下聽到的內容」來判斷。這個「依內容判斷要不要記」的能力，論文稱為<strong>選擇性（selectivity）</strong>。</p>
+  </div>
+  <div class="prose">
+    <p>有了這個視角，Mamba 的路線就很清楚了：從一個<strong>壓縮效率很高</strong>的模型家族（SSM）出發，替它補上<strong>選擇能力</strong>。下一節先認識 SSM。</p>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="ssm">
+  <h2><span class="n">5</span>狀態空間模型（SSM）</h2>
+  <p class="lede">SSM 來自控制工程與訊號處理，用一個隱藏狀態描述系統怎麼隨時間演變。深度學習版的 SSM（S4 系列）是 Mamba 的直接前身。</p>
+
+  <h3>5.1 連續時間的版本：一個會漏水的水桶</h3>
+  <div class="prose">
+    <p>SSM 最原始的形式是描述「連續時間」的系統，像是物體的位置、電路的電壓怎麼隨時間變化。它只有兩條式子：</p>
+  </div>
+  <div class="eq">
+    <span class="row"><span class="ch">h′(t)</span> = <span class="up">A</span>·<span class="ch">h(t)</span> + <span class="up">B</span>·<span class="cx">x(t)</span> &nbsp;&nbsp;&nbsp;&nbsp;（狀態怎麼變）</span>
+    <span class="row"><span class="cy">y(t)</span> = <span class="up">C</span>·<span class="ch">h(t)</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;（怎麼讀出輸出）</span>
+  </div>
+  <div class="prose">
+    <p><span class="m ch">h′(t)</span> 是 <span class="m ch">h</span> 的變化率（微分）。白話翻譯：狀態變化的速度，一部分由狀態本身決定（A），一部分由外來輸入決定（B）；輸出則是從狀態讀出來的（C）。</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 720 200" role="img" aria-label="SSM 方塊圖:輸入 x 經 B 寫入狀態 h,狀態經 A 自我更新,再經 C 讀出輸出 y">
+        <rect x="16" y="96" width="84" height="44" rx="8" class="b-x"/><text x="58" y="123" class="mid tx it">x(t)</text>
+        <path d="M100,118 H146" class="a-x" marker-end="url(#ar-x)"/>
+        <rect x="150" y="96" width="58" height="44" rx="8" class="b-panel"/><text x="179" y="124" class="mid lg it">B</text>
+        <path d="M208,118 H254" class="a-x" marker-end="url(#ar-x)"/>
+        <rect x="258" y="82" width="170" height="72" rx="10" class="b-h"/>
+        <text x="343" y="114" class="mid th it" style="font-size:18px">h(t)</text><text x="343" y="138" class="mid sm">狀態（水位）</text>
+        <path d="M398,82 C398,30 288,30 288,78" class="a-h" marker-end="url(#ar-h)"/>
+        <text x="343" y="40" class="mid lg it">A</text>
+        <path d="M428,118 H474" class="a-h" marker-end="url(#ar-h)"/>
+        <rect x="478" y="96" width="58" height="44" rx="8" class="b-panel"/><text x="507" y="124" class="mid lg it">C</text>
+        <path d="M536,118 H582" class="a-y" marker-end="url(#ar-y)"/>
+        <rect x="586" y="96" width="84" height="44" rx="8" class="b-y"/><text x="628" y="123" class="mid ty it">y(t)</text>
+        <text x="179" y="170" class="mid sm">倒水進來</text>
+        <text x="343" y="180" class="mid sm">A 為負：水會慢慢漏掉</text>
+        <text x="507" y="170" class="mid sm">看刻度</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 5.1 SSM 的水桶比喻。</b>輸入 <span class="m cx">x</span> 像倒進桶裡的水（B 控制倒多少），A 控制桶子漏水的速度（舊記憶怎麼衰減），C 是從水位讀出輸出的方式。水位 <span class="m ch">h</span> 就是記憶：它反映了「過去倒進來的水」，但越久以前的越淡。</figcaption>
+  </figure>
+
+  <h3>5.2 離散化：從連續時間到一步一步</h3>
+  <div class="prose">
+    <p>文字是一個一個 token，不是連續的訊號。所以要把連續系統轉成「一步一步」的版本，這叫<strong>離散化（discretization）</strong>。做法是選一個<strong>步長 Δ</strong>（每一步代表多長的時間），再用固定公式把 (Δ, A, B) 換成離散版的 (<span class="bar">A</span>, <span class="bar">B</span>):</p>
+  </div>
+  <div class="eq">
+    <span class="row"><span class="bar up">A</span> = exp(<span class="cd">Δ</span>·<span class="up">A</span>) &nbsp;&nbsp;&nbsp;&nbsp; <span class="bar up">B</span> ≈ <span class="cd">Δ</span>·<span class="up">B</span> &nbsp;&nbsp;&nbsp;&nbsp;（Δ 小時的近似）</span>
+    <span class="row"><span class="ch">h<sub>t</sub></span> = <span class="bar up">A</span>·<span class="ch">h<sub>t−1</sub></span> + <span class="bar up">B</span>·<span class="cx">x<sub>t</sub></span> &nbsp;&nbsp;&nbsp;&nbsp; <span class="cy">y<sub>t</sub></span> = <span class="up">C</span>·<span class="ch">h<sub>t</sub></span></span>
+  </div>
+  <div class="prose">
+    <p>第二行看起來是不是很眼熟？它跟 RNN 幾乎一模一樣，只是<strong>少了 tanh 這類非線性</strong>，是純粹的線性遞迴。正因為是線性的，才有下一小節的捲積技巧可用。</p>
+    <p>精確的 <span class="bar">B</span> 公式是 (ΔA)<sup>−1</sup>(exp(ΔA) − I)·ΔB，稱為零階保持法（ZOH）。初學時記住「<span class="bar">B</span> 大約是 Δ 乘以 B」就夠了。</p>
+    <p><strong>Δ 的意義非常重要</strong>（Mamba 的選擇機制就是靠它）。用最簡單的例子 A = −1 來看：<span class="bar">A</span> = e<sup>−Δ</sup>，代表每走一步，舊狀態保留多少比例。</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 720 250" role="img" aria-label="衰減曲線 e 的負 t 次方:Δ 小時保留大部分舊狀態,Δ 大時舊狀態幾乎消失">
+<path d="M70,30 V200 H640" class="s-ink" marker-end="url(#ar-ink)"/>
+<text x="62" y="44" class="end sm">1</text><text x="62" y="204" class="end sm">0</text>
+<text x="76" y="24" class="sm">舊狀態保留的比例</text>
+<text x="640" y="192" class="end sm">走過的時間</text>
+<polyline points="70.0,40.0 75.5,47.8 81.0,55.2 86.5,62.3 92.0,69.0 97.5,75.4 103.0,81.5 108.5,87.2 114.0,92.7 119.5,98.0 125.0,103.0 130.5,107.7 136.0,112.2 141.5,116.5 147.0,120.5 152.5,124.4 158.0,128.1 163.5,131.6 169.0,134.9 174.5,138.1 180.0,141.1 185.5,144.0 191.0,146.7 196.5,149.3 202.0,151.8 207.5,154.2 213.0,156.4 218.5,158.5 224.0,160.5 229.5,162.5 235.0,164.3 240.5,166.0 246.0,167.7 251.5,169.3 257.0,170.8 262.5,172.2 268.0,173.6 273.5,174.8 279.0,176.1 284.5,177.2 290.0,178.3 295.5,179.4 301.0,180.4 306.5,181.4 312.0,182.3 317.5,183.1 323.0,184.0 328.5,184.7 334.0,185.5 339.5,186.2 345.0,186.9 350.5,187.5 356.0,188.1 361.5,188.7 367.0,189.2 372.5,189.8 378.0,190.3 383.5,190.7 389.0,191.2 394.5,191.6 400.0,192.0 405.5,192.4 411.0,192.8 416.5,193.1 422.0,193.5 427.5,193.8 433.0,194.1 438.5,194.4 444.0,194.7 449.5,194.9 455.0,195.2 460.5,195.4 466.0,195.6 471.5,195.8 477.0,196.0 482.5,196.2 488.0,196.4 493.5,196.6 499.0,196.8 504.5,196.9 510.0,197.1 515.5,197.2 521.0,197.3 526.5,197.5 532.0,197.6 537.5,197.7 543.0,197.8 548.5,197.9 554.0,198.0 559.5,198.1 565.0,198.2 570.5,198.3 576.0,198.4 581.5,198.5 587.0,198.5 592.5,198.6 598.0,198.7 603.5,198.7 609.0,198.8 614.5,198.9 620.0,198.9" class="a-h" style="stroke-width:2.5"/>
+<path d="M92.0,200 V69.0" class="s-mute s-dash"/>
+<circle cx="92.0" cy="69.0" r="6" class="b-d"/>
+<text x="104.0" y="59.0" class="td">Δ = 0.2：保留 82%</text>
+<path d="M290.0,200 V178.3" class="s-mute s-dash"/>
+<circle cx="290.0" cy="178.3" r="6" class="b-d"/>
+<text x="302.0" y="168.3" class="td">Δ = 2：只剩 14%</text>
+<path d="M70,214 H92.0" class="a-d"/><text x="98.0" y="219" class="sm">一小步</text>
+<path d="M70,232 H290.0" class="a-d"/><text x="296.0" y="237" class="sm">一大步</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 5.2 Δ 決定舊記憶留多少。</b>把一步想成沿著衰減曲線走一段距離 Δ。走得短（Δ 小），舊狀態幾乎不變，新輸入的影響也很小（因為 <span class="bar">B</span> ≈ ΔB 也很小）；走得長（Δ 大），舊狀態幾乎歸零，新輸入佔滿狀態。</figcaption>
+  </figure>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Δ</th><th class="c"><span class="bar">A</span> = e<sup>−Δ</sup>（舊狀態保留）</th><th>白話</th></tr></thead>
+      <tbody>
+        <tr><td>0.01</td><td class="c">0.99</td><td>幾乎不動：維持記憶、忽略當下輸入</td></tr>
+        <tr><td>0.5</td><td class="c">0.61</td><td>新舊混合</td></tr>
+        <tr><td>3</td><td class="c">0.05</td><td>幾乎重設：忘掉舊的，專注當下輸入</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>5.3 同一個模型，兩種算法</h3>
+  <div class="prose">
+    <p>舊式 SSM 最迷人的性質是：它可以用兩種完全等價的方式計算。把遞迴式展開看看（假設 <span class="m ch">h</span><sub>−1</sub> = 0）：</p>
+  </div>
+  <div class="eq">
+    <span class="row"><span class="cy">y<sub>3</sub></span> = C<span class="bar">B</span>·<span class="cx">x<sub>3</sub></span> + C<span class="bar">A</span><span class="bar">B</span>·<span class="cx">x<sub>2</sub></span> + C<span class="bar">A</span><sup>2</sup><span class="bar">B</span>·<span class="cx">x<sub>1</sub></span> + C<span class="bar">A</span><sup>3</sup><span class="bar">B</span>·<span class="cx">x<sub>0</sub></span></span>
+  </div>
+  <div class="prose">
+    <p>係數 (C<span class="bar">B</span>, C<span class="bar">A</span><span class="bar">B</span>, C<span class="bar">A</span><sup>2</sup><span class="bar">B</span>, …) 和輸入無關，可以先算好，記為卷積核 <span class="m">K</span>。於是整條輸出就是 <span class="m">y</span> = <span class="m">x</span> ∗ <span class="m">K</span>，一個捲積！</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 760 330" role="img" aria-label="遞迴觀點與捲積觀點:上方狀態一步步傳遞,下方把輸入與預先算好的卷積核相乘再加總,兩者結果相同">
+        <text x="16" y="34" class="lg">遞迴觀點</text>
+        <text x="16" y="54" class="sm">一步一步算</text>
+        <circle cx="200" cy="70" r="24" class="b-h"/><text x="200" y="76" class="mid th it">h₀</text>
+        <circle cx="340" cy="70" r="24" class="b-h"/><text x="340" y="76" class="mid th it">h₁</text>
+        <circle cx="480" cy="70" r="24" class="b-h"/><text x="480" y="76" class="mid th it">h₂</text>
+        <circle cx="620" cy="70" r="24" class="b-h"/><text x="620" y="76" class="mid th it">h₃</text>
+        <path d="M224,70 H314" class="a-h" marker-end="url(#ar-h)"/><text x="270" y="62" class="mid sm">× Ā</text>
+        <path d="M364,70 H454" class="a-h" marker-end="url(#ar-h)"/><text x="410" y="62" class="mid sm">× Ā</text>
+        <path d="M504,70 H594" class="a-h" marker-end="url(#ar-h)"/><text x="550" y="62" class="mid sm">× Ā</text>
+        <g>
+          <rect x="182" y="120" width="36" height="28" rx="5" class="b-x"/><text x="200" y="139" class="mid tx it">x₀</text><path d="M200,120 V97" class="a-x" marker-end="url(#ar-x)"/>
+          <rect x="322" y="120" width="36" height="28" rx="5" class="b-x"/><text x="340" y="139" class="mid tx it">x₁</text><path d="M340,120 V97" class="a-x" marker-end="url(#ar-x)"/>
+          <rect x="462" y="120" width="36" height="28" rx="5" class="b-x"/><text x="480" y="139" class="mid tx it">x₂</text><path d="M480,120 V97" class="a-x" marker-end="url(#ar-x)"/>
+          <rect x="602" y="120" width="36" height="28" rx="5" class="b-x"/><text x="620" y="139" class="mid tx it">x₃</text><path d="M620,120 V97" class="a-x" marker-end="url(#ar-x)"/>
+        </g>
+        <path d="M644,70 H690" class="a-y" marker-end="url(#ar-y)"/><text x="664" y="62" class="mid sm">× C</text>
+        <rect x="694" y="54" width="50" height="32" rx="6" class="b-y"/><text x="719" y="75" class="mid ty it">y₃</text>
+        <path d="M16,178 H744" class="s-line s-dash"/>
+        <text x="16" y="212" class="lg">捲積觀點</text>
+        <text x="16" y="232" class="sm">一次算完</text>
+        <g>
+          <rect x="182" y="196" width="36" height="28" rx="5" class="b-x"/><text x="200" y="215" class="mid tx it">x₀</text>
+          <rect x="322" y="196" width="36" height="28" rx="5" class="b-x"/><text x="340" y="215" class="mid tx it">x₁</text>
+          <rect x="462" y="196" width="36" height="28" rx="5" class="b-x"/><text x="480" y="215" class="mid tx it">x₂</text>
+          <rect x="602" y="196" width="36" height="28" rx="5" class="b-x"/><text x="620" y="215" class="mid tx it">x₃</text>
+          <text x="200" y="246" class="mid">×</text><text x="340" y="246" class="mid">×</text><text x="480" y="246" class="mid">×</text><text x="620" y="246" class="mid">×</text>
+          <rect x="160" y="256" width="80" height="30" rx="6" class="b-faint"/><text x="200" y="276" class="mid">CĀ³B̄</text>
+          <rect x="300" y="256" width="80" height="30" rx="6" class="b-faint"/><text x="340" y="276" class="mid">CĀ²B̄</text>
+          <rect x="440" y="256" width="80" height="30" rx="6" class="b-faint"/><text x="480" y="276" class="mid">CĀB̄</text>
+          <rect x="580" y="256" width="80" height="30" rx="6" class="b-faint"/><text x="620" y="276" class="mid">CB̄</text>
+        </g>
+        <path d="M200,286 V302 M340,286 V302 M480,286 V302 M620,286 V302 M200,302 H719" class="s-mute"/>
+        <path d="M719,302 V250" class="a-y" marker-end="url(#ar-y)"/>
+        <rect x="694" y="214" width="50" height="32" rx="6" class="b-y"/><text x="719" y="235" class="mid ty it">y₃</text>
+        <text x="440" y="324" class="mid sm">卷積核 K：跟輸入無關，可以事先算好；全部相乘再加總</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 5.3 遞迴與捲積是同一件事的兩種算法。</b>訓練時整段序列都已知，用捲積可以平行算完（再加上 FFT 更快）；生成時字是一個一個來的，改用遞迴，每步只更新狀態，成本固定。舊式 SSM 因此同時擁有「好訓練」和「好推論」。</figcaption>
+  </figure>
+  <div class="prose">
+    <p>但請注意這個魔法的前提：<strong>A、B、C、Δ 在每個時間點都一樣</strong>。這個性質叫<strong>線性時不變（Linear Time Invariance,LTI）</strong>。只要參數會隨時間或輸入改變，卷積核 <span class="m">K</span> 就不再是固定的，捲積算法就失效了。記住這一點，它是第 6、7 節的伏筆。</p>
+  </div>
+
+  <h3>5.4 實際的維度：很多個小水桶</h3>
+  <div class="prose">
+    <p>實際的輸入不是一個數字，而是每個 token 一個長度 D 的向量（D 個「通道」）。SSM 的做法是：<strong>每個通道各自跑一個獨立的 SSM</strong>，每個 SSM 的狀態是 N 維的（Mamba 常用 N = 16）。</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 720 240" role="img" aria-label="多通道 SSM:輸入的每個通道各自擁有一個 N 維狀態的 SSM,總狀態大小為 D 乘 N">
+        <text x="56" y="22" class="mid sm">輸入 xₜ</text>
+        <text x="270" y="22" class="mid sm">每個通道：N 維狀態</text>
+        <text x="440" y="22" class="mid sm">輸出 yₜ</text>
+<rect x="36" y="40" width="40" height="32" rx="6" class="b-x"/><text x="56" y="61" class="mid tx sm" style="fill:var(--x)">1</text>
+<path d="M78,56 H148" class="a-x" marker-end="url(#ar-x)"/>
+<rect x="152" y="38" width="236" height="36" rx="7" class="b-faint"/>
+<rect x="162" y="45" width="22" height="22" rx="4" class="b-h" fill-opacity="1"/>
+<rect x="190" y="45" width="22" height="22" rx="4" class="b-h" fill-opacity="0.85"/>
+<rect x="218" y="45" width="22" height="22" rx="4" class="b-h" fill-opacity="0.7"/>
+<rect x="246" y="45" width="22" height="22" rx="4" class="b-h" fill-opacity="0.55"/>
+<rect x="274" y="45" width="22" height="22" rx="4" class="b-h" fill-opacity="0.4"/>
+<rect x="302" y="45" width="22" height="22" rx="4" class="b-h" fill-opacity="0.3"/>
+<text x="362" y="61" class="mid f-mute">…</text>
+<path d="M388,56 H426" class="a-y" marker-end="url(#ar-y)"/>
+<rect x="430" y="40" width="40" height="32" rx="6" class="b-y"/><text x="450" y="61" class="mid sm" style="fill:var(--y)">1</text>
+<rect x="36" y="85" width="40" height="32" rx="6" class="b-x"/><text x="56" y="106" class="mid tx sm" style="fill:var(--x)">2</text>
+<path d="M78,101 H148" class="a-x" marker-end="url(#ar-x)"/>
+<rect x="152" y="83" width="236" height="36" rx="7" class="b-faint"/>
+<rect x="162" y="90" width="22" height="22" rx="4" class="b-h" fill-opacity="1"/>
+<rect x="190" y="90" width="22" height="22" rx="4" class="b-h" fill-opacity="0.85"/>
+<rect x="218" y="90" width="22" height="22" rx="4" class="b-h" fill-opacity="0.7"/>
+<rect x="246" y="90" width="22" height="22" rx="4" class="b-h" fill-opacity="0.55"/>
+<rect x="274" y="90" width="22" height="22" rx="4" class="b-h" fill-opacity="0.4"/>
+<rect x="302" y="90" width="22" height="22" rx="4" class="b-h" fill-opacity="0.3"/>
+<text x="362" y="106" class="mid f-mute">…</text>
+<path d="M388,101 H426" class="a-y" marker-end="url(#ar-y)"/>
+<rect x="430" y="85" width="40" height="32" rx="6" class="b-y"/><text x="450" y="106" class="mid sm" style="fill:var(--y)">2</text>
+<rect x="36" y="130" width="40" height="32" rx="6" class="b-x"/><text x="56" y="151" class="mid tx sm" style="fill:var(--x)">3</text>
+<path d="M78,146 H148" class="a-x" marker-end="url(#ar-x)"/>
+<rect x="152" y="128" width="236" height="36" rx="7" class="b-faint"/>
+<rect x="162" y="135" width="22" height="22" rx="4" class="b-h" fill-opacity="1"/>
+<rect x="190" y="135" width="22" height="22" rx="4" class="b-h" fill-opacity="0.85"/>
+<rect x="218" y="135" width="22" height="22" rx="4" class="b-h" fill-opacity="0.7"/>
+<rect x="246" y="135" width="22" height="22" rx="4" class="b-h" fill-opacity="0.55"/>
+<rect x="274" y="135" width="22" height="22" rx="4" class="b-h" fill-opacity="0.4"/>
+<rect x="302" y="135" width="22" height="22" rx="4" class="b-h" fill-opacity="0.3"/>
+<text x="362" y="151" class="mid f-mute">…</text>
+<path d="M388,146 H426" class="a-y" marker-end="url(#ar-y)"/>
+<rect x="430" y="130" width="40" height="32" rx="6" class="b-y"/><text x="450" y="151" class="mid sm" style="fill:var(--y)">3</text>
+<rect x="36" y="175" width="40" height="32" rx="6" class="b-x"/><text x="56" y="196" class="mid tx sm" style="fill:var(--x)">4</text>
+<path d="M78,191 H148" class="a-x" marker-end="url(#ar-x)"/>
+<rect x="152" y="173" width="236" height="36" rx="7" class="b-faint"/>
+<rect x="162" y="180" width="22" height="22" rx="4" class="b-h" fill-opacity="1"/>
+<rect x="190" y="180" width="22" height="22" rx="4" class="b-h" fill-opacity="0.85"/>
+<rect x="218" y="180" width="22" height="22" rx="4" class="b-h" fill-opacity="0.7"/>
+<rect x="246" y="180" width="22" height="22" rx="4" class="b-h" fill-opacity="0.55"/>
+<rect x="274" y="180" width="22" height="22" rx="4" class="b-h" fill-opacity="0.4"/>
+<rect x="302" y="180" width="22" height="22" rx="4" class="b-h" fill-opacity="0.3"/>
+<text x="362" y="196" class="mid f-mute">…</text>
+<path d="M388,191 H426" class="a-y" marker-end="url(#ar-y)"/>
+<rect x="430" y="175" width="40" height="32" rx="6" class="b-y"/><text x="450" y="196" class="mid sm" style="fill:var(--y)">4</text>
+<text x="56" y="232" class="mid f-mute">⋮</text><text x="270" y="232" class="mid f-mute">⋮</text><text x="450" y="232" class="mid f-mute">⋮</text>
+        <text x="510" y="70" class="sm">D 個通道 = 特徵維度</text>
+        <text x="510" y="96" class="sm">每個通道一個獨立的 SSM</text>
+        <text x="510" y="122" class="sm">每個 SSM 有 N 個狀態值</text>
+        <text x="510" y="148" class="sm">各自以不同速度衰減</text>
+        <text x="510" y="184" class="th">總狀態 = D × N</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 5.4 多通道與狀態維度。</b>A 被限制為對角矩陣（這就是 structured SSM 裡「structured」的意思），等於每個狀態值都是一個獨立的小水桶，各有自己的漏水速度：有的漏得快，記短期的事；有的漏得慢，記長期的事。狀態總共 D×N 個數字，比輸入本身大 N 倍，這個「大狀態」是 SSM 表現好的原因，也是第 7 節要解決的記憶體難題。</figcaption>
+  </figure>
+
+  <h3>5.5 LTI 的致命傷：不會「看內容」</h3>
+  <div class="prose">
+    <p>舊式 SSM 在音訊、影像這類連續訊號上表現很好，但在文字上一直輸給 Transformer。論文用兩個人工設計的小任務點出原因：</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 760 200" role="img" aria-label="一般複製任務的重要 token 固定在開頭;選擇性複製任務的重要 token 隨機散落在雜訊之間">
+        <text x="16" y="50" class="lg">一般複製</text>
+<rect x="150" y="30" width="32" height="32" rx="5" class="b-x"/><text x="166" y="51" class="mid tx">A</text>
+<rect x="188" y="30" width="32" height="32" rx="5" class="b-h"/><text x="204" y="51" class="mid th">B</text>
+<rect x="226" y="30" width="32" height="32" rx="5" class="b-y"/><text x="242" y="51" class="mid ty">C</text>
+<rect x="264" y="30" width="32" height="32" rx="5" class="b-d"/><text x="280" y="51" class="mid td">D</text>
+<rect x="302" y="30" width="32" height="32" rx="5" class="b-n"/>
+<rect x="340" y="30" width="32" height="32" rx="5" class="b-n"/>
+<rect x="378" y="30" width="32" height="32" rx="5" class="b-n"/>
+<rect x="416" y="30" width="32" height="32" rx="5" class="b-n"/>
+<rect x="454" y="30" width="32" height="32" rx="5" class="b-n"/>
+<rect x="492" y="30" width="32" height="32" rx="5" class="b-n"/>
+<path d="M534,46 H566" class="s-ink" marker-end="url(#ar-ink)"/>
+<rect x="575" y="30" width="32" height="32" rx="5" class="b-faint s-dash"/><text x="591" y="51" class="mid f-mute">A</text>
+<rect x="613" y="30" width="32" height="32" rx="5" class="b-faint s-dash"/><text x="629" y="51" class="mid f-mute">B</text>
+<rect x="651" y="30" width="32" height="32" rx="5" class="b-faint s-dash"/><text x="667" y="51" class="mid f-mute">C</text>
+<rect x="689" y="30" width="32" height="32" rx="5" class="b-faint s-dash"/><text x="705" y="51" class="mid f-mute">D</text>
+        <text x="150" y="88" class="sm">要記的 token 位置固定：只要「數位置」就能做，不必看內容</text>
+        <text x="16" y="140" class="lg">選擇性複製</text>
+<rect x="150" y="120" width="32" height="32" rx="5" class="b-n"/>
+<rect x="188" y="120" width="32" height="32" rx="5" class="b-x"/><text x="204" y="141" class="mid tx">A</text>
+<rect x="226" y="120" width="32" height="32" rx="5" class="b-n"/>
+<rect x="264" y="120" width="32" height="32" rx="5" class="b-n"/>
+<rect x="302" y="120" width="32" height="32" rx="5" class="b-h"/><text x="318" y="141" class="mid th">B</text>
+<rect x="340" y="120" width="32" height="32" rx="5" class="b-y"/><text x="356" y="141" class="mid ty">C</text>
+<rect x="378" y="120" width="32" height="32" rx="5" class="b-n"/>
+<rect x="416" y="120" width="32" height="32" rx="5" class="b-n"/>
+<rect x="454" y="120" width="32" height="32" rx="5" class="b-d"/><text x="470" y="141" class="mid td">D</text>
+<rect x="492" y="120" width="32" height="32" rx="5" class="b-n"/>
+<path d="M534,136 H566" class="s-ink" marker-end="url(#ar-ink)"/>
+<rect x="575" y="120" width="32" height="32" rx="5" class="b-faint s-dash"/><text x="591" y="141" class="mid f-mute">A</text>
+<rect x="613" y="120" width="32" height="32" rx="5" class="b-faint s-dash"/><text x="629" y="141" class="mid f-mute">B</text>
+<rect x="651" y="120" width="32" height="32" rx="5" class="b-faint s-dash"/><text x="667" y="141" class="mid f-mute">C</text>
+<rect x="689" y="120" width="32" height="32" rx="5" class="b-faint s-dash"/><text x="705" y="141" class="mid f-mute">D</text>
+        <text x="150" y="178" class="sm">位置每次隨機：必須「看內容」才知道哪些該記、哪些是雜訊</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 5.5 兩個複製任務。</b>灰色是雜訊 token，最後的虛線框是模型要依序輸出的答案。LTI 模型用固定的卷積核就能解決一般複製，但面對選擇性複製就失敗：它的更新規則對每個 token 都一樣，沒辦法因為「這個 token 是雜訊」而選擇不記。</figcaption>
+  </figure>
+  <div class="prose">
+    <p>另一個任務叫 <strong>Induction Heads（歸納頭）</strong>，被認為和大型語言模型的「情境學習」能力高度相關。例如序列中曾出現「Harry Potter」，之後再看到「Harry」，模型應該要能預測「Potter」：</p>
+    <div class="strip" aria-label="Induction heads 範例"><span class="tok">…</span><span class="tok k">Harry</span><span class="tok k">Potter</span><span class="tok">走進</span><span class="tok">教室</span><span class="tok">…</span><span class="tok">…</span><span class="tok q">Harry</span><span class="tok">→ ?</span></div>
+    <p>這需要「根據當下的字，回想起它上次出現時後面接什麼」，同樣是依內容取用記憶，LTI 模型做不到。</p>
+  </div>
+  <div class="recap"><span class="lab">本節帶走</span>
+    <ul class="plain">
+      <li>SSM：<span class="m">h<sub>t</sub></span> = <span class="bar">A</span>·<span class="m">h<sub>t−1</sub></span> + <span class="bar">B</span>·<span class="m">x<sub>t</sub></span>，<span class="m">y<sub>t</sub></span> = C·<span class="m">h<sub>t</sub></span>；一個沒有非線性的線性 RNN。</li>
+      <li>Δ 控制每一步「保留舊記憶 vs. 吸收新輸入」的比例。</li>
+      <li>參數固定（LTI）時可以用捲積快速訓練、用遞迴快速推論，但代價是不能依內容做選擇。</li>
+    </ul>
+  </div>
+</section>
+<!-- ============ 6 ============ -->
+<section id="selection">
+  <h2><span class="n">6</span>選擇機制：讓 SSM 會「看內容」</h2>
+  <p class="lede">Mamba 最核心的一步。改動本身非常簡單：把 Δ、B、C 從「固定參數」改成「由當下輸入算出來」。</p>
+
+  <h3>6.1 改了什麼</h3>
+  <div class="prose">
+    <p>舊式 SSM（論文稱為 S4）的 Δ、B、C 訓練完就固定，對每個 token 都一樣。Mamba 的選擇性 SSM（論文稱為 <strong>S6</strong>）改成每個時間點都用當下的輸入 <span class="m cx">x<sub>t</sub></span> 現算：</p>
+  </div>
+  <div class="eq">
+    <span class="row"><span class="up">B</span><sub>t</sub> = Linear<sub>N</sub>(<span class="cx">x<sub>t</sub></span>) &nbsp;&nbsp;&nbsp; <span class="up">C</span><sub>t</sub> = Linear<sub>N</sub>(<span class="cx">x<sub>t</sub></span>)</span>
+    <span class="row"><span class="cd">Δ<sub>t</sub></span> = softplus( 參數 + Linear(<span class="cx">x<sub>t</sub></span>) )</span>
+    <span class="row"><span class="bar up">A</span><sub>t</sub> = exp(<span class="cd">Δ<sub>t</sub></span>·<span class="up">A</span>) &nbsp;&nbsp;&nbsp; <span class="bar up">B</span><sub>t</sub> ≈ <span class="cd">Δ<sub>t</sub></span>·<span class="up">B</span><sub>t</sub> &nbsp;&nbsp;&nbsp; <span class="ch">h<sub>t</sub></span> = <span class="bar up">A</span><sub>t</sub>·<span class="ch">h<sub>t−1</sub></span> + <span class="bar up">B</span><sub>t</sub>·<span class="cx">x<sub>t</sub></span></span>
+  </div>
+  <div class="pre"><span class="lab">名詞小抄</span>
+    <p><strong>Linear</strong>：一個全連接層，也就是乘上一個可學習的矩陣，把向量轉成指定長度（下標 N 表示輸出 N 維）。<strong>softplus</strong>(z) = log(1 + e<sup>z</sup>)，是平滑版的 ReLU，保證輸出永遠是正數，因為「步長」不能是負的。A 仍然是固定參數，但 <span class="bar">A</span><sub>t</sub> 透過 Δ<sub>t</sub> 也跟著輸入改變了。</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 760 300" role="img" aria-label="S4 與 S6 比較:S4 的 Δ、B、C 在每個時間點都相同;S6 的 Δ、B、C 由每個時間點的輸入計算,重要 token 的 Δ 大,雜訊 token 的 Δ 小">
+<text x="16" y="48" class="lg">S4(LTI)</text><text x="16" y="70" class="sm">參數訓練完就固定</text>
+<text x="16" y="168" class="lg">S6（選擇性）</text><text x="16" y="190" class="sm">參數由輸入算出</text>
+<rect x="168" y="53" width="14" height="22" rx="2" class="b-d"/>
+<rect x="188" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="198" y="70" class="mid sm" style="fill:var(--ink)">B</text>
+<rect x="212" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="222" y="70" class="mid sm" style="fill:var(--ink)">C</text>
+<text x="200" y="98" class="mid sm">t = 1</text>
+<rect x="168" y="161" width="14" height="44" rx="2" class="b-d"/>
+<rect x="188" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="198" y="200" class="mid" style="font-size:10.5px">B₁</text>
+<rect x="212" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="222" y="200" class="mid" style="font-size:10.5px">C₁</text>
+<path d="M200,246 V212" class="a-x" marker-end="url(#ar-x)"/>
+<rect x="170" y="248" width="60" height="30" rx="6" class="b-x"/><text x="200" y="268" class="mid tx">重要</text>
+<rect x="263" y="53" width="14" height="22" rx="2" class="b-d"/>
+<rect x="283" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="293" y="70" class="mid sm" style="fill:var(--ink)">B</text>
+<rect x="307" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="317" y="70" class="mid sm" style="fill:var(--ink)">C</text>
+<text x="295" y="98" class="mid sm">t = 2</text>
+<rect x="263" y="200" width="14" height="5" rx="2" class="b-d"/>
+<rect x="283" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="293" y="200" class="mid" style="font-size:10.5px">B₂</text>
+<rect x="307" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="317" y="200" class="mid" style="font-size:10.5px">C₂</text>
+<path d="M295,246 V212" class="a-x" marker-end="url(#ar-x)"/>
+<rect x="265" y="248" width="60" height="30" rx="6" class="b-n"/><text x="295" y="268" class="mid tn">雜訊</text>
+<rect x="358" y="53" width="14" height="22" rx="2" class="b-d"/>
+<rect x="378" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="388" y="70" class="mid sm" style="fill:var(--ink)">B</text>
+<rect x="402" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="412" y="70" class="mid sm" style="fill:var(--ink)">C</text>
+<text x="390" y="98" class="mid sm">t = 3</text>
+<rect x="358" y="200" width="14" height="5" rx="2" class="b-d"/>
+<rect x="378" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="388" y="200" class="mid" style="font-size:10.5px">B₃</text>
+<rect x="402" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="412" y="200" class="mid" style="font-size:10.5px">C₃</text>
+<path d="M390,246 V212" class="a-x" marker-end="url(#ar-x)"/>
+<rect x="360" y="248" width="60" height="30" rx="6" class="b-n"/><text x="390" y="268" class="mid tn">雜訊</text>
+<rect x="453" y="53" width="14" height="22" rx="2" class="b-d"/>
+<rect x="473" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="483" y="70" class="mid sm" style="fill:var(--ink)">B</text>
+<rect x="497" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="507" y="70" class="mid sm" style="fill:var(--ink)">C</text>
+<text x="485" y="98" class="mid sm">t = 4</text>
+<rect x="453" y="161" width="14" height="44" rx="2" class="b-d"/>
+<rect x="473" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="483" y="200" class="mid" style="font-size:10.5px">B₄</text>
+<rect x="497" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="507" y="200" class="mid" style="font-size:10.5px">C₄</text>
+<path d="M485,246 V212" class="a-x" marker-end="url(#ar-x)"/>
+<rect x="455" y="248" width="60" height="30" rx="6" class="b-x"/><text x="485" y="268" class="mid tx">重要</text>
+<rect x="548" y="53" width="14" height="22" rx="2" class="b-d"/>
+<rect x="568" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="578" y="70" class="mid sm" style="fill:var(--ink)">B</text>
+<rect x="592" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="602" y="70" class="mid sm" style="fill:var(--ink)">C</text>
+<text x="580" y="98" class="mid sm">t = 5</text>
+<rect x="548" y="200" width="14" height="5" rx="2" class="b-d"/>
+<rect x="568" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="578" y="200" class="mid" style="font-size:10.5px">B₅</text>
+<rect x="592" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="602" y="200" class="mid" style="font-size:10.5px">C₅</text>
+<path d="M580,246 V212" class="a-x" marker-end="url(#ar-x)"/>
+<rect x="550" y="248" width="60" height="30" rx="6" class="b-n"/><text x="580" y="268" class="mid tn">雜訊</text>
+<rect x="643" y="53" width="14" height="22" rx="2" class="b-d"/>
+<rect x="663" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="673" y="70" class="mid sm" style="fill:var(--ink)">B</text>
+<rect x="687" y="55" width="20" height="20" rx="3" class="b-faint"/><text x="697" y="70" class="mid sm" style="fill:var(--ink)">C</text>
+<text x="675" y="98" class="mid sm">t = 6</text>
+<rect x="643" y="161" width="14" height="44" rx="2" class="b-d"/>
+<rect x="663" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="673" y="200" class="mid" style="font-size:10.5px">B₆</text>
+<rect x="687" y="185" width="20" height="20" rx="3" class="b-faint"/><text x="697" y="200" class="mid" style="font-size:10.5px">C₆</text>
+<path d="M675,246 V212" class="a-x" marker-end="url(#ar-x)"/>
+<rect x="645" y="248" width="60" height="30" rx="6" class="b-x"/><text x="675" y="268" class="mid tx">重要</text>
+<path d="M16,124 H744" class="s-line s-dash"/>
+<text x="16" y="268" class="sm">輸入 xₜ</text><text x="16" y="230" class="sm">↑ Linear</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 6.1 S4 與 S6。</b>紅色柱的高度代表 Δ 的大小。S4 對每個 token 都用同一組參數；S6 由每個 token 自己算出 Δ、B、C，所以能讓重要 token 的 Δ 大（寫入）、雜訊 token 的 Δ 小（略過）。在張量形狀上，參數從 (D, N) 變成 (B, L, N)，多出的 L 就代表「每個時間點都不一樣」。</figcaption>
+  </figure>
+
+  <h3>6.2 三個選擇性參數各管什麼</h3>
+  <div class="prose">
+    <ul class="plain">
+      <li><strong><span class="cd">Δ</span>：專注還是忽略。</strong>Δ 大 → 舊狀態被大幅衰減、當下輸入大量寫入（「這很重要，記下來」）；Δ 小 → 狀態幾乎不動、當下輸入幾乎被忽略（「這是雜訊，跳過」）。它扮演的正是 RNN 閘門的角色。</li>
+      <li><strong>B：輸入怎麼寫進狀態。</strong>決定當下輸入要寫到 N 個狀態值中的哪些、寫多少。</li>
+      <li><strong>C：怎麼從狀態讀出。</strong>決定此刻要從記憶中取出哪些資訊來產生輸出。</li>
+    </ul>
+    <p>論文的消融實驗（ablation，把某個元件拿掉或換掉，看效果差多少）顯示 Δ 最關鍵，但三個一起變成選擇性時效果最好：</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 720 230" role="img" aria-label="消融實驗:哪些參數設成選擇性時的 perplexity,三者皆選擇性時最低為 8.71">
+<text x="168" y="33" class="end">都不選擇（LTI）</text>
+<rect x="180" y="16" width="437.2" height="24" rx="4" class="b-faint"/>
+<text x="625.2" y="33" style="font-weight:700">10.93</text>
+<text x="168" y="71" class="end">只有 B 選擇性</text>
+<rect x="180" y="54" width="406.0" height="24" rx="4" class="b-faint"/>
+<text x="594.0" y="71" style="font-weight:700">10.15</text>
+<text x="168" y="109" class="end">只有 C 選擇性</text>
+<rect x="180" y="92" width="399.2" height="24" rx="4" class="b-faint"/>
+<text x="587.2" y="109" style="font-weight:700">9.98</text>
+<text x="168" y="147" class="end">只有 Δ 選擇性</text>
+<rect x="180" y="130" width="392.4" height="24" rx="4" class="b-d"/>
+<text x="580.4" y="147" style="font-weight:700">9.81</text>
+<text x="168" y="185" class="end">Δ、B、C 全部</text>
+<rect x="180" y="168" width="348.4" height="24" rx="4" class="b-h"/>
+<text x="536.4" y="185" style="font-weight:700">8.71</text>
+<path d="M180,8 V206" class="s-ink"/>
+<text x="180" y="222" class="sm">perplexity（越短越好；橫軸從 0 開始）</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 6.2 哪些參數要做成選擇性？</b>約 3.5 億參數的語言模型，數字是 perplexity（困惑度），<b>越低越好</b>。困惑度可以理解成模型猜下一個字時「平均在幾個選項之間猶豫」。資料來源：論文 Table 7。</figcaption>
+  </figure>
+
+  <h3>6.3 動手試試：固定 Δ vs. 選擇性 Δ</h3>
+  <div class="lab-box" id="demo">
+    <h4>任務：記住最近一個重要數字</h4>
+    <p class="hint">橘色 token 是要記住的數字，灰色是雜訊。狀態只有一個數字 <span class="m">h</span>，更新規則是 <span class="m">h</span> ← e<sup>−Δ</sup>·<span class="m">h</span> + (1 − e<sup>−Δ</sup>)·<span class="m">x</span>（也就是 A = −1、B = 1 的單一狀態 SSM）。目標：讓最後的 <span class="m">h</span> 等於最後一個橘色數字。</p>
+    <div class="ctrl">
+      <div class="seg" role="group" aria-label="Δ 的決定方式">
+        <button type="button" data-mode="lti" aria-pressed="true">固定 Δ(LTI)</button>
+        <button type="button" data-mode="sel" aria-pressed="false">依內容選 Δ（選擇性）</button>
+      </div>
+      <label id="slwrap">所有 token 共用的 Δ <input type="range" min="0" max="100" value="45" id="dslider" aria-describedby="dval"><b id="dval">0.089</b></label>
+    </div>
+    <div class="fig-scroll" style="padding:10px"><svg id="demoSvg" viewBox="0 0 720 300" role="img" aria-label="狀態 h 隨時間的變化"></svg></div>
+    <p class="readout" id="readout" aria-live="polite"></p>
+    <p class="hint" id="demoTip">在「依內容選 Δ」模式下，可以點擊任一個 token 切換它的 Δ（小 / 中 / 大），自己設計選擇規則。</p>
+  </div>
+  <div class="prose">
+    <p>玩過之後會發現：<strong>固定 Δ 怎麼調都兩難</strong>。Δ 小，狀態不會被雜訊沖掉，但也來不及吸收新的重要數字；Δ 大，能記住新數字，但很快又被後面的雜訊覆蓋。只有讓 Δ 依內容而變，才能同時做到「該記就記、該忽略就忽略」。這正是選擇性複製任務在測的能力。</p>
+  </div>
+
+  <h3>6.4 原來 LSTM 的閘門是它的特例</h3>
+  <div class="prose">
+    <p>論文的定理 1 說：如果把選擇性 SSM 設成最簡單的情況（狀態只有 1 維 N = 1、A = −1、B = 1、Δ<sub>t</sub> = softplus(Linear(<span class="m cx">x<sub>t</sub></span>))），它的遞迴式會剛好變成：</p>
+  </div>
+  <div class="eq">
+    <span class="row"><span class="cd">g<sub>t</sub></span> = σ( Linear(<span class="cx">x<sub>t</sub></span>) ) &nbsp;&nbsp;&nbsp;&nbsp; <span class="ch">h<sub>t</sub></span> = (1 − <span class="cd">g<sub>t</sub></span>)·<span class="ch">h<sub>t−1</sub></span> + <span class="cd">g<sub>t</sub></span>·<span class="cx">x<sub>t</sub></span></span>
+  </div>
+  <div class="prose">
+    <p>這就是第 1 節圖 1.2 的閘門公式。也就是說，RNN 的閘門可以看成「選擇性 SSM 離散化之後的結果」，而 Δ 就是閘門的一般化版本。這個連結很重要：它說明選擇機制不是憑空發明，而是把 RNN 界多年來的經驗，用 SSM 的理論框架重新整理。</p>
+  </div>
+  <details class="proof">
+    <summary>展開推導（只用到指數與對數）</summary>
+    <div>
+      <p>令 z = Linear(<span class="m">x<sub>t</sub></span>)，則 Δ = softplus(z) = log(1 + e<sup>z</sup>)。</p>
+      <p><span class="bar">A</span> = exp(Δ·A) = exp(−log(1 + e<sup>z</sup>)) = 1 / (1 + e<sup>z</sup>) = σ(−z) = 1 − σ(z)。</p>
+      <p>A = −1、B = 1 時，精確的 <span class="bar">B</span> = (ΔA)<sup>−1</sup>(exp(ΔA) − 1)·Δ·B = 1 − exp(−Δ) = 1 − <span class="bar">A</span> = σ(z)。</p>
+      <p>令 g = σ(z)，代入 <span class="m">h<sub>t</sub></span> = <span class="bar">A</span>·<span class="m">h<sub>t−1</sub></span> + <span class="bar">B</span>·<span class="m">x<sub>t</sub></span>，得到 <span class="m">h<sub>t</sub></span> = (1 − g)·<span class="m">h<sub>t−1</sub></span> + g·<span class="m">x<sub>t</sub></span>。證畢。</p>
+    </div>
+  </details>
+
+  <h3>6.5 選擇帶來的三種能力</h3>
+  <div class="prose">
+    <ul class="plain">
+      <li><strong>過濾雜訊：</strong>重要資訊之間夾雜無關內容（像口語中的「嗯」「那個」）時，可以直接略過。</li>
+      <li><strong>越長越好：</strong>很多模型給它更長的上下文反而變差，因為無法忽略不相干的內容。選擇性模型可以在需要時「重設」狀態、丟掉多餘的歷史，所以上下文越長，表現理論上只會更好。</li>
+      <li><strong>邊界重設：</strong>訓練時常把多篇不相關的文件接成一條長序列。LTI 模型會讓前一篇的資訊「滲」到下一篇；選擇性模型在文件交界處把 Δ 調到很大，就能清空狀態重新開始。</li>
+    </ul>
+  </div>
+  <div class="intu"><span class="lab">但是，天下沒有白吃的午餐</span>
+    <p>參數隨輸入而變，模型就不再是 LTI，第 5.3 節的卷積核 <span class="m">K</span> 不再固定，<strong>捲積這條快速訓練的路就斷了</strong>。只剩遞迴可以算，而遞迴又要一步一步排隊、還要處理 D×N 這麼大的狀態。下一節就是作者怎麼把它變快。</p>
+  </div>
+  <div class="recap"><span class="lab">本節帶走</span>
+    <ul class="plain">
+      <li>選擇機制 = 讓 Δ、B、C 由當下輸入算出；模型從「時不變」變成「時變」。</li>
+      <li>Δ 是最關鍵的參數，本質上是一般化的 RNN 閘門。</li>
+      <li>代價：不能再用捲積加速訓練。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="scan">
+  <h2><span class="n">7</span>讓它跑得快：硬體感知的 selective scan</h2>
+  <p class="lede">選擇機制讓模型變聰明，也讓它變得難算。作者結合三個經典技巧，讓它在 GPU 上真的跑得快。</p>
+  <div class="prose">
+    <p>先看問題有多大。狀態的形狀是 (B, L, D, N)：批次大小 × 序列長度 × 通道數 × 狀態維度，比輸入 (B, L, D) 大了 N 倍（N 常是 16）。如果照教科書的寫法，把每一步的狀態都存進 HBM 再讀出來，大部分時間會花在搬資料上（回想第 3 節的 memory-bound）。</p>
+  </div>
+
+  <h3>技巧一：核心融合（kernel fusion）</h3>
+  <div class="prose"><p>與其分好幾個步驟、每步都把巨大的中間結果寫回 HBM，不如把整串工作<strong>塞進同一個 GPU 程式（kernel）</strong>，在 SRAM 裡一次做完，只把最後的小結果寫回去。</p></div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 760 300" role="img" aria-label="一般實作在 HBM 與 SRAM 之間來回搬運三次大型中間結果;Mamba 的融合核心只讀一次參數、只寫一次輸出">
+        <text x="190" y="24" class="mid lg">一般實作</text>
+        <rect x="30" y="40" width="320" height="86" rx="10" class="b-h"/>
+        <text x="190" y="66" class="mid th">SRAM</text>
+        <text x="190" y="90" class="mid sm">離散化、scan、乘以 C 分三次做</text>
+        <text x="190" y="110" class="mid sm">每次結束都把結果寫回 HBM</text>
+        <rect x="30" y="206" width="320" height="70" rx="10" class="b-faint"/>
+        <text x="190" y="236" class="mid">HBM</text>
+        <text x="190" y="258" class="mid sm">存著 Ā、B̄、h：每個都是 (B, L, D, N)</text>
+        <path d="M70,202 V130" class="a-x" marker-end="url(#ar-x)"/><path d="M100,130 V202" class="a-d" marker-end="url(#ar-d)"/>
+        <path d="M160,202 V130" class="a-x" marker-end="url(#ar-x)"/><path d="M190,130 V202" class="a-d" marker-end="url(#ar-d)"/>
+        <path d="M250,202 V130" class="a-x" marker-end="url(#ar-x)"/><path d="M280,130 V202" class="a-d" marker-end="url(#ar-d)"/>
+        <text x="292" y="170" class="sm">大量來回</text>
+
+        <text x="570" y="24" class="mid lg">Mamba 的融合核心</text>
+        <rect x="410" y="40" width="320" height="86" rx="10" class="b-h"/>
+        <text x="570" y="66" class="mid th">SRAM</text>
+        <text x="570" y="90" class="mid sm">離散化 → scan → 乘以 C</text>
+        <text x="570" y="110" class="mid sm">一次做完，N 倍大的狀態只存在這裡</text>
+        <rect x="410" y="206" width="320" height="70" rx="10" class="b-faint"/>
+        <text x="570" y="236" class="mid">HBM</text>
+        <text x="570" y="258" class="mid sm">只存輸入的 Δ、A、B、C 與輸出 y</text>
+        <path d="M520,202 V130" class="a-x" marker-end="url(#ar-x)"/><text x="512" y="172" class="sm end">讀 Δ, A, B, C</text>
+        <path d="M620,130 V202" class="a-d" marker-end="url(#ar-d)"/><text x="630" y="172" class="sm">只寫 y</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 7.1 少搬資料就是加速。</b>橘色箭頭是讀、紅色箭頭是寫。融合之後，記憶體讀寫量大約少了 N 倍。序列太長、SRAM 放不下時，就切成幾段依序處理，段與段之間只要傳遞當時的狀態即可。</figcaption>
+  </figure>
+
+  <h3>技巧二：平行掃描（parallel scan）</h3>
+  <div class="prose">
+    <p>遞迴不是一定要排隊嗎？關鍵觀察是：每一步 <span class="m">h<sub>t</sub></span> = <span class="m">a<sub>t</sub></span>·<span class="m">h<sub>t−1</sub></span> + <span class="m">b<sub>t</sub></span>（這裡 <span class="m">a<sub>t</sub></span> = <span class="bar">A</span><sub>t</sub>、<span class="m">b<sub>t</sub></span> = <span class="bar">B</span><sub>t</sub><span class="m">x<sub>t</sub></span>）都是一個「線性函數」。兩個線性函數接起來，還是線性函數：</p>
+  </div>
+  <div class="eq">
+    <span class="row">先做 (a₁, b₁) 再做 (a₂, b₂):&nbsp; a₂(a₁h + b₁) + b₂ = (a₂a₁)·h + (a₂b₁ + b₂)</span>
+    <span class="row">所以「合併」規則是：(a₁, b₁) ⊕ (a₂, b₂) = (a₁a₂, a₂b₁ + b₂)</span>
+  </div>
+  <div class="prose">
+    <p>這個合併符合<strong>結合律</strong>（先合併前兩個或先合併後兩個，結果相同），所以可以像淘汰賽一樣兩兩配對、同時合併，不必從頭排隊。</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 760 296" role="img" aria-label="平行掃描:八個步驟兩兩合併,三輪就合併完成,每一輪內的合併可以同時進行">
+<rect x="77.0" y="236" width="66" height="30" rx="6" class="b-x"/><text x="110.0" y="256" class="mid">第1步</text>
+<rect x="162.0" y="236" width="66" height="30" rx="6" class="b-x"/><text x="195.0" y="256" class="mid">第2步</text>
+<rect x="247.0" y="236" width="66" height="30" rx="6" class="b-x"/><text x="280.0" y="256" class="mid">第3步</text>
+<rect x="332.0" y="236" width="66" height="30" rx="6" class="b-x"/><text x="365.0" y="256" class="mid">第4步</text>
+<rect x="417.0" y="236" width="66" height="30" rx="6" class="b-x"/><text x="450.0" y="256" class="mid">第5步</text>
+<rect x="502.0" y="236" width="66" height="30" rx="6" class="b-x"/><text x="535.0" y="256" class="mid">第6步</text>
+<rect x="587.0" y="236" width="66" height="30" rx="6" class="b-x"/><text x="620.0" y="256" class="mid">第7步</text>
+<rect x="672.0" y="236" width="66" height="30" rx="6" class="b-x"/><text x="705.0" y="256" class="mid">第8步</text>
+<path d="M110.0,236 L152.5,196" class="s-mute"/>
+<path d="M195.0,236 L152.5,196" class="s-mute"/>
+<rect x="120.5" y="166" width="64" height="30" rx="6" class="b-faint"/><text x="152.5" y="186" class="mid">1–2</text>
+<path d="M280.0,236 L322.5,196" class="s-mute"/>
+<path d="M365.0,236 L322.5,196" class="s-mute"/>
+<rect x="290.5" y="166" width="64" height="30" rx="6" class="b-faint"/><text x="322.5" y="186" class="mid">3–4</text>
+<path d="M450.0,236 L492.5,196" class="s-mute"/>
+<path d="M535.0,236 L492.5,196" class="s-mute"/>
+<rect x="460.5" y="166" width="64" height="30" rx="6" class="b-faint"/><text x="492.5" y="186" class="mid">5–6</text>
+<path d="M620.0,236 L662.5,196" class="s-mute"/>
+<path d="M705.0,236 L662.5,196" class="s-mute"/>
+<rect x="630.5" y="166" width="64" height="30" rx="6" class="b-faint"/><text x="662.5" y="186" class="mid">7–8</text>
+<path d="M152.5,166 L237.5,126" class="s-mute"/>
+<path d="M322.5,166 L237.5,126" class="s-mute"/>
+<rect x="205.5" y="96" width="64" height="30" rx="6" class="b-faint"/><text x="237.5" y="116" class="mid">1–4</text>
+<path d="M492.5,166 L577.5,126" class="s-mute"/>
+<path d="M662.5,166 L577.5,126" class="s-mute"/>
+<rect x="545.5" y="96" width="64" height="30" rx="6" class="b-faint"/><text x="577.5" y="116" class="mid">5–8</text>
+<path d="M237.5,96 L407.5,56" class="s-mute"/>
+<path d="M577.5,96 L407.5,56" class="s-mute"/>
+<rect x="369.5" y="26" width="76" height="30" rx="6" class="b-h"/><text x="407.5" y="46" class="mid">1–8</text>
+<text x="8" y="186" class="sm">第 1 輪</text>
+<text x="8" y="116" class="sm">第 2 輪</text>
+<text x="8" y="46" class="sm">第 3 輪</text>
+<text x="8" y="256" class="sm">8 步</text>
+<text x="8" y="284" class="sm">每個方框都是一組 (a, b)；同一輪的合併彼此獨立，可以同時進行</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 7.2 平行掃描的「往上合併」階段。</b>8 個步驟，排隊要做 7 次；兩兩同時合併只要 3 輪（log₂8）。要得到每一個 <span class="m">h<sub>t</sub></span>（而不只是最後一個），還需要一個類似的「往下分發」階段，同樣是 log 輪。這和計算前綴和（prefix sum）的經典演算法（Blelloch, 1990）是同一個概念。</figcaption>
+  </figure>
+  <div class="intu"><span class="lab">直覺：全班算總分</span>
+    <p>排隊算法是第一個人算完交給第二個人加，一路傳到最後。平行算法是先兩人一組相加，再組與組相加，幾輪就算完。人多（GPU 的運算單元很多）時，後者快得多。</p>
+  </div>
+
+  <h3>技巧三：重新計算（recomputation）</h3>
+  <div class="prose">
+    <p>訓練時，反向傳播需要用到前向計算的中間狀態。正常做法是把它們存起來，但那正是 N 倍大的東西。Mamba 選擇<strong>不存</strong>，等反向傳播需要時再從輸入<strong>重算一次</strong>。聽起來浪費，但因為「重算」比「從 HBM 讀回 N 倍大的資料」還快，整體反而更省。結果是 Mamba 層的記憶體用量，和使用 FlashAttention 的最佳化 Transformer 差不多。</p>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><div class="v">20–40×</div><div class="l">比一般 PyTorch 寫法的 scan 更快</div></div>
+    <div class="stat"><div class="v">&gt; 2K</div><div class="l">序列長度超過約 2,000 後，比 FlashAttention-2 還快</div></div>
+    <div class="stat"><div class="v">≈ 相同</div><div class="l">訓練記憶體用量與 FlashAttention Transformer 相當</div></div>
+  </div>
+  <div class="recap"><span class="lab">本節帶走</span>
+    <ul class="plain">
+      <li>融合：大狀態只活在 SRAM 裡，不寫回 HBM。</li>
+      <li>平行掃描：線性遞迴的合併符合結合律，可以 log 輪完成。</li>
+      <li>重算：中間狀態反向傳播時再算，省記憶體也省時間。</li>
+    </ul>
+  </div>
+</section>
+<!-- ============ 8 ============ -->
+<section id="block">
+  <h2><span class="n">8</span>Mamba 架構：把積木組起來</h2>
+  <p class="lede">選擇性 SSM 只是一個「序列轉換層」，還要放進完整的神經網路裡。Mamba 的設計原則是簡單：只用一種區塊，重複堆疊。</p>
+  <div class="prose">
+    <p>以往的 SSM 語言模型（如 H3）會把「含 SSM 的區塊」和「MLP 前饋區塊」交錯堆疊，就像 Transformer 交錯 attention 和 MLP 一樣。Mamba 把這兩者<strong>合併成一個區塊</strong>:</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 760 470" role="img" aria-label="Mamba 區塊:輸入分成兩條分支。主分支經 Linear、Conv1d、SiLU、選擇性 SSM;閘門分支經 Linear、SiLU;兩者相乘後經 Linear 輸出">
+        <rect x="160" y="424" width="140" height="34" rx="7" class="b-faint"/><text x="230" y="446" class="mid">輸入（D 維）</text>
+        <path d="M230,424 V404 H130 V388" class="s-ink" marker-end="url(#ar-ink)"/>
+        <path d="M230,404 H340 V388" class="s-ink" marker-end="url(#ar-ink)"/>
+        <text x="130" y="416" class="sm mid">主分支</text><text x="340" y="416" class="sm mid">閘門分支</text>
+
+        <rect x="65" y="350" width="130" height="36" rx="7" class="b-panel"/><text x="130" y="373" class="mid">① Linear ↑</text>
+        <path d="M130,350 V328" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="65" y="290" width="130" height="36" rx="7" class="b-panel"/><text x="130" y="313" class="mid">② Conv1d</text>
+        <path d="M130,290 V268" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="65" y="230" width="130" height="36" rx="7" class="b-panel"/><text x="130" y="253" class="mid">③ SiLU</text>
+        <path d="M130,230 V206" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="45" y="150" width="170" height="54" rx="9" class="b-h"/><text x="130" y="174" class="mid th">④ 選擇性 SSM</text><text x="130" y="194" class="mid sm">Δ、B、C 由輸入算出</text>
+        <path d="M130,150 V100 H212" class="s-ink" marker-end="url(#ar-ink)"/>
+
+        <rect x="275" y="350" width="130" height="36" rx="7" class="b-panel"/><text x="340" y="373" class="mid">① Linear ↑</text>
+        <path d="M340,350 V268" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="275" y="230" width="130" height="36" rx="7" class="b-panel"/><text x="340" y="253" class="mid">③ SiLU</text>
+        <path d="M340,230 V100 H248" class="s-ink" marker-end="url(#ar-ink)"/>
+
+        <circle cx="230" cy="100" r="17" class="b-d"/><text x="230" y="106" class="mid td" style="font-size:17px">⊗</text>
+        <text x="230" y="134" class="mid sm">⑤ 相乘</text>
+        <path d="M230,83 V66" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="165" y="28" width="130" height="36" rx="7" class="b-panel"/><text x="230" y="51" class="mid">⑥ Linear ↓</text>
+        <path d="M295,46 H338" class="s-ink" marker-end="url(#ar-ink)"/><text x="344" y="51">輸出（D 維）</text>
+
+        <path d="M450,20 V450" class="s-line s-dash"/>
+        <text x="600" y="30" class="mid lg">它從哪裡來？</text>
+        <rect x="470" y="50" width="125" height="96" rx="9" class="b-faint"/>
+        <text x="532" y="78" class="mid">H3 區塊</text>
+        <text x="532" y="102" class="mid sm">SSM 夾在</text><text x="532" y="120" class="mid sm">兩個乘法閘門中間</text>
+        <rect x="610" y="50" width="125" height="96" rx="9" class="b-faint"/>
+        <text x="672" y="78" class="mid">Gated MLP</text>
+        <text x="672" y="102" class="mid sm">Transformer 常用的</text><text x="672" y="120" class="mid sm">前饋層（SwiGLU）</text>
+        <path d="M532,146 L590,196" class="s-ink" marker-end="url(#ar-ink)"/>
+        <path d="M672,146 L612,196" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="535" y="200" width="130" height="50" rx="9" class="b-h"/><text x="600" y="231" class="mid th">Mamba 區塊</text>
+        <text x="470" y="290" class="sm">以前：SSM 區塊與 MLP 區塊交錯堆疊</text>
+        <text x="470" y="312" class="sm">Mamba：只重複堆疊同一種區塊</text>
+        <text x="470" y="350" class="sm">對比 Gated MLP：多了 Conv + SSM 這條路</text>
+        <text x="470" y="372" class="sm">對比 H3：第一個乘法閘門換成激活函數</text>
+        <text x="470" y="410" class="sm">兩個 Mamba 區塊的參數量</text>
+        <text x="470" y="432" class="sm">≈ 一層 Transformer(attention + MLP)</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 8.1 一個 Mamba 區塊。</b>左半是細部結構，右半說明它是由哪兩種既有區塊合併而來。</figcaption>
+  </figure>
+  <div class="prose">
+    <ol class="plain">
+      <li><strong>Linear ↑（擴展）：</strong>用矩陣乘法把維度從 D 放大到 E·D（論文固定 E = 2）。兩條分支各有一個。更寬的空間讓 SSM 有更多通道可用。</li>
+      <li><strong>Conv1d（短捲積）：</strong>卷積核很短（實作上長度 4），在進 SSM 前先把左右相鄰幾個 token 的資訊混一下，處理局部的小模式。</li>
+      <li><strong>SiLU：</strong>激活函數 SiLU(x) = x·σ(x)，是平滑、非線性的「開關」。整個區塊的非線性主要來自這裡，因為 SSM 本身是線性的。</li>
+      <li><strong>選擇性 SSM：</strong>第 6 節的主角，負責沿著序列方向傳遞、挑選資訊。這是整個區塊裡唯一讓不同 token 之間交換資訊的地方。</li>
+      <li><strong>相乘（閘控）：</strong>閘門分支的輸出與 SSM 的輸出逐元素相乘，決定每個維度放行多少。注意這種「架構上的乘法閘門」只在同一個 token 內作用，和沿時間方向挑選資訊的「選擇機制」是兩回事；論文特別強調，光有前者無法解決選擇性複製任務。</li>
+      <li><strong>Linear ↓（縮回）：</strong>把維度縮回 D，好跟殘差相加。</li>
+    </ol>
+  </div>
+  <h3>整個模型</h3>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 720 420" role="img" aria-label="完整 Mamba 語言模型:token 經 embedding,經過 n 層『正規化、Mamba 區塊、殘差相加』,再經正規化與輸出層,得到下一個字的機率">
+        <text x="260" y="408" class="mid sm">輸入 token</text>
+        <path d="M260,392 V368" class="a-x" marker-end="url(#ar-x)"/>
+        <rect x="180" y="332" width="160" height="34" rx="7" class="b-x"/><text x="260" y="354" class="mid">Embedding</text>
+        <path d="M260,332 V304" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="110" y="140" width="300" height="162" rx="12" class="b-faint s-dash"/>
+        <text x="124" y="166" class="lg">× n 層</text>
+        <circle cx="260" cy="284" r="3.5" class="f-ink"/>
+        <path d="M260,284 V268" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="200" y="236" width="120" height="30" rx="7" class="b-panel"/><text x="260" y="256" class="mid">Norm</text>
+        <path d="M260,236 V214" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="180" y="172" width="160" height="40" rx="8" class="b-h"/><text x="260" y="197" class="mid th">Mamba 區塊</text>
+        <path d="M260,172 V168" class="s-ink" marker-end="url(#ar-ink)"/>
+        <circle cx="260" cy="155" r="11" class="b-panel"/><text x="260" y="160" class="mid" style="font-size:15px">+</text>
+        <path d="M260,284 H375 V155 H273" class="s-mute" marker-end="url(#ar-mute)"/>
+        <text x="381" y="220" class="sm">殘差</text>
+        <path d="M260,144 V120" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="200" y="88" width="120" height="30" rx="7" class="b-panel"/><text x="260" y="108" class="mid">Norm</text>
+        <path d="M260,88 V66" class="s-ink" marker-end="url(#ar-ink)"/>
+        <rect x="170" y="30" width="180" height="34" rx="7" class="b-y"/><text x="260" y="52" class="mid ty">輸出層 → 下一個字的機率</text>
+        <text x="450" y="60" class="sm">Embedding：把每個 token 轉成 D 維向量</text>
+        <text x="450" y="110" class="sm">Norm：把數值尺度調整穩定</text>
+        <text x="450" y="130" class="sm">（實作用 RMSNorm）</text>
+        <text x="450" y="200" class="sm">殘差連接：把區塊的輸入直接</text>
+        <text x="450" y="220" class="sm">加回輸出，讓很深的網路也好訓練</text>
+        <text x="450" y="290" class="sm">沒有 attention、沒有獨立的 MLP 層</text>
+        <text x="450" y="310" class="sm">也不需要位置編碼：</text>
+        <text x="450" y="330" class="sm">遞迴本身就有先後順序</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 8.2 完整的 Mamba 語言模型。</b>結構和 Transformer 語言模型幾乎一樣，只是把每一層的「attention + MLP」換成一個 Mamba 區塊。</figcaption>
+  </figure>
+  <div class="recap"><span class="lab">本節帶走</span>
+    <ul class="plain">
+      <li>一個 Mamba 區塊 = 擴展 → 短捲積 → 選擇性 SSM，再乘上一條閘門分支，最後縮回。</li>
+      <li>整個網路只堆這一種區塊，加上正規化與殘差連接。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="train-infer">
+  <h2><span class="n">9</span>訓練與推論：同一個模型，兩種跑法</h2>
+  <p class="lede">訓練時整段序列都已知，用平行掃描一次算完；生成時字一個一個來，就切回最省的遞迴模式。</p>
+  <div class="prose">
+    <p><strong>訓練</strong>：整段文字都已經在手上，用第 7 節的平行 scan 沿著序列一次算完，成本隨長度線性成長。</p>
+    <p><strong>推論（生成）</strong>：每生成一個字，只要拿每一層手上的狀態 <span class="m ch">h</span>（大小 D×N）和短捲積需要的最後幾個 token，更新一次就好。不用 KV cache，不用回頭看歷史。</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 720 260" role="img" aria-label="生成時需保存的記憶:Transformer 的 KV cache 隨長度線性增加,Mamba 的狀態大小固定">
+        <path d="M70,30 V212 H660" class="s-ink" marker-end="url(#ar-ink)"/>
+        <text x="60" y="26" class="end sm">記憶</text>
+        <text x="660" y="236" class="end sm">已生成的長度</text>
+        <path d="M70,205 L640,52" class="a-y" style="stroke-width:3"/>
+        <text x="420" y="96" class="ty">Transformer：KV cache 一直變大</text>
+        <path d="M70,170 H640" class="a-h" style="stroke-width:3"/>
+        <text x="420" y="160" class="th">Mamba：狀態大小固定</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 9.1 生成時要保存多少東西（示意）。</b>記憶體省下來，同一張 GPU 就能同時服務更多請求（更大的 batch），這是 Mamba 生成吞吐量比同規模 Transformer 高 4 到 5 倍的主因。</figcaption>
+  </figure>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>訓練（長度 L 的序列）</th><th>生成一個新 token</th><th>生成時要保存的記憶</th></tr></thead>
+      <tbody>
+        <tr><td>Transformer</td><td>O(L²)</td><td>O(L)：要讀整個快取</td><td>KV cache，隨 L 成長</td></tr>
+        <tr class="hl"><td><strong>Mamba</strong></td><td>O(L)</td><td>O(1)：只更新狀態</td><td>固定大小的狀態</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="results">
+  <h2><span class="n">10</span>實驗結果：它真的有效嗎？</h2>
+  <p class="lede">論文在人工任務、語言、DNA、音訊四類資料上驗證。以下挑重點。</p>
+  <div class="stat-row">
+    <div class="stat"><div class="v">99.8%</div><div class="l">選擇性複製任務準確率（舊式 S4 僅 18.3%）</div></div>
+    <div class="stat"><div class="v">4000×</div><div class="l">Induction heads：訓練長度 256，測到 100 萬仍全對</div></div>
+    <div class="stat"><div class="v">5×</div><div class="l">生成吞吐量，相對同規模 Transformer</div></div>
+  </div>
+  <h3>人工任務：選擇機制是關鍵</h3>
+  <div class="prose">
+    <p>選擇性複製任務中，作者把「架構」和「內層用哪種 SSM」分開比較，結果很清楚：<strong>換成選擇性 SSM(S6)才是決定性的改進</strong>，架構上的閘門只能幫一點忙。</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>架構</th><th>內層</th><th class="c">準確率</th></tr></thead>
+      <tbody>
+        <tr><td>無閘門</td><td>S4(LTI)</td><td class="c">18.3%</td></tr>
+        <tr><td>無閘門</td><td>S6（選擇性）</td><td class="c">97.0%</td></tr>
+        <tr><td>H3</td><td>S4</td><td class="c">57.0%</td></tr>
+        <tr><td>H3</td><td>Hyena（LTI 長捲積）</td><td class="c">30.1%</td></tr>
+        <tr><td>Mamba</td><td>S4</td><td class="c">56.4%</td></tr>
+        <tr class="hl"><td>Mamba</td><td>S6</td><td class="c"><strong>99.8%</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p>Induction heads 任務中，模型在長度 256 的序列上訓練，再測試更長的序列。Mamba 一路到長度約 100 萬（訓練長度的 4000 倍）都保持完美；各種 attention 變體超過訓練長度約 2 倍就開始崩，而且到長度 16,384 後就因記憶體不足無法測試。</p>
+  </div>
+  <h3>語言模型：第一個追上 Transformer 的線性時間模型</h3>
+  <div class="prose">
+    <p>在 300B 個 token 的 Pile 資料集上訓練後，於多個常識推理基準測試做零樣本（zero-shot）評測。下圖是各模型的平均準確率：</p>
+  </div>
+  <figure class="wide">
+    <div class="fig-scroll">
+      <svg viewBox="0 0 720 250" role="img" aria-label="零樣本評測平均準確率:Mamba 2.8B 為 63.3,高於同規模的 Pythia 2.8B 59.1 與 RWKV 3B 59.6,也高於兩倍大的 Pythia 6.9B 61.7">
+<text x="148" y="31" class="end">Pythia-2.8B</text>
+<rect x="160" y="14" width="378.2" height="24" rx="4" class="b-faint"/>
+<text x="546.2" y="31" style="font-weight:700">59.1</text>
+<text x="148" y="71" class="end">RWKV-3B</text>
+<rect x="160" y="54" width="381.4" height="24" rx="4" class="b-faint"/>
+<text x="549.4" y="71" style="font-weight:700">59.6</text>
+<text x="148" y="111" class="end">Mamba-2.8B</text>
+<rect x="160" y="94" width="405.1" height="24" rx="4" class="b-h"/>
+<text x="573.1" y="111" style="font-weight:700">63.3</text>
+<text x="148" y="151" class="end">Pythia-6.9B</text>
+<rect x="160" y="134" width="394.9" height="24" rx="4" class="b-faint"/>
+<text x="562.9" y="151" style="font-weight:700">61.7</text>
+<text x="148" y="191" class="end">RWKV-7.4B</text>
+<rect x="160" y="174" width="400.0" height="24" rx="4" class="b-faint"/>
+<text x="568.0" y="191" style="font-weight:700">62.5</text>
+<path d="M160,6 V214" class="s-ink"/>
+<text x="160" y="226" class="sm">平均準確率 %（越長越好；橫軸從 0 開始）</text>
+<path d="M30,132 H700" class="s-line s-dash"/><text x="700" y="126" class="end sm">↑ 約 3B 參數</text><text x="700" y="146" class="end sm">↓ 約兩倍大</text>
+      </svg>
+    </div>
+    <figcaption><b>圖 10.1 零樣本評測平均準確率（%）。</b>這些模型使用相同的分詞器、資料集與訓練量。Mamba-2.8B 超越同規模模型，也勝過兩倍大的 Pythia-6.9B。資料來源：論文 Table 3。</figcaption>
+  </figure>
+  <div class="prose">
+    <p>在規模定律（scaling laws）實驗中（1.25 億到 13 億參數），Mamba 是第一個追上「Transformer++」（採用 LLaMA、PaLM 等現代訓練配方的強化版 Transformer）的無 attention 模型，而且序列越長，優勢越明顯。</p>
+    <h3>DNA 與音訊：越長越好</h3>
+    <p>在人類基因組資料上，Mamba 用大約三到四分之一的參數就達到其他模型的水準；更重要的是，把上下文從約一千拉長到一百萬個鹼基時，Mamba 的表現持續變好，而 LTI 的 HyenaDNA 反而變差，這正好印證 6.5 節「越長越好」的論點。在音訊上，Mamba 也勝過先前最好的 SaShiMi，且在語音生成的品質指標上大幅領先。</p>
+  </div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="limits">
+  <h2><span class="n">11</span>限制與後續發展</h2>
+  <p class="lede">讀論文要同時看作者沒做到的部分。</p>
+  <div class="prose">
+    <h4>作者自己承認的限制</h4>
+    <ul class="plain">
+      <li><strong>規模：</strong>實驗最大只到約 30 億參數，遠小於主流大型語言模型。放大之後是否仍有優勢，論文發表時尚未驗證。</li>
+      <li><strong>連續與離散的取捨：</strong>選擇機制補強了文字、DNA 這類離散資料，但可能削弱舊式 SSM 原本擅長的連續訊號。論文的音訊實驗其實改用了複數版本的參數化，作者也明說這是一種取捨。</li>
+      <li><strong>生態系：</strong>Transformer 累積了大量配套技術（微調、提示、指令調整、RLHF、量化等），這些是否同樣適用於 SSM，仍待研究。</li>
+    </ul>
+    <h4>固有的取捨</h4>
+    <p>Mamba 終究是把歷史壓縮進固定大小的狀態。選擇機制讓它壓得聰明，但不可能無損。後續研究普遍觀察到，在需要逐字回想大量前文內容的任務（例如長段落的精確複製、從長文中查找特定細節）上，固定狀態的模型仍不如保留完整歷史的 attention。</p>
+    <h4>後續發展（延伸閱讀方向）</h4>
+    <ul class="plain">
+      <li><strong>Mamba-2</strong>（Dao &amp; Gu, 2024）：提出「狀態空間對偶性」，說明某類選擇性 SSM 和一種 attention 在數學上是同一件事的兩面，並藉此改用矩陣乘法來算，訓練更快。</li>
+      <li><strong>混合架構：</strong>例如 AI21 的 Jamba，把少量 attention 層和大量 Mamba 層混著堆，兼顧精確回想與長序列效率。這已成為很常見的設計方向。</li>
+      <li><strong>其他領域：</strong>Vision Mamba 等工作把它用在影像，以及醫療訊號、時間序列等長序列資料。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section id="recap">
+  <h2><span class="n">12</span>總整理與自我檢測</h2>
+  <div class="prose">
+    <p>把整份講義串成一段話：序列模型的核心問題是<strong>怎麼把過去壓縮成狀態</strong>。Transformer 不壓縮，效果好但貴；RNN 和舊式 SSM 壓縮成固定大小，便宜但不會挑。舊式 SSM 靠「參數固定」換來捲積式的快速訓練，卻也因此無法依內容做選擇。Mamba 讓 Δ、B、C 隨輸入改變，補上<strong>選擇能力</strong>；為了彌補失去的捲積加速，它用<strong>核心融合、平行掃描、重新計算</strong>在 GPU 上高效實作；最後用<strong>單一種區塊</strong>堆出整個網路。結果是訓練線性時間、生成每步固定成本，而且在語言上首次追平 Transformer。</p>
+  </div>
+  <h3>自我檢測</h3>
+  <details class="q"><summary>為什麼 Transformer 生成長文時會越來越慢？</summary><div>因為它不壓縮歷史：每個舊 token 的 key、value 都存在 KV cache 裡，每生成一個新字都要讀過整個快取，所以每步成本隨長度成長，記憶體也一直增加。</div></details>
+  <details class="q"><summary>舊式 SSM 為什麼能同時用遞迴和捲積來算？代價是什麼？</summary><div>因為參數在每個時間點都相同（LTI），展開後的係數 C<span class="bar">A</span><sup>k</sup><span class="bar">B</span> 與輸入無關，可以事先算成固定的卷積核。代價是它對每個 token 一視同仁，無法依內容選擇要記住或忽略什麼。</div></details>
+  <details class="q"><summary>Δ 大和 Δ 小分別代表什麼？</summary><div>Δ 大：舊狀態大幅衰減、當下輸入大量寫入，相當於「重設並專注在當下」。Δ 小：狀態幾乎不變、當下輸入幾乎被忽略，相當於「略過這個 token」。</div></details>
+  <details class="q"><summary>加了選擇機制後為什麼不能用捲積？Mamba 用什麼替代？</summary><div>參數隨輸入改變，卷積核就不再固定，捲積等價關係消失。Mamba 改用遞迴的平行掃描，搭配核心融合（大狀態只放在 SRAM）與重新計算，讓遞迴在 GPU 上也很快。</div></details>
+  <details class="q"><summary>LSTM 的閘門和 Mamba 的選擇機制有什麼關係？</summary><div>把選擇性 SSM 設成最簡單的情形（N = 1、A = −1、B = 1）時，離散化後的遞迴剛好就是 h<sub>t</sub> = (1 − g<sub>t</sub>)h<sub>t−1</sub> + g<sub>t</sub>x<sub>t</sub> 的閘門形式。所以閘門是選擇機制的特例，Δ 是閘門的一般化。</div></details>
+  <details class="q"><summary>Mamba 區塊裡的「乘法閘門分支」和「選擇機制」是同一件事嗎？</summary><div>不是。乘法閘門在同一個 token 的各個維度上作用，不會在不同時間點之間傳遞資訊；選擇機制則決定資訊如何沿著序列方向被保留或遺忘。論文實驗顯示，只有架構閘門而沒有選擇性 SSM，解不了選擇性複製任務。</div></details>
+
+  <h3>名詞對照表</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>名詞</th><th>白話說明</th></tr></thead>
+      <tbody>
+        <tr><td>Token</td><td>序列中的一個單位，例如一個字或詞的片段、一個音訊取樣點、一個 DNA 鹼基</td></tr>
+        <tr><td>隱藏狀態 h</td><td>模型對「到目前為止讀過的內容」的摘要</td></tr>
+        <tr><td>SSM（狀態空間模型）</td><td>用線性遞迴 <span class="m">h<sub>t</sub></span> = <span class="bar">A</span><span class="m">h<sub>t−1</sub></span> + <span class="bar">B</span><span class="m">x<sub>t</sub></span> 更新狀態的模型</td></tr>
+        <tr><td>離散化、步長 Δ</td><td>把連續時間系統轉成一步一步更新；Δ 決定每一步保留多少舊狀態</td></tr>
+        <tr><td>LTI（線性時不變）</td><td>參數在每個時間點都相同；可用捲積計算，但無法依內容選擇</td></tr>
+        <tr><td>S4 / S6</td><td>S4：結構化 SSM(LTI);S6：加上選擇機制並用 scan 計算的版本，也就是 Mamba 的核心層</td></tr>
+        <tr><td>選擇機制</td><td>讓 Δ、B、C 由當下輸入計算，模型才能決定記住或忽略</td></tr>
+        <tr><td>KV cache</td><td>Transformer 生成時保存的所有舊 token 的 key、value 向量</td></tr>
+        <tr><td>HBM / SRAM</td><td>GPU 上大而慢 / 小而快的兩層記憶體</td></tr>
+        <tr><td>Kernel fusion</td><td>把多個運算步驟合成一個 GPU 程式，避免中間結果來回搬運</td></tr>
+        <tr><td>Parallel scan</td><td>利用結合律，把遞迴計算改成兩兩合併，log 輪完成</td></tr>
+        <tr><td>Perplexity（困惑度）</td><td>語言模型的評分方式，越低代表預測下一個字越準</td></tr>
+        <tr><td>Ablation（消融實驗）</td><td>拿掉或替換某個元件，觀察效果變化，以判斷它的貢獻</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  講義內容依據 Gu &amp; Dao(2023)<em>Mamba: Linear-Time Sequence Modeling with Selective State Spaces</em>(arXiv:2312.00752)整理；圖表數字取自論文，示意圖為重新繪製。官方程式碼：github.com/state-spaces/mamba
+</footer>
+</main>
+</div>
+<script>
+(function(){
+  /* ---- TOC highlight ---- */
+  try{
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if(e.isIntersecting){
+            links.forEach(function(a){ a.classList.remove('on'); });
+            var a = map[e.target.id]; if(a) a.classList.add('on');
+          }
+        });
+      }, {rootMargin:'-20% 0px -70% 0px'});
+      document.querySelectorAll('main section[id]').forEach(function(s){ io.observe(s); });
+    }
+  }catch(err){}
+
+  /* ---- Δ selection demo ---- */
+  var svg = document.getElementById('demoSvg');
+  if(!svg) return;
+  var toks = [
+    {v:.9,d:true},{v:.2},{v:.3},{v:.1},{v:.25},{v:.15},{v:.6,d:true},{v:.2},{v:.1},{v:.3}
+  ];
+  var LEVELS = [0.005, 0.5, 3];
+  var LNAME = {0.005:'小', 0.5:'中', 3:'大'};
+  var sel = toks.map(function(t){ return t.d ? 3 : 0.005; });
+  var mode = 'lti';
+  var FCg = '\uff0c';
+  var slider = document.getElementById('dslider');
+  var dval = document.getElementById('dval');
+  var slwrap = document.getElementById('slwrap');
+  var readout = document.getElementById('readout');
+  var tip = document.getElementById('demoTip');
+  function ltiDelta(){ return 0.005 * Math.pow(600, slider.value/100); }
+  function deltas(){ var d = ltiDelta(); return toks.map(function(_,i){ return mode==='lti' ? d : sel[i]; }); }
+  function f2(n){ return n.toFixed(2); }
+  function render(){
+    var ds = deltas(), h = 0, hs = [], target = null, tg = [];
+    toks.forEach(function(t,i){
+      var a = Math.exp(-ds[i]);
+      h = a*h + (1-a)*t.v; hs.push(h);
+      if(t.d) target = t.v; tg.push(target);
+    });
+    var lv=ltiDelta(); dval.textContent = lv<0.1?lv.toFixed(3):f2(lv);
+    var W0 = 60, CW = 64, BASE = 280, SC = 160, s = '';
+    s += '<path d="M44,'+BASE+' H704" class="s-ink"/>';
+    s += '<text x="14" y="'+(BASE-SC)+'" class="sm">1.0</text><path d="M44,'+(BASE-SC)+' H704" class="s-line s-dash"/>';
+    s += '<text x="14" y="'+(BASE-SC/2+4)+'" class="sm">0.5</text><path d="M44,'+(BASE-SC/2)+' H704" class="s-line s-dash"/>';
+    s += '<text x="14" y="'+(BASE+4)+'" class="sm">0</text>';
+    toks.forEach(function(t,i){
+      var cx = W0 + CW*i + CW/2;
+      var clickable = mode==='sel';
+      s += '<g class="'+(clickable?'tokbtn':'')+'" data-i="'+i+'"'+(clickable?' tabindex="0" role="button" aria-label="第 '+(i+1)+' 個 token'+FCg+'數值 '+t.v+FCg+'Δ '+LNAME[sel[i]]+FCg+'按下切換"':'')+'>';
+      s += '<rect x="'+(cx-26)+'" y="8" width="52" height="34" rx="6" class="'+(t.d?'b-x':'b-n')+'"/>';
+      s += '<text x="'+cx+'" y="30" class="mid '+(t.d?'tx':'tn')+'">'+t.v+'</text>';
+      var lg = Math.log(ds[i]/0.005)/Math.log(600); var bh = 4 + 26*Math.max(0,Math.min(1,lg));
+      s += '<rect x="'+(cx-6)+'" y="'+(80-bh)+'" width="12" height="'+bh+'" rx="2" class="b-d"/>';
+      s += '<text x="'+cx+'" y="98" class="mid sm">Δ '+(ds[i]<0.1?ds[i].toFixed(3):ds[i].toFixed(1))+'</text>';
+      if(clickable) s += '<rect x="'+(cx-28)+'" y="4" width="56" height="100" fill="transparent"/>';
+      s += '</g>';
+      var bh2 = Math.max(1, hs[i]*SC);
+      s += '<rect x="'+(cx-14)+'" y="'+(BASE-bh2)+'" width="28" height="'+bh2+'" rx="3" class="b-h"/>';
+      s += '<text x="'+cx+'" y="'+(bh2>26 ? BASE-bh2+17 : BASE-bh2-6)+'" class="mid sm" style="fill:var(--ink)">'+f2(hs[i])+'</text>';
+      if(tg[i]!==null){ var ty = BASE - tg[i]*SC; s += '<path d="M'+(cx-30)+','+ty+' H'+(cx+30)+'" class="a-x s-dash"/>'; }
+    });
+    s += '<text x="704" y="'+(BASE+16)+'" class="sm end">時間 →</text>';
+    s += '<text x="44" y="'+(BASE+16)+'" class="sm">橘色虛線 = 應該記住的值\uff1b綠柱 = 狀態 h</text>';
+    svg.innerHTML = s;
+    svg.setAttribute('aria-label', '狀態 h 依序為 ' + hs.map(f2).join('、'));
+    var fin = hs[hs.length-1], goal = tg[tg.length-1], err = Math.abs(fin-goal);
+    // also check memory right before the second key token
+    var mid = hs[5], midErr = Math.abs(mid - 0.9);
+    var FC='\uff0c', CO='\uff1a', LP='\uff08', RP='\uff09';
+    var msg = '最後的 h = <b>'+f2(fin)+'</b>'+FC+'目標 <b>'+f2(goal)+'</b>'+LP+'誤差 '+f2(err)+RP+'。第二個數字出現前的 h = <b>'+f2(mid)+'</b>'+FC+'目標 0.90'+LP+'誤差 '+f2(midErr)+RP+'。';
+    if(mode==='lti'){
+      msg += (midErr+err < 0.12) ? '' : (ltiDelta() < 0.3 ? 'Δ 太小'+CO+'狀態反應太慢'+FC+'新的重要數字寫不進去。' : 'Δ 太大'+CO+'重要數字很快被後面的雜訊沖掉。');
+    } else {
+      msg += (midErr+err < 0.12) ? '兩段都記住了'+CO+'重要 token 用大 Δ 寫入'+FC+'雜訊用小 Δ 略過。' : '再調整看看'+CO+'哪些 token 應該用大 Δ\uff1f';
+    }
+    readout.innerHTML = msg;
+  }
+  svg.addEventListener('click', function(e){
+    if(mode!=='sel') return;
+    var g = e.target.closest('[data-i]'); if(!g) return;
+    cycle(+g.getAttribute('data-i'));
+  });
+  svg.addEventListener('keydown', function(e){
+    if(mode!=='sel') return;
+    if(e.key!=='Enter' && e.key!==' ') return;
+    var g = e.target.closest('[data-i]'); if(!g) return;
+    e.preventDefault(); var i = +g.getAttribute('data-i'); cycle(i);
+    var again = svg.querySelector('[data-i="'+i+'"]'); if(again) again.focus();
+  });
+  function cycle(i){ var k = LEVELS.indexOf(sel[i]); sel[i] = LEVELS[(k+1)%LEVELS.length]; render(); }
+  document.querySelectorAll('#demo .seg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      mode = b.getAttribute('data-mode');
+      document.querySelectorAll('#demo .seg button').forEach(function(x){ x.setAttribute('aria-pressed', x===b ? 'true':'false'); });
+      slwrap.style.display = mode==='lti' ? '' : 'none';
+      render();
+    });
+  });
+  slider.addEventListener('input', render);
+  render();
+})();
+</script>
+</body>
+</html>
