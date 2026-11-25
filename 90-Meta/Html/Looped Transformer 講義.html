@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Looped Transformer 講義</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3F6FA; --panel:#FFFFFF; --ink:#18202E; --muted:#596476;
+  --line:#DCE3EC; --line-strong:#98A4B6;
+  --blue:#2D5BD0; --blue-bg:#E5ECFC;
+  --teal:#0F7E68; --teal-bg:#DFF2EC;
+  --amber:#B8760A; --amber-bg:#FBEFD6;
+  --rose:#B9375F; --rose-bg:#F9E2EA;
+  --gray-bg:#EDF0F5; --grid:rgba(45,91,208,.055);
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU","Source Han Serif TC",serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#10141B; --panel:#171D27; --ink:#E3E8F0; --muted:#9BA6B7;
+    --line:#29323F; --line-strong:#58647A;
+    --blue:#82A5FF; --blue-bg:#1C2846;
+    --teal:#52CCAF; --teal-bg:#133229;
+    --amber:#F2B64C; --amber-bg:#382A10;
+    --rose:#F283A5; --rose-bg:#3C1B28;
+    --gray-bg:#202734; --grid:rgba(130,165,255,.045);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10141B; --panel:#171D27; --ink:#E3E8F0; --muted:#9BA6B7;
+  --line:#29323F; --line-strong:#58647A;
+  --blue:#82A5FF; --blue-bg:#1C2846;
+  --teal:#52CCAF; --teal-bg:#133229;
+  --amber:#F2B64C; --amber-bg:#382A10;
+  --rose:#F283A5; --rose-bg:#3C1B28;
+  --gray-bg:#202734; --grid:rgba(130,165,255,.045);
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background-color:var(--paper); color:var(--ink);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  font-family:var(--sans); font-size:17px; line-height:1.85;
+  -webkit-text-size-adjust:100%;
+}
+main{max-width:860px; margin:0 auto; padding:48px 20px 96px}
+a{color:var(--blue)}
+a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--amber); outline-offset:3px; border-radius:4px}
+
+/* hero */
+.hero{padding:8px 0 12px}
+.hero h1{font-family:var(--serif); font-weight:900; font-size:clamp(2rem,5.4vw,3.3rem); line-height:1.22; letter-spacing:.01em; margin:0 0 .35em}
+.hero h1 span{display:block; font-size:.48em; font-weight:700; color:var(--muted); letter-spacing:.04em; margin-top:.35em}
+.lede{font-size:1.08rem; color:var(--muted); max-width:36em; margin:0 0 20px}
+.hero-fig{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 14px 8px; margin:8px 0 0}
+
+/* toc */
+nav.toc{margin:36px 0 8px; padding:18px 22px; background:var(--panel); border:1px solid var(--line); border-radius:10px}
+nav.toc h2{font-family:var(--serif); font-size:1.1rem; margin:0 0 6px}
+nav.toc .toc-cols{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:4px 28px}
+nav.toc ol{margin:0; padding:0; list-style:none; font-size:.95rem; line-height:1.95}
+nav.toc .tno{display:inline-block; min-width:2.6em; font-family:var(--mono); font-size:.82em; color:var(--muted)}
+nav.toc .grp{font-weight:700; color:var(--muted); font-size:.85rem; margin:4px 0 2px}
+
+
+/* parts & sections */
+.part{margin:80px 0 4px; padding-top:16px; border-top:4px solid var(--blue)}
+.part.b{border-top-color:var(--amber)}
+.part h2{font-family:var(--serif); font-weight:900; font-size:clamp(1.65rem,3.8vw,2.3rem); line-height:1.3; margin:0}
+.part h2 .letter{color:var(--blue); margin-right:.4em}
+.part.b h2 .letter{color:var(--amber)}
+.part p{color:var(--muted); margin:.4em 0 0}
+section{margin-top:52px}
+h3{font-family:var(--serif); font-weight:700; font-size:1.42rem; line-height:1.45; margin:0 0 .4em}
+h3 .no{font-family:var(--mono); font-weight:500; font-size:.8em; color:var(--blue); margin-right:.55em}
+.b-sec h3 .no{color:var(--amber)}
+h4{font-size:1.04rem; margin:1.6em 0 .2em}
+p{margin:.75em 0}
+strong{font-weight:700}
+.eq{font-family:var(--mono); font-size:.95rem; background:var(--gray-bg); border-radius:6px; padding:12px 16px; overflow-x:auto; white-space:nowrap; margin:14px 0; line-height:1.9}
+.eq .cm{color:var(--muted); font-family:var(--sans); font-size:.88rem}
+code{font-family:var(--mono); font-size:.9em; background:var(--gray-bg); padding:1px 5px; border-radius:4px}
+.note{border-left:4px solid var(--blue); background:var(--blue-bg); padding:12px 16px; border-radius:0 6px 6px 0; margin:18px 0}
+.note.amber{border-left-color:var(--amber); background:var(--amber-bg)}
+.note.rose{border-left-color:var(--rose); background:var(--rose-bg)}
+.note p{margin:.3em 0}
+ul.plain{padding-left:1.2em}
+ul.plain li{margin:.35em 0}
+
+/* figures */
+figure.fig{margin:26px 0; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px 16px 12px}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+figcaption{font-size:.88rem; color:var(--muted); margin-top:10px; line-height:1.65}
+figcaption b{color:var(--ink); margin-right:.4em}
+.schem{display:inline-block; font-size:.74rem; line-height:1.6; padding:0 8px; border-radius:999px; border:1px solid var(--amber); color:var(--amber); margin-left:6px; vertical-align:1px}
+
+/* svg diagram vocabulary */
+svg.dia{display:block; width:100%; height:auto}
+.scroll svg.dia{min-width:600px}
+svg.dia text{font-family:var(--sans); font-size:14px; fill:var(--ink)}
+svg.dia .sm{font-size:12px; fill:var(--muted)}
+svg.dia .s13{font-size:13px}
+svg.dia .lg{font-size:15px; font-weight:700}
+svg.dia .xl{font-size:22px; font-weight:700}
+svg.dia .huge{font-size:42px; fill:var(--muted)}
+svg.dia .mono{font-family:var(--mono)}
+svg.dia .pre{white-space:pre}
+svg.dia .c{text-anchor:middle}
+svg.dia .e{text-anchor:end}
+svg.dia .bd{font-weight:700}
+svg.dia .amber{fill:var(--amber)}
+svg.dia .blue{fill:var(--blue)}
+svg.dia .teal{fill:var(--teal)}
+svg.dia .rose{fill:var(--rose)}
+svg.dia .on-fill{fill:var(--panel)}
+.box{fill:var(--panel); stroke:var(--line-strong); stroke-width:1.5}
+.bx-blue{fill:var(--blue-bg); stroke:var(--blue); stroke-width:1.5}
+.bx-teal{fill:var(--teal-bg); stroke:var(--teal); stroke-width:1.5}
+.bx-amber{fill:var(--amber-bg); stroke:var(--amber); stroke-width:1.5}
+.bx-rose{fill:var(--rose-bg); stroke:var(--rose); stroke-width:1.5}
+.bx-gray{fill:var(--gray-bg); stroke:var(--line-strong); stroke-width:1.5}
+.frame{fill:none; stroke:var(--line-strong); stroke-width:1.2; stroke-dasharray:6 5}
+.ring{fill:none; stroke:var(--line); stroke-width:1.5}
+.stream{fill:var(--blue-bg); stroke:var(--blue); stroke-width:1.5}
+.ln{fill:none; stroke:var(--ink); stroke-width:1.6}
+.ln-mut{fill:none; stroke:var(--muted); stroke-width:1.3}
+.ln-blue{fill:none; stroke:var(--blue); stroke-width:2.2}
+.ln-teal{fill:none; stroke:var(--teal); stroke-width:2.2}
+.ln-amber{fill:none; stroke:var(--amber); stroke-width:2.2}
+.ln-rose{fill:none; stroke:var(--rose); stroke-width:2}
+.dash{stroke-dasharray:5 4}
+.thin{stroke-width:1}
+.ah{fill:var(--ink)} .ah-mut{fill:var(--muted)} .ah-blue{fill:var(--blue)} .ah-teal{fill:var(--teal)} .ah-amber{fill:var(--amber)} .ah-rose{fill:var(--rose)}
+.cell{fill:var(--blue)}
+.masked{fill:url(#hatch); stroke:var(--line)}
+.hatch{stroke:var(--rose); stroke-width:1.4; opacity:.6}
+.dot{fill:var(--panel); stroke:var(--ink); stroke-width:1.6}
+.stair{fill:none; stroke:var(--ink); stroke-width:1.6}
+.bar-blue{fill:var(--blue); opacity:.55}
+.bar-amber{fill:var(--amber)}
+.node{fill:var(--panel); stroke:var(--line-strong); stroke-width:1.5}
+.node-start{fill:var(--blue-bg); stroke:var(--blue); stroke-width:2}
+.node-mid{fill:var(--amber-bg); stroke:var(--amber); stroke-width:2}
+.node-ans{fill:var(--amber); stroke:var(--amber); stroke-width:2}
+.faded{opacity:.32}
+.loop-anim{stroke-dasharray:9 6; animation:dash 1.1s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-30}}
+@media (prefers-reduced-motion: reduce){.loop-anim{animation:none}}
+
+/* capability chips */
+.cap{display:grid; gap:12px}
+.cap-row{display:grid; grid-template-columns:110px 1fr; gap:12px; align-items:start}
+.cap-d{font-weight:700; font-size:.92rem; padding-top:4px}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{border-radius:999px; padding:3px 12px; font-size:.88rem; border:1.5px solid; line-height:1.6; white-space:nowrap}
+.chip.ok{border-color:var(--teal); background:var(--teal-bg)}
+.chip.mid{border-color:var(--amber); background:var(--amber-bg)}
+.chip.no{border-color:var(--rose); background:var(--rose-bg)}
+@media (max-width:520px){.cap-row{grid-template-columns:1fr; gap:4px}}
+
+/* table */
+.tbl{overflow-x:auto; margin:20px 0}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:.93rem; background:var(--panel)}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:left; vertical-align:top}
+th{background:var(--gray-bg); font-weight:700}
+td.num{font-family:var(--mono); white-space:nowrap}
+td.win{background:var(--teal-bg)}
+
+/* stepper */
+.stepper .modes{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px}
+.stepper button{font:inherit; font-size:.92rem; color:var(--ink); background:var(--panel); border:1.5px solid var(--line-strong); border-radius:999px; padding:5px 14px; cursor:pointer}
+.stepper button[aria-pressed="true"]{background:var(--ink); color:var(--panel); border-color:var(--ink)}
+.stepper .controls{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:10px}
+.stepper .controls button{border-radius:8px}
+.stepper input[type=range]{flex:1 1 180px; accent-color:var(--amber)}
+.stepper .msg{min-height:3.6em; margin:12px 0 0; padding:10px 14px; background:var(--gray-bg); border-radius:6px; font-size:.95rem}
+.st-off{fill:var(--gray-bg); stroke:var(--line-strong); stroke-width:1.5; transition:fill .25s,stroke .25s}
+.st-past{fill:var(--amber-bg); stroke:var(--amber); stroke-width:2; stroke-dasharray:5 3; transition:fill .25s}
+.st-now{fill:var(--amber); stroke:var(--amber); stroke-width:2; transition:fill .25s}
+.mode-untied .st-past{fill:var(--blue-bg); stroke:var(--blue)}
+.mode-untied .st-now{fill:var(--blue); stroke:var(--blue)}
+svg.dia .tx-off{fill:var(--muted)}
+svg.dia .tx-now{fill:var(--panel)}
+.seg-todo{fill:var(--panel); stroke:var(--line-strong); stroke-width:1.2}
+.seg-done{fill:var(--amber-bg); stroke:var(--amber); stroke-width:1.2}
+.seg-now{fill:var(--amber); stroke:var(--amber); stroke-width:1.2}
+.mode-untied .seg-done{fill:var(--blue-bg); stroke:var(--blue)}
+.mode-untied .seg-now{fill:var(--blue); stroke:var(--blue)}
+
+/* quiz */
+details.q{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px 16px; margin:10px 0}
+details.q summary{cursor:pointer; font-weight:700}
+details.q p{margin:.6em 0 .2em; color:var(--ink)}
+
+
+.part.e{border-top-color:var(--teal)}
+.part.e h2 .letter{color:var(--teal)}
+.e-sec h3 .no{color:var(--teal)}
+.qa{border:1px dashed var(--line-strong); background:var(--panel); border-radius:8px; padding:10px 18px 8px; margin:20px 0}
+.qa .qh{font-weight:700; font-size:.86rem; color:var(--teal); margin:0 0 2px}
+.qa ul{margin:.2em 0; padding-left:1.2em; font-size:.95rem}
+.qa li{margin:.35em 0}
+footer{margin-top:72px; padding-top:16px; border-top:1px solid var(--line); font-size:.88rem; color:var(--muted)}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+    <marker id="ah-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-mut"/></marker>
+    <marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-blue"/></marker>
+    <marker id="ah-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-teal"/></marker>
+    <marker id="ah-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-amber"/></marker>
+    <marker id="ah-rose" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-rose"/></marker>
+    <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="hatch"/></pattern>
+  </defs>
+</svg>
+
+<main>
+
+<header class="hero">
+  <h1>Looped Transformer 講義<span>論文〈Inside the Loop〉導讀：同一組積木重複用，會發生什麼事</span></h1>
+  <p class="lede">這份講義接續<a href="https://claude.ai/artifact/KPDXnJeAwvegjY1nLc14KQ">《Transformer 架構複習講義》</a>，用那裡複習過的零件（殘差流、注意力、輸出頭、因果遮罩）解釋 looped（權重綁定、迴圈式）Transformer，以及論文〈Inside the Loop〉的實驗與發現。</p>
+  <div class="hero-fig scroll">
+    <svg class="dia" viewBox="0 0 760 320" role="img" aria-label="左邊是 32 層各自不同權重的普通 Transformer，右邊是 4 層重複跑 8 輪的 Looped Transformer，兩者有效深度相同">
+      <g id="heroTower"></g>
+      <text x="185" y="290" class="c lg">普通 Transformer：32 層</text>
+      <text x="185" y="311" class="c sm">32 組不同的權重</text>
+      <text x="380" y="152" class="c huge">≈</text>
+      <text x="380" y="182" class="c sm">一樣的有效深度</text>
+      <g id="heroBlock"></g>
+      <path d="M575 250 L575 199" class="ln" marker-end="url(#ah)"/>
+      <text x="575" y="266" class="c sm">輸入</text>
+      <path d="M575 84 L575 36" class="ln" marker-end="url(#ah)"/>
+      <text x="575" y="26" class="c sm">輸出</text>
+      <path d="M655 172 C740 172 740 108 659 108" class="ln-amber loop-anim" style="stroke-width:3" marker-end="url(#ah-amber)"/>
+      <text x="724" y="147" class="xl amber">×8</text>
+      <text x="575" y="290" class="c lg">Looped Transformer：4 層 × 8 輪</text>
+      <text x="575" y="311" class="c sm">只有 4 組權重，重複使用</text>
+    </svg>
+  </div>
+</header>
+
+<nav class="toc" aria-label="目錄">
+  <h2>目錄</h2>
+  <div class="toc-cols">
+    <div><p class="grp">C　Looped Transformer</p><ol>
+      <li><a href="#c1"><span class="tno">C1</span>什麼是 Looped Transformer</a></li>
+      <li><a href="#c2"><span class="tno">C2</span>迭代嵌入 τ<sub>t</sub></a></li>
+      <li><a href="#c3"><span class="tno">C3</span>論文想回答的問題</a></li>
+      <li><a href="#c4"><span class="tno">C4</span>實驗任務：沿著環走幾步</a></li>
+      <li><a href="#c5"><span class="tno">C5</span>結果一：誰學得會</a></li>
+      <li><a href="#c6"><span class="tno">C6</span>怎麼看進模型內部</a></li>
+      <li><a href="#c7"><span class="tno">C7</span>結果二：樓梯</a></li>
+      <li><a href="#c8"><span class="tno">C8</span>迭代預算怎麼分配</a></li>
+      <li><a href="#c9"><span class="tno">C9</span>模型真的在用這些狀態嗎</a></li>
+      <li><a href="#c10"><span class="tno">C10</span>結論、限制與自我檢查</a></li>
+    </ol></div>
+  </div>
+</nav>
+
+<!-- ===================== PART C ===================== -->
+<div class="part b">
+  <h2><span class="letter">C</span>Looped Transformer</h2>
+  <p>論文：Sesodia、Sock、Torr、Schroeder de Witt，〈Inside the Loop: A Mechanistic Study of Weight-Tied Transformers on Depth-Bound Algorithmic Tasks〉，arXiv:2610.24135（2026 年 10 月）。</p>
+</div>
+
+<section id="c1" class="b-sec">
+  <h3><span class="no">C1</span>什麼是 Looped Transformer</h3>
+  <p>普通 Transformer 的每一層都有自己的權重，輸入從下往上只走一次。Looped Transformer 只準備一小組 L 層（叫做一個 <strong>block</strong>），然後把輸出再餵回 block 的入口，重複跑 T 輪。論文把這種模型寫成 <strong>L×T</strong>，例如 4×8 就是「4 層跑 8 輪」。</p>
+  <div class="eq">
+    迴圈式：x<sup>(t)</sup> = f<sub>θ</sub>( x<sup>(t−1)</sup> + τ<sub>t</sub> )　<span class="cm">每一輪都用同一組 θ</span><br>
+    普通式：x<sup>(t)</sup> = f<sub>θ<sub>t</sub></sub>( x<sup>(t−1)</sup> )　　　<span class="cm">每一段都有自己的 θ<sub>t</sub></span>
+  </div>
+  <p>兩者每次前向傳遞都做了 L×T 次層計算，論文稱這為<strong>有效深度</strong> D<sub>eff</sub> = LT。差別只在於：這 32 次計算是用 32 組不同的權重，還是 4 組權重輪流用 8 次。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 230" role="img" aria-label="把 4×8 迴圈模型攤開成 32 次計算，顏色每 4 個重複一次；普通模型 32 個顏色都不同">
+      <text x="40" y="30" class="lg">普通 32 層：32 組不同的權重</text>
+      <g id="unrollUntied"></g>
+      <text x="40" y="128" class="lg">迴圈 4×8：一樣 32 次計算，但只有 4 組權重輪流用</text>
+      <g id="unrollLoop"></g>
+      <g id="unrollBrackets"></g>
+    </svg>
+    </div>
+    <figcaption><b>圖 C1</b>把迴圈模型「攤開」來看。顏色代表權重：上排 32 格都不一樣，下排每 4 格就重複一次。</figcaption>
+  </figure>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 120" role="img" aria-label="參數量比較：迴圈 4×8 約 3.22M，普通 32 層約 25.72M">
+      <text x="140" y="44" class="e">迴圈 4×8</text>
+      <rect x="150" y="24" width="65" height="28" rx="3" class="bar-amber"/><text x="224" y="44" class="mono">3.22M</text>
+      <text x="140" y="94" class="e">普通 32 層</text>
+      <rect x="150" y="74" width="520" height="28" rx="3" class="bar-blue"/><text x="678" y="94" class="mono">25.72M</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 C2</b>有效深度一樣都是 32，參數量卻差了約 8 倍（論文第 3.2 節的數字）。</figcaption>
+  </figure>
+</section>
+
+<section id="c2" class="b-sec">
+  <h3><span class="no">C2</span>迭代嵌入 τ<sub>t</sub></h3>
+  <p>既然每一輪都用同一組權重，模型怎麼知道自己現在跑到第幾輪？論文在每一輪開始前，把一個可學習的向量 τ<sub>t</sub> 加進殘差流，當作「第 t 輪」的標籤，作用很像位置編碼，只是標記的是深度而不是位置。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 230" role="img" aria-label="x 加上 τt 後進入同一組 f_θ，若 t 小於 T 就送回去再跑一輪，否則交給輸出頭">
+      <rect x="10" y="92" width="110" height="46" rx="6" class="bx-gray"/><text x="65" y="120" class="c">x⁽⁰⁾ 題目</text>
+      <path d="M120 115 L182 115" class="ln" marker-end="url(#ah)"/>
+      <circle cx="200" cy="115" r="16" class="box"/><text x="200" y="121" class="c lg">+</text>
+      <rect x="140" y="20" width="120" height="36" rx="6" class="bx-amber"/><text x="200" y="43" class="c">τₜ（第 t 輪）</text>
+      <path d="M200 56 L200 97" class="ln-amber" marker-end="url(#ah-amber)"/>
+      <path d="M216 115 L268 115" class="ln" marker-end="url(#ah)"/>
+      <rect x="270" y="78" width="170" height="74" rx="8" class="bx-teal"/>
+      <text x="355" y="109" class="c lg">同一組 f<tspan dy="4" style="font-size:11px">θ</tspan></text><text x="355" y="133" class="c sm">L 層，每輪共用</text>
+      <path d="M440 115 L503 115" class="ln"/>
+      <circle cx="510" cy="115" r="5" class="ah"/>
+      <text x="510" y="98" class="c">x⁽ᵗ⁾</text>
+      <path d="M515 115 L588 115" class="ln" marker-end="url(#ah)"/>
+      <rect x="590" y="92" width="160" height="46" rx="6" class="bx-blue"/><text x="670" y="112" class="c">t = T：輸出頭</text><text x="670" y="130" class="c sm">寫出答案</text>
+      <path d="M510 120 L510 192 L200 192 L200 133" class="ln-amber" style="stroke-width:2.6" marker-end="url(#ah-amber)"/>
+      <text x="355" y="214" class="c amber">t &lt; T：把結果送回入口，再跑一輪</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 C3</b>論文研究的是最單純的迴圈：所有層都共用，沒有額外的前置層、收尾層，也沒有每輪重新注入原始輸入。這樣才能把「迴圈本身」的效果隔離出來。</figcaption>
+  </figure>
+</section>
+
+<section id="c3" class="b-sec">
+  <h3><span class="no">C3</span>論文想回答的問題</h3>
+  <p>大家對迴圈模型的期待通常有三種：</p>
+  <ul class="plain">
+    <li><strong>省參數</strong>：同樣深度，權重只要存 1/T。</li>
+    <li><strong>在隱藏狀態裡思考</strong>：中間過程不用寫成文字，不受 token 的資訊瓶頸限制。</li>
+    <li><strong>偏好「重複同一個步驟」的演算法</strong>：既然每輪都是同一個函數，理論上比較容易學出「一輪做一步」的程式。</li>
+  </ul>
+  <p>論文研究的是第三點。問題在於，訓練好的迴圈模型真的是一輪做一步嗎？還是它其實只是把「深網路」用比較少的參數模擬出來，內部的運作方式跟普通模型沒兩樣？</p>
+  <div class="note amber">
+    <p><strong>兩種假說的預測不同。</strong>如果迴圈真的在跑演算法，那第 t 輪結束時，殘差流裡應該讀得出第 t 步的中間結果，畫出來會是一道「樓梯」。如果只是模擬深網路，中間結果什麼時候出現都有可能，不需要對齊輪數。</p>
+  </div>
+  <p>用自然語言很難檢驗這件事，因為中間步驟沒有標準答案。所以作者設計了一個中間步驟全部已知的玩具任務。</p>
+</section>
+
+<section id="c4" class="b-sec">
+  <h3><span class="no">C4</span>實驗任務：沿著環走幾步</h3>
+  <p>任務叫 <strong>directed permutation traversal</strong>（dePo）。隨機產生一個由 N = 16 個節點組成的環，把它的邊以打亂的順序列給模型看，再問：「從節點 s 出發，沿著箭頭走 H 步，會到哪個節點？」</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 300" role="img" aria-label="dePo 任務：從 3 出發走 4 步，依序經過 11、6、2，答案是 9">
+      <rect x="10" y="20" width="340" height="260" rx="8" class="box"/>
+      <text x="28" y="50" class="sm">模型看到的輸入（邊的順序打亂）</text>
+      <text x="28" y="86" class="pre">11→6   9→14   3→11</text>
+      <text x="28" y="114" class="pre">7→3    2→9    6→2</text>
+      <text x="28" y="142" class="sm">……另外 10 條邊</text>
+      <path d="M28 160 L332 160" class="ln-mut thin"/>
+      <text x="28" y="192">問題：從 3 出發，走 4 步？</text>
+      <text x="28" y="226">答案：<tspan class="amber bd">9</tspan></text>
+      <text x="28" y="258" class="sm">途中的 11、6、2 叫參考狀態 z₁–z₃</text>
+
+      <path d="M659.7 216.5 A110 110 0 0 1 460.3 216.5" class="ln-mut dash"/>
+      <text x="560" y="262" class="c sm">另外 9 個節點（省略）</text>
+      <path d="M454.6 180.5 L455.8 150.4" class="ln-mut" marker-end="url(#ah-mut)"/>
+      <path d="M467.6 118.1 L485.9 94.2" class="ln-mut" marker-end="url(#ah-mut)"/>
+      <path d="M514.1 74.5 L542.8 65.4" class="ln-mut" marker-end="url(#ah-mut)"/>
+      <path d="M577.2 65.4 L605.9 74.5" class="ln-mut" marker-end="url(#ah-mut)"/>
+      <path d="M634.1 94.2 L652.4 118.1" class="ln-mut" marker-end="url(#ah-mut)"/>
+      <path d="M664.2 150.4 L665.4 180.5" class="ln-mut" marker-end="url(#ah-mut)"/>
+      <path d="M437.8 125.5 Q425.1 66.5 485.4 63.5" class="ln-amber" marker-end="url(#ah-amber)"/>
+      <path d="M485.4 63.5 Q508.9 7.9 560 40" class="ln-amber" marker-end="url(#ah-amber)"/>
+      <path d="M560 40 Q611.1 7.9 634.6 63.5" class="ln-amber" marker-end="url(#ah-amber)"/>
+      <path d="M634.6 63.5 Q694.9 66.5 682.2 125.5" class="ln-amber" marker-end="url(#ah-amber)"/>
+      <text x="428" y="74" class="c amber bd">1</text><text x="508" y="22" class="c amber bd">2</text><text x="614" y="22" class="c amber bd">3</text><text x="694" y="76" class="c amber bd">4</text>
+      <circle cx="453.8" cy="198.5" r="17" class="node"/><text x="453.8" y="203.5" class="c s13">7</text>
+      <circle cx="456.6" cy="132.4" r="17" class="node-start"/><text x="456.6" y="137.4" class="c s13 bd">3</text>
+      <circle cx="496.9" cy="79.9" r="17" class="node-mid"/><text x="496.9" y="84.9" class="c s13">11</text>
+      <circle cx="560" cy="60" r="17" class="node-mid"/><text x="560" y="65" class="c s13">6</text>
+      <circle cx="623.1" cy="79.9" r="17" class="node-mid"/><text x="623.1" y="84.9" class="c s13">2</text>
+      <circle cx="663.4" cy="132.4" r="17" class="node-ans"/><text x="663.4" y="137.4" class="c s13 bd on-fill">9</text>
+      <circle cx="666.2" cy="198.5" r="17" class="node"/><text x="666.2" y="203.5" class="c s13">14</text>
+      <text x="430" y="152" class="e sm blue">起點</text>
+      <text x="688" y="152" class="sm amber">答案</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 C4</b>dePo 任務（依論文圖 2 的例子重畫，省略的節點與邊為示意）。灰色直箭頭是邊，黃色彎箭頭是「一步」。</figcaption>
+  </figure>
+  <p>這個任務有兩個好處。第一，步數 H 就是難度旋鈕。第二，每一個中間節點 z<sub>1</sub>、z<sub>2</sub>…都有已知的標準答案，雖然訓練時從來沒有監督它們，研究者事後卻可以檢查「它在網路的第幾層開始讀得出來」。</p>
+  <div class="note">
+    <p><strong>一個細節：</strong>因為是環，往前走 H 步跟往回走 N − H 步會到同一個點。在 N = 16 時，走 1 到 15 步最多只需要 8 步依序計算，所以作者分析內部狀態時只看 H ≤ 8。他們也檢查過模型確實是往前走，而不是偷偷往回走比較短的那條路。</p>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>符號</th><th>意思</th><th>論文中的值</th></tr></thead>
+      <tbody>
+        <tr><td>N</td><td>環上的節點數</td><td>16（另做 32 的延伸實驗）</td></tr>
+        <tr><td>H</td><td>要走幾步</td><td>訓練 1–15，分析時看 ≤ 8</td></tr>
+        <tr><td>L × T</td><td>block 有幾層 × 跑幾輪</td><td>L ∈ {2, 4, 8, 16}，T 最多 16</td></tr>
+        <tr><td>D<sub>eff</sub></td><td>有效深度 = L·T</td><td>2 到 32</td></tr>
+        <tr><td>z<sub>h</sub></td><td>第 h 步的參考節點</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="c5" class="b-sec">
+  <h3><span class="no">C5</span>結果一：誰學得會</h3>
+  <p>最直覺的假說是：迴圈的好處只是「免費拿到深度」。如果是這樣，同樣有效深度的迴圈模型和普通模型應該差不多，普通模型參數多，甚至應該略勝。結果剛好相反。</p>
+  <figure class="fig">
+    <div class="cap" role="list" aria-label="不同設定在學習率 10 的負 3 次方下學會任務的種子比例">
+      <div class="cap-row" role="listitem"><div class="cap-d">有效深度 32</div><div class="chips"><span class="chip no">普通 32 層　0/5</span><span class="chip no">16×2　0/5</span><span class="chip ok">8×4　≥ 4/5</span><span class="chip ok">4×8　5/5</span><span class="chip ok">2×16　≥ 4/5</span></div></div>
+      <div class="cap-row" role="listitem"><div class="cap-d">有效深度 16</div><div class="chips"><span class="chip no">普通 16 層　0/5</span><span class="chip no">8×2　0/5</span><span class="chip mid">4×4　2/5</span><span class="chip mid">2×8　2/5</span></div></div>
+      <div class="cap-row" role="listitem"><div class="cap-d">有效深度 ≤ 8</div><div class="chips"><span class="chip no">所有設定都沒學會</span></div></div>
+    </div>
+    <figcaption><b>圖 C5</b>學習率 10<sup>−3</sup> 時，每種設定 5 個種子裡有幾個學會（每一步的準確率都 ≥ 0.8）。整理自論文圖 3 的文字描述。</figcaption>
+  </figure>
+  <p>可以讀出兩件事。<strong>深度是必要條件</strong>：有效深度 8 以下全部失敗。<strong>但深度不是充分條件</strong>：同樣深度 32，深度怎麼分配決定成敗，迴圈次數夠多的模型學得會，只迴圈兩次的 16×2 和普通 32 層都學不會。作者也確認普通模型不是訓練不夠，它的 loss 在後 7 萬步幾乎沒有變化。</p>
+  <h4>那普通模型在什麼條件下學得會？</h4>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>設定</th><th>學習率</th><th>迴圈 4×8</th><th>普通 32 層</th></tr></thead>
+      <tbody>
+        <tr><td>N = 16</td><td class="num">10⁻³</td><td class="num win">5/5</td><td class="num">0/5</td></tr>
+        <tr><td>N = 16</td><td class="num">3×10⁻⁴</td><td class="num win">5/5</td><td class="num">4/5</td></tr>
+        <tr><td>N = 16</td><td class="num">10⁻⁴</td><td class="num">1/5</td><td class="num">1/5</td></tr>
+        <tr><td>N = 16，改用普通 16 層</td><td class="num">3×10⁻⁴</td><td>—</td><td class="num">1/5</td></tr>
+        <tr><td>N = 16，第 8、16、24 層加輔助 loss</td><td class="num">10⁻³</td><td>—</td><td class="num">2/5</td></tr>
+        <tr><td>N = 32（每個種子能連續解到第幾步）</td><td class="num">3×10⁻⁴</td><td class="num win">6、0、1</td><td class="num">1、1、1</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>普通模型要嘛降低學習率，要嘛直接監督中間層才學得會。學習率 3×10⁻⁴ 時兩者都能解，但迴圈模型平均在第 4.5 萬步就解出來，普通模型要到第 5.5 萬步。換到更長的鏈（N = 32）時，普通 32 層的三個種子都卡在第一步，迴圈模型用八分之一的參數，至少有一個種子連續解出前六步。</p>
+  <div class="note"><p><strong>小結：</strong>迴圈模型在更寬的學習率範圍內都學得會，包括普通模型會失敗的較大學習率。這表示權重綁定確實讓這類任務變得「更好學」。</p></div>
+</section>
+
+<section id="c6" class="b-sec">
+  <h3><span class="no">C6</span>怎麼看進模型內部</h3>
+  <p>知道迴圈模型學得比較好之後，下一個問題是：它跟普通模型的解法一樣嗎？作者用了三種常見的機制可解釋性（mechanistic interpretability）工具。</p>
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dia" viewBox="0 0 760 290" role="img" aria-label="三種分析方法：線性探針、logit lens、activation patching">
+      <path d="M253 10 L253 280 M506 10 L506 280" class="ln-mut dash thin"/>
+      <text x="125" y="24" class="c lg">線性探針</text>
+      <rect x="30" y="40" width="28" height="14" rx="2" class="bx-teal"/><rect x="70" y="40" width="28" height="14" rx="2" class="bx-teal"/><rect x="110" y="40" width="28" height="14" rx="2" class="bx-teal"/><rect x="150" y="40" width="28" height="14" rx="2" class="bx-teal"/><rect x="190" y="40" width="28" height="14" rx="2" class="bx-teal"/>
+      <rect x="20" y="60" width="210" height="22" rx="11" class="stream"/>
+      <circle cx="145" cy="71" r="14" class="ln-amber" style="stroke-width:2.6"/><path d="M155 81 L166 92" class="ln-amber" style="stroke-width:3"/>
+      <path d="M145 100 L145 140" class="ln" marker-end="url(#ah)"/>
+      <rect x="55" y="142" width="180" height="40" rx="6" class="bx-amber"/><text x="145" y="167" class="c">線性分類器</text>
+      <path d="M145 182 L145 212" class="ln" marker-end="url(#ah)"/>
+      <rect x="85" y="214" width="120" height="34" rx="6" class="box"/><text x="145" y="236" class="c">節點是 6？</text>
+      <text x="125" y="272" class="c sm">資訊「讀得出來」嗎？</text>
+
+      <text x="380" y="24" class="c lg">Logit lens</text>
+      <rect x="270" y="50" width="24" height="24" rx="3" class="bx-amber"/><rect x="298" y="50" width="24" height="24" rx="3" class="bx-amber"/><rect x="326" y="50" width="24" height="24" rx="3" class="bx-amber"/>
+      <g class="faded"><rect x="354" y="50" width="24" height="24" rx="3" class="box"/><rect x="382" y="50" width="24" height="24" rx="3" class="box"/><rect x="410" y="50" width="24" height="24" rx="3" class="box"/><rect x="438" y="50" width="24" height="24" rx="3" class="box"/><rect x="466" y="50" width="24" height="24" rx="3" class="box"/></g>
+      <path d="M352 40 L352 84" class="ln-rose dash"/>
+      <text x="380" y="100" class="c sm">第 3 輪就停下</text>
+      <path d="M338 108 L338 140" class="ln" marker-end="url(#ah)"/>
+      <rect x="290" y="142" width="180" height="40" rx="6" class="bx-blue"/><text x="380" y="167" class="c">模型自己的輸出頭</text>
+      <path d="M380 182 L380 212" class="ln" marker-end="url(#ah)"/>
+      <rect x="316" y="214" width="128" height="34" rx="6" class="box"/><text x="380" y="236" class="c s13">會寫出哪個節點？</text>
+      <text x="380" y="272" class="c sm">不用另外訓練讀取器</text>
+
+      <text x="633" y="24" class="c lg">Activation patching</text>
+      <text x="526" y="52" class="sm">原題（起點 3）</text>
+      <rect x="526" y="58" width="24" height="22" rx="3" class="bx-blue"/><rect x="554" y="58" width="24" height="22" rx="3" class="bx-blue"/>
+      <rect x="582" y="58" width="24" height="22" rx="3" class="bx-teal"/><rect x="610" y="58" width="24" height="22" rx="3" class="bx-teal"/><rect x="638" y="58" width="24" height="22" rx="3" class="bx-teal"/><rect x="666" y="58" width="24" height="22" rx="3" class="bx-teal"/><rect x="694" y="58" width="24" height="22" rx="3" class="bx-teal"/><rect x="722" y="58" width="24" height="22" rx="3" class="bx-teal"/>
+      <text x="610" y="136" class="sm">提供者（同環，起點 7）</text>
+      <rect x="526" y="142" width="24" height="22" rx="3" class="bx-teal"/><rect x="554" y="142" width="24" height="22" rx="3" class="bx-teal"/><rect x="582" y="142" width="24" height="22" rx="3" class="bx-teal"/><rect x="610" y="142" width="24" height="22" rx="3" class="bx-teal"/><rect x="638" y="142" width="24" height="22" rx="3" class="bx-teal"/><rect x="666" y="142" width="24" height="22" rx="3" class="bx-teal"/><rect x="694" y="142" width="24" height="22" rx="3" class="bx-teal"/><rect x="722" y="142" width="24" height="22" rx="3" class="bx-teal"/>
+      <path d="M566 140 C566 112 594 112 594 84" class="ln-amber" style="stroke-width:2.6" marker-end="url(#ah-amber)"/>
+      <text x="610" y="108" class="sm amber bd">第 2 輪後複製過去</text>
+      <path d="M641 166 L641 182" class="ln" marker-end="url(#ah)"/>
+      <rect x="546" y="184" width="190" height="34" rx="6" class="bx-teal"/><text x="641" y="206" class="c">原題寫出提供者的答案</text>
+      <text x="633" y="246" class="c sm">⇒ 模型真的照著</text>
+      <text x="633" y="264" class="c sm">這個狀態走完剩下的路</text>
+    </svg>
+    </div>
+    <figcaption><b>圖 C6</b>三種工具各回答一個問題：資訊在不在（探針）、模型自己讀不讀得到（logit lens）、模型有沒有真的依賴它（activation patching）。</figcaption>
+  </figure>
+  <h4>Selectivity：怎麼判斷「讀得出來」</h4>
+  <p>探針準確率高，不一定代表資訊真的在裡面，也可能是分類器自己夠強、硬背出來。所以作者用 <strong>selectivity</strong>：同樣的探針，一次用真實標籤訓練，一次用打亂的標籤訓練，兩者準確率相減。</p>
+  <div class="eq">S<sub>ℓ,h</sub> = Acc<sub>真實標籤</sub>(ℓ, h) − Acc<sub>打亂標籤</sub>(ℓ, h)　<span class="cm">ℓ = 第幾層，h = 第幾步</span></div>
+  <p>S 接近 1 表示這一層的向量裡可以線性讀出第 h 步的節點；接近 0 表示讀不出來。論文把 S ≥ 0.5 當作「讀得出來」，第一次達到的那一層叫做 <strong>onset</strong>。</p>
+</section>
+
+<section id="c7" class="b-sec">
+  <h3><span class="no">C7</span>結果二：迴圈模型在爬樓梯</h3>
+  <p>用探針一層一層看下去，兩種模型的樣子完全不同。下面這個互動圖把論文圖 4 的趨勢簡化成 8 個階段，可以切換模型、一步一步看哪些節點讀得出來。</p>
+  <figure class="fig stepper" id="stepper">
+    <div class="modes" role="group" aria-label="選擇模型">
+      <button type="button" data-mode="loop" aria-pressed="true">迴圈 4×8（學習率 10⁻³）</button>
+      <button type="button" data-mode="untied" aria-pressed="false">普通 32 層（學習率 3×10⁻⁴）</button>
+    </div>
+    <div class="scroll">
+    <svg class="dia" id="stepSvg" viewBox="0 0 760 210" role="img" aria-label="走 4 步的題目中，各階段讀得出的節點">
+      <g id="segs"></g>
+      <path d="M140 125 L213 125" class="ln-mut" marker-end="url(#ah-mut)"/><path d="M275 125 L348 125" class="ln-mut" marker-end="url(#ah-mut)"/><path d="M410 125 L483 125" class="ln-mut" marker-end="url(#ah-mut)"/><path d="M545 125 L618 125" class="ln-mut" marker-end="url(#ah-mut)"/>
+      <g id="stepNodes"></g>
+      <text x="110" y="184" class="c sm">起點</text><text x="245" y="184" class="c sm">第 1 步</text><text x="380" y="184" class="c sm">第 2 步</text><text x="515" y="184" class="c sm">第 3 步</text><text x="650" y="184" class="c sm">答案（第 4 步）</text>
+    </svg>
+    </div>
+    <div class="controls">
+      <button type="button" id="prevBtn">上一步</button>
+      <input type="range" id="stepRange" min="0" max="8" value="0" aria-label="目前階段">
+      <button type="button" id="nextBtn">下一步</button>
+      <button type="button" id="resetBtn">重來</button>
+    </div>
+    <p class="msg" id="stepMsg" aria-live="polite"></p>
+    <figcaption><b>圖 C7</b>H = 4 時兩種模型的中間節點出現時機<span class="schem">示意</span>。實心＝目前最清楚的節點，虛線框＝已經走過、正在淡出的節點。</figcaption>
+  </figure>
+  <p>把每一層、每一步的 selectivity 畫成熱圖，差別更明顯。迴圈模型的 onset 一階一階往右上爬；普通模型（在它學得會的較低學習率下）前 25 層什麼都讀不出來，然後在第 26 到 30 層之間，所有中間節點和答案幾乎同時冒出來。</p>
+  <figure class="fig">
+    <div class="scroll"><svg class="dia" id="heatLoop" viewBox="0 0 760 255" role="img" aria-label="迴圈模型的探針熱圖，onset 呈樓梯狀"></svg></div>
+    <div class="scroll"><svg class="dia" id="heatUntied" viewBox="0 0 760 255" role="img" aria-label="普通模型的探針熱圖，所有節點集中在最後幾層出現"></svg></div>
+    <figcaption><b>圖 C8</b>H = 8 時的探針 selectivity 熱圖<span class="schem">示意</span>。顏色越深代表越讀得出該步的節點，白點是 onset。依論文圖 1 與第 5 節的描述重畫，數值並非原始數據。</figcaption>
+  </figure>
+  <p>還有一個對照組很有意思：如果對普通模型的第 8、16、24 層額外加監督，它也會長出類似的樓梯，只是每一階的高度不一樣。換句話說，普通模型不是「做不到」樓梯，而是沒有外力時不會自己長出來；迴圈模型則在完全沒有中間監督的情況下自己學出來。</p>
+</section>
+
+<section id="c8" class="b-sec">
+  <h3><span class="no">C8</span>迭代預算怎麼分配</h3>
+  <p>常有人說迴圈模型「一輪做一步」。作者用三種預算測試這句話：輪數多於步數、等於步數、少於步數。</p>
+  <figure class="fig">
+    <div class="scroll"><svg class="dia" id="budget" viewBox="0 0 760 270" role="img" aria-label="三種迴圈預算下，每一步在第幾輪開始讀得出來"></svg></div>
+    <figcaption><b>圖 C9</b>H = 8 時，每一步的節點在第幾輪開始讀得出來<span class="schem">示意</span>。虛線是「一輪剛好一步」的對角線。依論文圖 5 的文字描述重畫。</figcaption>
+  </figure>
+  <ul class="plain">
+    <li><strong>輪數 &gt; 步數（2×16）</strong>：大約一輪一步，第 12 輪就走完，剩下的 4 輪沒有再多跳（3 個種子中的 2 個）。</li>
+    <li><strong>輪數 = 步數（4×8）</strong>：大致沿著對角線走，但第一步要花約兩輪，之後又在某一輪裡連跳兩步，最後剛好在第 8 輪走完。</li>
+    <li><strong>輪數 &lt; 步數（8×4）</strong>：每一輪塞進好幾步，在第 4 輪（最後一輪）結束時剛好走到答案。</li>
+  </ul>
+  <div class="note"><p><strong>結論：</strong>「一輪一步」不是硬規則。比較準確的說法是：迴圈模型會<strong>依照自己的預算安排步伐</strong>，預算夠就一輪一步，預算不夠就把好幾步壓進同一輪。</p></div>
+</section>
+
+<section id="c9" class="b-sec">
+  <h3><span class="no">C9</span>模型真的在用這些狀態嗎</h3>
+  <p>探針只證明資訊「在裡面」，不代表模型有用到。作者再做兩個檢查。</p>
+  <h4>Logit lens：模型自己的輸出頭讀得到樓梯</h4>
+  <p>在 4×8 模型（H = 8）每一輪結束時就套上它自己的輸出頭，發現第 t 輪之後輸出頭會寫出第 t 步的節點，機率從第 4 步的 0.53 一路升到第 7 步的 1.00。</p>
+  <p>有一個有趣的差別：探針還能讀到已經走過的舊節點（大約多撐兩輪才淡掉），但輸出頭幾乎不寫舊節點，放在舊節點上的機率從未超過 0.10。這表示殘差流裡同時存著新舊節點，而輸出頭只挑「目前這一步」來讀。</p>
+  <figure class="fig">
+    <div class="scroll"><svg class="dia" id="pvh" viewBox="0 0 760 185" role="img" aria-label="探針讀得到目前節點和尚未淡出的舊節點，輸出頭只寫出目前節點"></svg></div>
+    <figcaption><b>圖 C10</b>探針與輸出頭「看到」的東西不同<span class="schem">示意</span>。z<sub>t</sub> 是第 t 步的節點。</figcaption>
+  </figure>
+  <h4>Activation patching：換掉狀態，模型就改走別條路</h4>
+  <p>拿另一題（同一個環、不同起點）當提供者，在第 t 輪之後把它在答案位置上的狀態複製到原題裡，讓剩下的輪數照常跑完。如果模型真的依賴這個狀態，原題就會寫出提供者的答案。</p>
+  <p>結果：3 個種子中有 2 個，只要在第 2 輪之後複製，就 100% 寫出提供者的答案；第 3 個種子在第 6 輪之後才達到。未訓練的模型則兩個答案都寫不出來。</p>
+  <div class="note rose"><p><strong>作者自己提的保留：</strong>輸出頭能完整追蹤每一步的情況，在每種預算下都只有一個種子做到。如果改用「不同的環、相同的起點」當提供者，模型會寫出「兩條路組合起來」的節點，這只在 5 個種子中的 1 個成立，2×16 模型則完全沒有。</p></div>
+</section>
+
+<section id="c10" class="b-sec">
+  <h3><span class="no">C10</span>結論、限制與自我檢查</h3>
+  <h4>一段話總結</h4>
+  <p>在需要多步依序計算的任務上，有效深度只是門檻，跨過門檻後，<strong>權重綁定的程度</strong>才是決定能不能學會的關鍵。迴圈模型會把迭代分配給演算法的一個個步驟，在殘差流裡留下一道樓梯，而且模型確實依賴這道樓梯完成計算。作者因此把迴圈 Transformer 重新定位為「迭代式程式學習者」，而不只是比較省參數的深網路。</p>
+  <h4>讀的時候要記得的限制</h4>
+  <ul class="plain">
+    <li>模型很小（寬度 256），任務是乾淨的合成任務，不代表大型預訓練迴圈模型也一樣。</li>
+    <li>每個設定只有 3 到 5 個種子，有些現象只在部分種子出現。</li>
+    <li>研究的是最單純的「全部共用」迴圈；實務上常見的前置層、收尾層、輸入重新注入等變體沒有涵蓋。</li>
+  </ul>
+
+  <h4>自我檢查</h4>
+  <details class="q"><summary>1. 為什麼 decoder-only 模型需要因果遮罩？</summary><p>訓練時整句一起餵進去，如果某個位置能看到後面的字，就等於偷看答案。遮罩把未來位置的分數設成 −∞，確保每個位置只用自己和前面的資訊，跟實際生成時的情況一致。</p></details>
+  <details class="q"><summary>2. 為什麼殘差連接讓「探針」這種分析方法可行？</summary><p>每一層都是從同一條殘差流讀取、再把增量加回去，所以各層的輸出都在同一個向量空間裡。研究者可以在任何深度插一個線性分類器，問「現在這條流裡裝著什麼」。</p></details>
+  <details class="q"><summary>3. 4×8 迴圈模型和普通 32 層模型，有效深度和參數量各是多少？</summary><p>有效深度都是 32。參數量約 3.22M 對 25.72M，差了大約 8 倍。</p></details>
+  <details class="q"><summary>4. 普通模型在什麼條件下也學得會？內部長得一樣嗎？</summary><p>降低學習率到 3×10⁻⁴（5 個種子中 4 個學會），或在中間層加監督（2 個學會）。低學習率時，中間節點要到最後幾層才幾乎同時出現，沒有樓梯；加了中間監督才會出現類似樓梯，但每階高度不均勻。</p></details>
+  <details class="q"><summary>5. 如果迴圈的輪數比需要的步數少，模型怎麼辦？</summary><p>它會在同一輪裡做好幾步。例如 8×4 模型面對 8 步的題目，在第 4 輪結束時剛好走到答案。</p></details>
+  <details class="q"><summary>6. 論文用什麼證據說模型「真的在用」中間狀態，而不只是剛好讀得出來？</summary><p>兩個證據：logit lens 顯示模型自己的輸出頭在第 t 輪後會寫出第 t 步的節點；activation patching 顯示把提供者的狀態移植過來後，模型會照著提供者的路走完，寫出提供者的答案。</p></details>
+  <details class="q"><summary>7. Selectivity 為什麼要減掉「打亂標籤」的準確率？</summary><p>為了排除「探針自己很強、硬背出來」的可能。只有真實標籤明顯比打亂標籤好讀，才表示資訊真的線性地存在於那一層的向量裡。</p></details>
+</section>
+
+<footer>
+  <p>論文：<a href="https://arxiv.org/abs/2610.24135">arXiv:2610.24135</a>　程式碼：<a href="https://github.com/magnus-sesodia/insidetheloop">github.com/magnus-sesodia/insidetheloop</a></p>
+  <p>標示「示意」的圖是依論文文字描述簡化重畫，用來說明趨勢，數值不是論文的原始數據。C5 的表格與參數量、學習率、種子數等數字取自論文正文。</p>
+</footer>
+
+</main>
+
+<script>
+(function(){
+  var NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs, parent, text){
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function rng(seed){
+    var s = (seed >>> 0) || 1;
+    return function(){ s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+  }
+  function towerColor(i){ return 'hsl(' + (200 + i*4) + ',52%,' + (i % 2 ? 62 : 51) + '%)'; }
+  var loopColors = ['hsl(36,80%,52%)','hsl(22,72%,60%)','hsl(46,85%,55%)','hsl(12,64%,54%)'];
+  var SUB = ['₀','₁','₂','₃','₄','₅','₆','₇','₈'];
+
+  /* hero */
+  var ht = document.getElementById('heroTower');
+  if (ht) for (var i = 0; i < 32; i++) el('rect', {x:110, y:20 + (31 - i) * 7.5, width:150, height:6, rx:1.5, fill:towerColor(i)}, ht);
+  var hb = document.getElementById('heroBlock');
+  if (hb) for (var k = 0; k < 4; k++) el('rect', {x:500, y:88 + (3 - k) * 26, width:150, height:22, rx:3, fill:loopColors[k]}, hb);
+
+  /* A13 stacks */
+  var ds = document.getElementById('deepStack');
+  if (ds) for (var i2 = 0; i2 < 12; i2++) el('rect', {x:75, y:44 + (11 - i2) * 12.5, width:100, height:10, rx:2, fill:towerColor(i2 * 2.6 | 0)}, ds);
+  var l3 = document.getElementById('loopStack3');
+  if (l3) for (var k2 = 0; k2 < 3; k2++) el('rect', {x:590, y:90 + (2 - k2) * 18, width:80, height:14, rx:2, fill:loopColors[k2]}, l3);
+
+  /* vectors */
+  document.querySelectorAll('g.vec').forEach(function(g){
+    var x = +g.dataset.x, y = +g.dataset.y, n = +g.dataset.n, w = +(g.dataset.w || 24), r = rng(+g.dataset.seed);
+    for (var j = 0; j < n; j++) el('rect', {x:x + j * (w + 2), y:y, width:w, height:28, rx:3, 'class':'cell', 'fill-opacity':(0.12 + 0.85 * r()).toFixed(2)}, g);
+  });
+
+  /* mask grid */
+  (function(){
+    var g = document.getElementById('maskGrid'), toks = ['今天','天氣','很','好','，'];
+    if (!g) return;
+    var x0 = 130, y0 = 60, c = 38, r = rng(5);
+    toks.forEach(function(t, j){
+      el('text', {x:x0 + j * c + c/2, y:52, 'class':'c s13'}, g, t);
+      el('text', {x:x0 - 8, y:y0 + j * c + c/2 + 5, 'class':'e s13'}, g, t);
+    });
+    for (var i = 0; i < 5; i++){
+      var ws = [], sum = 0;
+      for (var j = 0; j <= i; j++){ var v = 0.2 + r() * (j === i ? 1.2 : 1); ws.push(v); sum += v; }
+      for (var j2 = 0; j2 < 5; j2++){
+        var x = x0 + j2 * c, y = y0 + i * c;
+        if (j2 <= i){
+          var w = ws[j2] / sum;
+          el('rect', {x:x + 1, y:y + 1, width:c - 2, height:c - 2, rx:3, 'class':'cell', 'fill-opacity':(0.12 + 0.8 * w / Math.max.apply(null, ws.map(function(q){return q/sum;}))).toFixed(2)}, g);
+          var op = 0.12 + 0.8 * w / Math.max.apply(null, ws.map(function(q){return q/sum;}));
+          el('text', {x:x + c/2, y:y + c/2 + 4, 'class':'c mono', style:'font-size:10px', fill: op > 0.6 ? 'var(--panel)' : 'var(--ink)'}, g, w.toFixed(2).replace(/^0/, ''));
+        } else {
+          el('rect', {x:x + 1, y:y + 1, width:c - 2, height:c - 2, rx:3, 'class':'masked'}, g);
+        }
+      }
+    }
+  })();
+
+  /* heads */
+  (function(){
+    var g = document.getElementById('heads');
+    if (!g) return;
+    var notes = ['例：找前一個字','例：找同一個節點','例：找題目的起點','…','…','…','…','…'];
+    for (var k = 0; k < 8; k++){
+      var y = 10 + k * 28;
+      el('path', {d:'M112 120 L168 ' + (y + 11), 'class':'ln-mut thin'}, g);
+      el('rect', {x:170, y:y, width:240, height:22, rx:4, 'class': k < 3 ? 'bx-teal' : 'box'}, g);
+      el('text', {x:182, y:y + 16, 'class':'s13 bd'}, g, '頭 ' + (k + 1));
+      el('text', {x:228, y:y + 16, 'class':'sm'}, g, notes[k]);
+      el('path', {d:'M410 ' + (y + 11) + ' L468 120', 'class':'ln-mut thin'}, g);
+    }
+  })();
+
+  /* unrolled */
+  (function(){
+    var u = document.getElementById('unrollUntied'), lp = document.getElementById('unrollLoop'), br = document.getElementById('unrollBrackets');
+    if (!u) return;
+    for (var i = 0; i < 32; i++){
+      el('rect', {x:40 + i * 22, y:40, width:20, height:40, rx:3, fill:towerColor(i)}, u);
+      el('rect', {x:40 + i * 22, y:138, width:20, height:40, rx:3, fill:loopColors[i % 4]}, lp);
+    }
+    for (var k = 0; k < 8; k++){
+      var a = 40 + k * 88, b = a + 86;
+      el('path', {d:'M' + a + ' 186 L' + a + ' 192 L' + b + ' 192 L' + b + ' 186', 'class':'ln-mut'}, br);
+      el('text', {x:(a + b) / 2, y:212, 'class':'c sm'}, br, '第 ' + (k + 1) + ' 輪');
+    }
+  })();
+
+  /* heatmaps */
+  function heat(id, onsets, opt){
+    var svg = document.getElementById(id), x0 = 90, y0 = 50, cw = 20, ch = 20, r = rng(opt.seed);
+    if (!svg) return;
+    el('text', {x:16, y:22, 'class':'lg'}, svg, opt.title);
+    if (opt.iters){
+      for (var k = 0; k < 8; k++) el('text', {x:x0 + (k * 4 + 2) * cw, y:y0 - 8, 'class':'c sm'}, svg, '第' + (k + 1) + '輪');
+    }
+    for (var h = 1; h <= 8; h++){
+      var y = y0 + (h - 1) * ch, on = onsets[h - 1];
+      el('text', {x:x0 - 10, y:y + 15, 'class':'e sm'}, svg, '第 ' + h + ' 步');
+      for (var l = 1; l <= 32; l++){
+        var v;
+        if (l < on - 1) v = 0.03 + 0.09 * r();
+        else if (l === on - 1) v = 0.36;
+        else if (opt.fade){ var since = l - on; v = since > 6 ? Math.max(0.16, 0.93 - (since - 6) * 0.07) : 0.9 + 0.06 * r(); }
+        else v = 0.88 + 0.08 * r();
+        el('rect', {x:x0 + (l - 1) * cw, y:y, width:cw - 1, height:ch - 1, rx:2, 'class':'cell', 'fill-opacity':v.toFixed(2)}, svg);
+      }
+    }
+    if (opt.iters){
+      for (var k2 = 1; k2 < 8; k2++){ var x = x0 + k2 * 4 * cw - 0.5; el('path', {d:'M' + x + ' ' + (y0 - 2) + ' L' + x + ' ' + (y0 + 8 * ch + 2), 'class':'ln-mut thin', style:'opacity:.7'}, svg); }
+    }
+    var pts = onsets.map(function(on, i){ return [x0 + (on - 0.5) * cw, y0 + (i + 0.5) * ch]; });
+    el('polyline', {points:pts.map(function(p){return p.join(',');}).join(' '), 'class':'stair'}, svg);
+    pts.forEach(function(p){ el('circle', {cx:p[0], cy:p[1], r:4.5, 'class':'dot'}, svg); });
+    [4,8,12,16,20,24,28,32].forEach(function(l){ el('text', {x:x0 + (l - 0.5) * cw, y:y0 + 8 * ch + 18, 'class':'c sm mono'}, svg, l); });
+    el('text', {x:x0 + 16 * cw, y:y0 + 8 * ch + 38, 'class':'c sm'}, svg, '層');
+  }
+  heat('heatLoop', [8,12,16,18,20,24,28,31], {seed:3, title:'迴圈 4×8：一階一階往上爬', iters:true, fade:true});
+  heat('heatUntied', [26,26,27,27,28,28,29,30], {seed:9, title:'普通 32 層（學習率 3×10⁻⁴）：最後幾層一次冒出來', iters:false, fade:false});
+
+  /* budgets */
+  (function(){
+    var svg = document.getElementById('budget');
+    if (!svg) return;
+    var B = [
+      {T:16, on:[5,6,7,8,9,10,11,12], t:'2×16：輪數 > 步數'},
+      {T:8, on:[2,3,4,4.5,5,6,7,8], t:'4×8：輪數 = 步數'},
+      {T:4, on:[1,1.5,2,2.4,2.8,3.2,3.6,4], t:'8×4：輪數 < 步數'}
+    ];
+    B.forEach(function(b, i){
+      var px = 50 + i * 250, w = 190, yT = 50, yB = 210, sx = w / b.T;
+      function X(t){ return px + t * sx; } function Y(h){ return yB - h * 20; }
+      el('text', {x:px + w / 2, y:26, 'class':'c lg'}, svg, b.t);
+      for (var t = 1; t <= b.T; t++) el('path', {d:'M' + X(t) + ' ' + yT + ' L' + X(t) + ' ' + yB, 'class':'ln-mut thin', style:'opacity:.35'}, svg);
+      el('path', {d:'M' + px + ' ' + yT + ' L' + px + ' ' + yB + ' L' + (px + w) + ' ' + yB, 'class':'ln-mut'}, svg);
+      var m = Math.min(b.T, 8);
+      el('path', {d:'M' + X(0) + ' ' + Y(0) + ' L' + X(m) + ' ' + Y(m), 'class':'ln-mut dash'}, svg);
+      var pts = [[X(0), Y(0)]].concat(b.on.map(function(o, h){ return [X(o), Y(h + 1)]; }));
+      el('polyline', {points:pts.map(function(p){return p.join(',');}).join(' '), 'class':'ln-amber', style:'stroke-width:2.4'}, svg);
+      pts.slice(1).forEach(function(p){ el('circle', {cx:p[0], cy:p[1], r:4, 'class':'dot'}, svg); });
+      [0,4,8].forEach(function(h){ el('text', {x:px - 8, y:Y(h) + 4, 'class':'e sm mono'}, svg, h); });
+      el('text', {x:X(0), y:yB + 18, 'class':'c sm mono'}, svg, '0');
+      el('text', {x:X(b.T), y:yB + 18, 'class':'c sm mono'}, svg, b.T);
+      el('text', {x:px + w / 2, y:yB + 38, 'class':'c sm'}, svg, '第幾輪');
+    });
+    el('text', {x:16, y:130, 'class':'c sm', transform:'rotate(-90 16 130)'}, svg, '第幾步');
+  })();
+
+  /* probe vs head */
+  (function(){
+    var svg = document.getElementById('pvh');
+    if (!svg) return;
+    el('text', {x:16, y:48, 'class':'s13 bd'}, svg, '探針讀得到');
+    el('text', {x:16, y:66, 'class':'sm'}, svg, '（舊節點慢慢淡出）');
+    el('text', {x:16, y:124, 'class':'s13 bd'}, svg, '輸出頭寫出');
+    el('text', {x:16, y:142, 'class':'sm'}, svg, '（只寫目前這一步）');
+    for (var k = 0; k < 8; k++){
+      var x = 140 + k * 77, cx = x + 35.5, t = k + 1;
+      el('rect', {x:x, y:20, width:71, height:60, rx:6, 'class':'bx-blue'}, svg);
+      el('text', {x:cx, y:50, 'class':'c lg'}, svg, 'z' + SUB[t]);
+      var old = [];
+      if (t - 2 >= 1) old.push('z' + SUB[t - 2]);
+      if (t - 1 >= 1) old.push('z' + SUB[t - 1]);
+      el('text', {x:cx, y:70, 'class':'c sm', style:'opacity:.75'}, svg, old.length ? old.join(' ') : '—');
+      el('rect', {x:x, y:100, width:71, height:50, rx:6, 'class':'bx-amber'}, svg);
+      el('text', {x:cx, y:131, 'class':'c lg'}, svg, 'z' + SUB[t]);
+      el('text', {x:cx, y:174, 'class':'c sm'}, svg, '第 ' + t + ' 輪');
+    }
+  })();
+
+  /* stepper */
+  (function(){
+    var svg = document.getElementById('stepSvg'), segG = document.getElementById('segs'), nodeG = document.getElementById('stepNodes');
+    if (!svg) return;
+    var range = document.getElementById('stepRange'), msg = document.getElementById('stepMsg');
+    var modeBtns = document.querySelectorAll('#stepper [data-mode]');
+    var labels = ['3','11','6','2','9'], xs = [110,245,380,515,650];
+    var segs = [], segTx = [], circles = [], ctext = [];
+    for (var i = 0; i < 8; i++){
+      segs.push(el('rect', {x:40 + i * 86, y:16, width:80, height:34, rx:5, 'class':'seg-todo'}, segG));
+      segTx.push(el('text', {x:80 + i * 86, y:38, 'class':'c s13'}, segG, ''));
+    }
+    for (var j = 0; j < 5; j++){
+      circles.push(el('circle', {cx:xs[j], cy:125, r:30, 'class':'st-off'}, nodeG));
+      ctext.push(el('text', {x:xs[j], y:132, 'class':'c xl tx-off'}, nodeG, labels[j]));
+    }
+    var state = {mode:'loop', t:0};
+    var loopMsg = [
+      '還沒進迴圈：殘差流裡只讀得出起點 3。',
+      '第 1 輪（第 1–4 層）結束：探針開始讀得出第 1 步的節點 11。',
+      '第 2 輪：輪到 6。前面的 11 不會瞬間消失，而是慢慢淡出，探針大約還能多讀兩輪。',
+      '第 3 輪：走到 2。每一輪大約往前一步，畫出來就像爬樓梯。',
+      '第 4 輪（到第 16 層）：走到答案 9。論文圖 4a 的 4×8 模型正是在第 16 層左右抵達答案。',
+      '第 5 輪：答案已經在手，沒有新的節點冒出來，舊節點繼續淡出。',
+      '第 6 輪：一樣停在答案。多出來的輪數基本上是閒置的。',
+      '第 7 輪：仍然停在答案。論文在 2×16 模型上也看到，多餘的輪數不會再多跳。',
+      '第 8 輪：輸出頭在這裡讀出答案 9。'
+    ];
+    function untiedMsg(t){
+      if (t === 0) return '開始前：讀得出起點 3。';
+      if (t <= 6) return '第 ' + ((t - 1) * 4 + 1) + '–' + (t * 4) + ' 層：除了起點以外，什麼都還讀不出來。';
+      if (t === 7) return '第 25–28 層：從第 26 層開始，中間節點突然一起冒出來。';
+      return '第 29–32 層：到第 30 層前後，所有中間節點和答案都讀得出來了。它們幾乎同時出現，沒有一階一階的樓梯。';
+    }
+    function nodeState(i, t, mode){
+      if (mode === 'loop'){
+        var cur = Math.min(t, 4);
+        if (i === cur) return 'now';
+        if (i < cur && t - i <= 2) return 'past';
+        return 'off';
+      }
+      if (t <= 6) return i === 0 ? 'now' : 'off';
+      if (t === 7) return i === 0 ? 'past' : (i <= 2 ? 'now' : 'off');
+      return i === 0 ? 'past' : 'now';
+    }
+    function render(){
+      var t = state.t, m = state.mode;
+      svg.classList.toggle('mode-untied', m === 'untied');
+      for (var i = 0; i < 8; i++){
+        segs[i].setAttribute('class', i < t - 1 ? 'seg-done' : (i === t - 1 ? 'seg-now' : 'seg-todo'));
+        segTx[i].textContent = m === 'loop' ? '第 ' + (i + 1) + ' 輪' : (i * 4 + 1) + '–' + (i * 4 + 4) + ' 層';
+        segTx[i].setAttribute('class', 'c s13' + (i === t - 1 ? ' on-fill' : ''));
+      }
+      for (var j = 0; j < 5; j++){
+        var s = nodeState(j, t, m);
+        circles[j].setAttribute('class', 'st-' + s);
+        ctext[j].setAttribute('class', 'c xl ' + (s === 'now' ? 'tx-now' : (s === 'off' ? 'tx-off' : '')));
+      }
+      msg.textContent = m === 'loop' ? loopMsg[t] : untiedMsg(t);
+      range.value = t;
+    }
+    document.getElementById('prevBtn').addEventListener('click', function(){ state.t = Math.max(0, state.t - 1); render(); });
+    document.getElementById('nextBtn').addEventListener('click', function(){ state.t = Math.min(8, state.t + 1); render(); });
+    document.getElementById('resetBtn').addEventListener('click', function(){ state.t = 0; render(); });
+    range.addEventListener('input', function(){ state.t = +range.value; render(); });
+    modeBtns.forEach(function(b){
+      b.addEventListener('click', function(){
+        state.mode = b.dataset.mode; state.t = 0;
+        modeBtns.forEach(function(o){ o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+        render();
+      });
+    });
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
